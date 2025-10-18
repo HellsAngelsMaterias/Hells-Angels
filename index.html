@@ -7,10 +7,6 @@
   <link rel="icon" type="image/png" href="logo-dark.png">
   
   <title>Hells Angels</title>
-  
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --cor-fundo: #fff0f6;
@@ -33,40 +29,142 @@
       --cor-principal: #ff0080; 
       --cor-card: #2c001a; 
       --cor-borda: #e60073; 
-      --cor-btn-primario: #ff0080;
+      --cor-btn-primario: #ff0080; 
       --cor-btn-texto: #fff;
-      --cor-btn-secundario: #4d0026;
-      --cor-btn-secundario-texto: #ffccf0;
-      --cor-erro: #ff5555;
-      --cor-glow-pulsante: rgba(255, 0, 128, 0.8);
+      --cor-btn-secundario: #4d002a; 
+      --cor-btn-secundario-texto: #ffccf0; 
+      /* NOVO: Cor para o brilho pulsante no modo escuro */
+      --cor-glow-pulsante: rgba(255, 0, 128, 0.6); /* Cor Principal Escura com opacidade */
     }
     
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      background-color: var(--cor-fundo);
+    body.dark input[type=number], body.dark input[type=text], body.dark select, body.dark input[type=password] {
+      background: #33001f;
       color: var(--cor-texto);
-      margin: 0;
-      padding: 0;
-      transition: background-color 0.3s, color 0.3s;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      border: 1px solid var(--cor-borda);
+    }
+    
+    /* --- ESTILO PARA INPUT DATALIST (Foco Rosa/Roxo) --- */
+    input[list]:focus, input[list]:hover {
+        border-color: var(--cor-principal) !important; 
+        box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); 
+    }
+    
+    /* --- NOVO ESTILO PARA DATALIST (Sugestões de Organização) --- */
+    input[list] {
+        position: relative;
+        z-index: 1; 
+    }
+    
+    input[list]::-webkit-calendar-picker-indicator {
+        display: none;
+    }
+    /* --- FIM NOVO ESTILO PARA DATALIST --- */
+    
+    /* --- NOVO: Estilo para a dica de sugestão da Organização --- */
+    .suggestion-tip {
+        font-size: 11px;
+        color: var(--cor-principal); /* Usa a cor principal para destaque */
+        margin-top: 4px;
+        margin-bottom: 0;
+        font-weight: 500;
+        opacity: 0.8;
+    }
+    /* --- FIM NOVO: Estilo para a dica de sugestão da Organização --- */
+    
+    /* --- ESTILOS TOUR --- */
+    .tour-tooltip {
+      position: absolute;
+      background: var(--cor-principal);
+      color: var(--cor-btn-texto);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      max-width: 300px;
+      text-align: left;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 10002;
     }
 
-    /* NOVOS ESTILOS PARA TELA DE LOGIN */
-    #authLogo {
+    .tour-tooltip.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tour-tooltip h4 {
+        margin: 0 0 5px;
+        font-size: 16px;
+        color: var(--cor-btn-texto);
+    }
+    .tour-tooltip p {
+        margin: 0;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    
+    .tour-tooltip button {
+        background: var(--cor-btn-secundario);
+        color: var(--cor-btn-secundario-texto);
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 8px;
+    }
+    
+    .tour-highlight {
+      box-shadow: 0 0 0 3px rgba(230,0,115,0.6), 0 0 10px rgba(230,0,115,0.5);
+      position: relative;
+      z-index: 10001;
+    }
+    /* --- FIM ESTILOS TOUR --- */
+    
+    /* --- ESTILO PARA CAMPO INVÁLIDO --- */
+    input.input-invalido, select.input-invalido {
+        border: 2px solid var(--cor-erro) !important;
+        box-shadow: 0 0 4px var(--cor-erro);
+    }
+    /* --- FIM ESTILO PARA CAMPO INVÁLIDO --- */
+
+    
+    /* Container para a logo */
+    #logoLink {
+        position: fixed;
+        top: 16px; 
+        left: 16px; 
+        width: auto; 
+        max-height: 80px; 
+        cursor: pointer;
+        z-index: 9998; 
+    }
+    
+    /* Ajuste na logo superior */
+    .app-logo {
+      max-height: 80px; 
+      width: auto;
+      transition: opacity 0.3s ease, filter 0.3s ease; /* Adicionado filter para a transição do hover */
+      display: block; 
+    }
+    
+    /* NOVO: Efeito de iluminação ao passar o mouse na Logo (na calculadora) */
+    #appLogo:hover {
+        /* Brilho da logo ao passar o mouse */
+        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante));
+        opacity: 0.9;
+    }
+
+    
+    /* --- Estilo para a imagem na tela de boas-vindas --- */
+    #welcomeLogo {
       max-width: 80%;
       max-height: 120px; 
       margin-bottom: 25px;
       display: block;
+      /* NÃO ADICIONAR EFEITO DE HOVER AQUI */
     }
     
-    #authScreen {
+    #welcomeScreen {
       position: fixed;
       top: 0;
       left: 0;
@@ -74,7 +172,7 @@
       height: 100%;
       background-color: var(--cor-card);
       z-index: 10000; 
-      display: none; /* Controlado pelo JS */
+      display: none; 
       flex-direction: column;
       justify-content: center; 
       align-items: center;
@@ -84,1138 +182,1042 @@
       box-sizing: border-box; 
     }
     
-    #authScreen.show {
+    #welcomeScreen.show {
         display: flex; 
     }
-    
-    #authScreen.hidden {
+
+    #welcomeScreen.hidden {
       opacity: 0;
       pointer-events: none; 
     }
     
-    #authScreen h2 {
+    #welcomeScreen h2 {
       font-size: 36px;
       margin-top: 10px; 
       margin-bottom: 20px;
       color: var(--cor-principal);
-      font-weight: 900;
     }
     
-    .auth-input {
-        width: 80%;
-        max-width: 300px;
-        margin: 8px 0;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid var(--cor-borda);
-        background-color: var(--cor-fundo);
-        color: var(--cor-texto);
-    }
-
-    body.dark .auth-input {
-        background: #33001f;
-        color: var(--cor-texto);
-        border: 1px solid var(--cor-borda);
-    }
-    
-    #authError {
-        color: var(--cor-erro);
-        font-weight: 600;
-        margin-top: 10px;
-    }
-
-    #logoutBtn {
-        background: var(--cor-erro); 
-        color: var(--cor-btn-texto);
-        display: none; 
-    }
-    /* FIM NOVOS ESTILOS */
-
-    /* Estilos Gerais */
-    header {
-      width: 100%;
-      text-align: center;
-      padding: 15px 0;
-      border-bottom: 2px solid var(--cor-borda);
-      background-color: var(--cor-card);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    
-    #logo-link {
-        display: block;
-        text-decoration: none;
-        color: var(--cor-principal);
-        font-size: 30px;
-        font-weight: 900;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: color 0.3s;
-        /* NOVO: A logo só deve ser visível após o login */
-        display: none; 
-    }
-
-    .top-right-controls {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .control-btn {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background-color: var(--cor-btn-secundario);
-      color: var(--cor-btn-secundario-texto);
-      font-weight: 600;
-      transition: background-color 0.3s;
-    }
-
-    .control-btn:hover {
-      opacity: 0.8;
-    }
-    
-    main {
-      padding: 20px;
-      width: 100%;
-      max-width: 1200px;
-      flex-grow: 1;
-    }
-    
-    .card {
-      background-color: var(--cor-card);
-      padding: 25px;
+    #welcomeScreen button {
+      padding: 12px 24px;
+      font-size: 18px;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-      transition: background-color 0.3s, box-shadow 0.3s;
+      margin-top: 10px;
     }
 
-    .card h2 {
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 20px;
+      background: var(--cor-fundo);
+      color: var(--cor-texto);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+    
+    /* CORREÇÃO: Conteúdo principal escondido por padrão. O listener do Firebase irá exibi-lo. */
+    #mainCard {
+        display: none; 
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      font-weight: 700;
       color: var(--cor-principal);
-      border-bottom: 2px solid var(--cor-borda);
-      padding-bottom: 10px;
-      margin-top: 0;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--cor-principal);
+    }
+    
+    h3 {
+        color: var(--cor-principal); 
+        font-weight:600; 
+        margin-top: 16px;
+    }
+
+    .card {
+      background: var(--cor-card);
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid var(--cor-borda);
       margin-bottom: 20px;
     }
 
-    /* Inputs e Selects */
     label {
       display: block;
-      margin-bottom: 5px;
+      margin: 10px 0 6px;
       font-weight: 600;
+      color: var(--cor-principal);
     }
+    
+    /* NOVO ESTILO PARA INPUTS DA TELA DE LOGIN */
+    /* Incluindo input[type=text] para o Nome de Usuário */
+    #loginScreen input[type=text], #loginScreen input[type=password] {
+        height: 40px;
+        font-size: 16px;
+    }
+    /* FIM NOVO ESTILO PARA INPUTS DA TELA DE LOGIN */
 
-    input, select, textarea {
+    input[type=number], input[type=text], select {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
+      padding: 8px;
+      border-radius: 6px;
       border: 1px solid var(--cor-borda);
-      border-radius: 5px;
-      background-color: var(--cor-fundo);
+      background: #fff;
       color: var(--cor-texto);
-      transition: border-color 0.3s;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-
+    
     input[type=number] {
-      -moz-appearance: textfield;
-    }
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
+        width: 140px;
     }
 
-    textarea {
-        resize: vertical;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--cor-principal);
-      outline: none;
-    }
-
-    /* Botões */
-    button, .button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 700;
-      transition: opacity 0.3s, background-color 0.3s, box-shadow 0.3s;
-      display: inline-block;
-      text-align: center;
-      margin-right: 10px;
-    }
-
-    button.primary, .button.primary {
-      background-color: var(--cor-btn-primario);
-      color: var(--cor-btn-texto);
-    }
-    
-    button.muted, .button.muted {
-        background-color: var(--cor-btn-secundario);
-        color: var(--cor-btn-secundario-texto);
-    }
-
-    button:hover:not(:disabled), .button:hover:not(:disabled) {
-      opacity: 0.9;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Seções e Grid */
-    .grid-container {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .grid-item-full {
-      grid-column: 1 / -1;
-    }
-
-    /* Resultados e Materiais */
-    #resultadoCalc {
-      margin-top: 20px;
-      padding: 15px;
-      border: 2px dashed var(--cor-principal);
-      border-radius: 5px;
-      background-color: var(--cor-fundo);
-    }
-
-    #resultadoCalc p {
-      margin: 5px 0;
-      font-size: 1.1em;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
     }
     
-    .valor-total {
-        font-size: 1.5em;
-        font-weight: 900;
-        color: var(--cor-principal);
-        /* NOVO: Efeito de brilho pulsante */
-        animation: pulse-glow 2s infinite alternate;
-    }
-    
-    @keyframes pulse-glow {
-        from {
-            text-shadow: 0 0 5px var(--cor-glow-pulsante), 0 0 10px var(--cor-glow-pulsante);
-        }
-        to {
-            text-shadow: 0 0 10px var(--cor-glow-pulsante), 0 0 20px var(--cor-glow-pulsante);
-        }
+    .grid-venda {
+        grid-template-columns: 1fr 1fr;
     }
 
-    /* Histórico */
-    #historyCard {
-      display: none;
-    }
-    
-    #historicoTabelaContainer {
-        max-height: 500px;
-        overflow-y: auto;
-        margin-top: 20px;
-        border: 1px solid var(--cor-borda);
-        border-radius: 5px;
-    }
-
-    #historicoVendas {
+    table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.9em;
+      margin-top: 12px;
+      font-size: 14px;
     }
 
-    #historicoVendas thead th {
-        position: sticky;
-        top: 0;
-        background-color: var(--cor-principal);
-        color: var(--cor-btn-texto);
-        padding: 10px;
-        text-align: left;
-        z-index: 5;
+    th, td {
+      padding: 6px; /* Reduzido o padding para caber mais na tela do celular */
+      border-bottom: 1px solid var(--cor-borda);
+      text-align: left;
+    }
+
+    th {
+      background: var(--cor-btn-secundario);
+      color: var(--cor-btn-secundario-texto);
+      font-weight: 600;
     }
     
-    #historicoVendas tbody tr {
-      border-bottom: 1px solid var(--cor-borda);
+    
+/* --- NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
+.history-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 8px;
+}
+
+/* Garante que o container interno não atrapalhe a rolagem */
+#historyBackground {
+    overflow: hidden;
+}
+
+/* Mantém a tabela com comportamento de tabela e largura controlada */
+#historyCard table {
+    width: 100%;
+    display: table;
+    border-collapse: collapse;
+    table-layout: fixed; /* ajuda a manter colunas alinhadas */
+    min-width: 900px; /* força scroll em telas pequenas mantendo alinhamento */
+}
+
+/* Estilo base para células */
+#historyCard th, #historyCard td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+/* Definição de larguras e alinhamentos por coluna - ajustáveis conforme necessidade */
+#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 90px; text-align: center; } /* Data/Hora */
+#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 160px; text-align: left; }   /* Cliente */
+#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; text-align: center; } /* Organização/Tipo */
+#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; text-align: center; } /* Telefone */
+#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; text-align: left; }   /* Produtos */
+#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 140px; text-align: center; } /* Valor */
+#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 140px; text-align: center; } /* Negociadoras */
+#historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; text-align: center; } /* Ações */
+
+/* Ajuste para a linha de data/hora (duas linhas dentro da mesma célula) */
+.history-datetime-line {
+    display: block;
+    line-height: 1.1;
+    font-size: 12px;
+}
+
+/* Faz com que valores longos quebrem visualmente melhor em células menores quando necessário */
+@media (max-width: 700px) {
+    #historyCard th, #historyCard td {
+        font-size: 12px;
+    }
+    #historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 320px; }
+}
+/* --- FIM NOVO ESTILO PARA RESPONSIVIDADE DA TABELA --- */
+
+
+
+    .actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
     }
 
-    #historicoVendas tbody tr:nth-child(even) {
-      background-color: var(--cor-fundo);
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity 0.2s ease, box-shadow 0.3s ease; /* Adicionado box-shadow para transição do glow */
     }
 
-    #historicoVendas tbody td {
-      padding: 10px;
-      vertical-align: top;
+    button:hover { opacity: 0.85; }
+    
+    /* NOVO: Efeito de brilho pulsante para o botão principal (Calcular/Registrar) */
+    .primary, .success {
+        animation: pulse-glow 2s infinite ease-in-out;
+    }
+    
+    /* NOVO: Keyframes para o brilho pulsante */
+    @keyframes pulse-glow {
+        0% {
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
+        }
+        50% {
+            box-shadow: 0 0 10px var(--cor-glow-pulsante), 0 0 20px var(--cor-glow-pulsante); 
+        }
+        100% {
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0); 
+        }
     }
 
-    .btn-action {
-        margin-right: 5px;
-        padding: 5px 8px;
-        font-size: 0.8em;
+    .primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
+    .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
+    .success { background: #00b33c; color: #fff; }
+
+    /* Container para agrupar e posicionar botões (Modo Noturno e Tutorial) */
+    .top-right-controls {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        gap: 10px;
+        z-index: 9999;
+    }
+    
+    /* NOVO: Ajuste do Container para incluir o botão de Logout */
+    .top-right-controls button {
+        height: 40px; /* Garante que todos os botões no topo tenham altura uniforme */
+    }
+    
+
+    /* Estilo base para botões de controle fixos */
+    .control-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: var(--cor-btn-primario);
+        color: var(--cor-btn-texto);
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        border: none;
+        transition: opacity 0.2s ease;
+        /* ANIMAÇÃO pulse-glow REMOVIDA DAQUI */
+    }
+    .control-btn:hover {
+        opacity: 0.85;
+    }
+    
+    /* --- Estilo para o Fundo do Histórico --- */
+    #historyBackground {
+      /* ALTERAÇÃO: Fundo semi-transparente (70%) */
+      background: rgba(255, 255, 255, 0.7); 
+      position: relative; 
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid var(--cor-borda);
+      margin-bottom: 20px;
+      min-height: 400px;
+      overflow: hidden;
+    }
+    
+    /* NOVO: Estilo para o background do histórico no modo escuro */
+    body.dark #historyBackground {
+        background: rgba(44, 0, 26, 0.7); /* Cor do Card Escuro com transparência */
     }
 
-    .btn-edit { background-color: #007bff; color: #fff; }
-    .btn-delete { background-color: var(--cor-erro); color: #fff; }
-
-    /* Toast Notification */
-    .toast {
+    #historyBackground img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: auto;
+      opacity: 0.3; /* ALTERAÇÃO: Aumentado para maior visibilidade */
+      z-index: 1;
+      object-fit: contain;
+    }
+    #historyBackground > * {
+      position: relative;
+      z-index: 2;
+    }
+    #historyCard table {
+      font-size: 12px;
+    }
+    /* --- CORREÇÃO DE ALINHAMENTO DAS CÉLULAS (Principal Alteração) --- */
+    /* Garante que o conteúdo fique no topo para alinhar a borda inferior */
+    #historyCard th, #historyCard td {
+      padding: 8px 6px;
+      text-align: center;
+      vertical-align: middle; /* Centraliza verticalmente */
+      white-space: nowrap; /* Evita quebras desnecessárias */
+    }
+    /* Corrige o bloco de data/hora */
+    #historyCard tr td:first-child {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+      padding: 4px 0;
+    }
+    .history-datetime-line {
+      display: block;
+      font-size: 12px;
+    }
+    /* Estilo para cada linha do texto dentro da célula de Data/Hora */
+    .history-datetime-line {
+      display: block;
+      line-height: 1.2;
+      padding: 6px 0 0 6px; /* Adiciona o padding de volta (topo e esquerda) */
+    }
+    /* Reduz o espaçamento vertical para compactar o texto na célula de Valor Total (que tem quebra de linha) */
+    .valor-total-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Centraliza horizontalmente */
+      justify-content: center; /* Centraliza verticalmente */
+      padding: 4px 0;
+      line-height: 1.3;
+      text-align: center;
+    }
+    .valor-total-cell span {
+      display: block;
+    }
+    .valor-obs-text {
+      font-size: 11px;
+      color: var(--cor-principal);
+      margin-top: 2px; /* Pequeno espaçamento entre o valor e a observação */
+    }
+    /* --- FIM CORREÇÃO DE ALINHAMENTO --- */
+    /* Estilo para colocar os botões do histórico na mesma linha (Responsivo) */
+    .history-actions-cell {
+      display: flex;
+      gap: 5px; /* Espaçamento entre os botões */
+      flex-wrap: nowrap; /* Garante que fiquem na mesma linha */
+      padding-top: 4px; /* Ajuste para o padding das outras células */
+    }
+    .history-actions-cell button {
+      padding: 4px 8px;
+      font-size: 11px;
+      margin-top: 2px; /* Pequeno ajuste de margem */
+      border-radius: 4px;
+      white-space: nowrap; /* Impede a quebra de linha dos botões */
+    }
+    /* --- Estilos para Notificação Toast --- */
+    #toast-container {
       position: fixed;
       bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #333;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 5px;
-      z-index: 10001;
-      opacity: 0;
-      transition: opacity 0.5s, transform 0.5s;
-      pointer-events: none;
-      font-weight: bold;
+      right: 20px;
+      z-index: 10005;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+      align-items: flex-end;
     }
-
+    .toast {
+      background-color: var(--cor-principal);
+      color: var(--cor-btn-texto);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(100%);
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+      min-width: 250px;
+      text-align: center;
+      font-weight: 600;
+    }
     .toast.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
+    }
+    .toast.error {
+      background-color: var(--cor-erro);
+    }
+    .toast.success {
+      background-color: #00b33c;
+    }
+    .toast.info {
+        background-color: #007bff;
+    }
+    /* --- FIM Estilos para Notificação Toast --- */
+    
+    
+    /* --- NOVO ESTILO: TELA DE CARREGAMENTO (SPLASH) --- */
+    #loadingScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: var(--cor-fundo);
+        z-index: 10006; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: opacity 0.5s ease;
     }
     
-    .toast.success { background-color: #28a745; }
-    .toast.error { background-color: var(--cor-erro); }
-    .toast.info { background-color: #17a2b8; }
-    
-    /* Welcome Screen (Agora desnecessária com o login, mas mantida) */
-    #welcomeScreen {
-        display: none;
+    .loading-spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-top: 4px solid var(--cor-principal);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
     }
 
-    @media (max-width: 768px) {
-      .grid-container {
-        grid-template-columns: 1fr;
-      }
-      .top-right-controls {
-          position: relative;
-          top: unset;
-          right: unset;
-          justify-content: center;
-          margin-top: 10px;
-      }
-      header {
-          padding-bottom: 10px;
-      }
-      .control-btn {
-          font-size: 0.9em;
-      }
-      #authScreen h2 {
-          font-size: 28px;
-      }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
+    
+    #loadingScreen.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+    /* --- FIM NOVO ESTILO: TELA DE CARREGAMENTO (SPLASH) --- */
   </style>
 </head>
-<body class="dark">
+<body class="light">
 
-  <div id="authScreen" class="show"> 
-      <img id="authLogo" src="logo-dark.png" alt="Auth Logo"> 
-      <h2>Acesso Hells Angels</h2>
-      
-      <input type="text" id="usernameInput" class="auth-input" placeholder="Nome de Usuário">
-      <input type="password" id="passwordInput" class="auth-input" placeholder="Senha">
-      
-      <button id="loginBtn" class="primary" style="margin-top: 10px; padding: 10px 30px;">Entrar</button>
-      <button id="registerAuthBtn" class="muted" style="margin-top: 10px; padding: 10px 30px;">Criar Nova Conta</button>
-      
-      <p id="authError" style="display:none;"></p>
-  </div>
-  <header>
-    <a href="#" id="logo-link">Hells Angels</a>
-    <div class="top-right-controls">
-      <button class="control-btn" id="logoutBtn" style="display:none;">🚪 Logout</button> 
-      <button class="control-btn" id="tutorialBtn">💡 Tutorial</button>
-      <button class="control-btn" id="themeBtn">☀️ Modo Claro</button>
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <p>Carregando...</p>
     </div>
-  </header>
+    
+    <div id="loginScreen" class="card" style="
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        z-index: 10000; 
+        display: none; /* COMEÇA ESCONDIDO */
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center; 
+        padding: 20px; 
+        box-sizing: border-box;
+        background-color: var(--cor-fundo); 
+    ">
+        <div id="loginFormCard" style="max-width: 400px; width: 100%; padding: 30px; border-radius: 12px; background: var(--cor-card); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid var(--cor-borda);">
+            <img id="loginLogo" src="logo-dark.png" alt="Hells Angels Logo" style="max-width: 100px; max-height: 100px; display: block; margin: 0 auto 20px;">
+            <h2 id="loginTitle" style="text-align: center; margin-bottom: 25px;">Acesso ao Sistema</h2>
+            
+            <div id="emailField" style="display: none;">
+                <label for="registerEmail">E-mail (Necessário para o Firebase)</label>
+                <input type="email" id="registerEmail" placeholder="seu@email.com">
+            </div>
 
-  <main>
-    <div id="mainCard" class="card">
+            <label for="loginUsername">Nome de Usuário</label>
+            <input type="text" id="loginUsername" placeholder="Ex: meuusuario" required>
+
+            <label for="loginPassword" style="margin-top: 15px;">Senha</label>
+            <input type="password" id="loginPassword" placeholder="******" required>
+            
+            <button id="authActionBtn" class="primary" style="width: 100%; margin-top: 25px;">
+                Entrar
+            </button>
+
+            <button id="toggleAuthModeBtn" class="muted" style="width: 100%; margin-top: 10px;">
+                Quero me Cadastrar
+            </button>
+            
+            <p id="passwordTip" style="text-align: center; margin-top: 15px; font-size: 12px; color: var(--cor-texto);">
+                A senha deve ter no mínimo 6 caracteres.
+            </p>
+        </div>
+    </div>
+    <div class="top-right-controls">
+    <button id="logoutBtn" class="control-btn muted" style="display: none;">Sair</button> 
+    <button id="themeBtn" class="control-btn">🌙 Modo Noturno</button>
+    <button id="tourBtn" class="control-btn primary">Tour</button>
+  </div>
+
+  <a id="logoLink" href="#">
+    <img id="appLogo" class="app-logo" src="logo-dark.png" alt="Hells Angels Logo">
+  </a>
+
+  <div id="welcomeScreen">
+    <img id="welcomeLogo" src="logo-dark.png" alt="Hells Angels Logo">
+    <h2>Bem-vindo(a)!</h2>
+    <p>Este sistema ajuda você a calcular seus ganhos e a manter o histórico de suas vendas e negociações.</p>
+    <button id="startAppBtn" class="primary">Começar!</button>
+  </div>
+  <div id="mainCard" style="display: none;"> 
+      
+      <div id="calcCard" class="card">
+        <h1>Calculadora de Vendas</h1>
         
-      <div class="grid-item-full" style="text-align: center; margin-bottom: 20px;">
-        <button id="toggleCalcBtn" class="primary">Calculadora</button>
-        <button id="toggleHistoryBtn" class="muted">Ver Histórico de Vendas</button>
-      </div>
-
-      <section id="calcSection">
-        <h2>Calculadora e Registro de Vendas</h2>
-        <div class="grid-container">
-          
-          <div class="grid-item">
-            <label for="nomeCliente">Nome do Cliente (Obrigatório):</label>
-            <input type="text" id="nomeCliente" required>
-
-            <label for="organizacao">Organização:</label>
-            <input type="text" id="organizacao" list="organizacoesLista">
-            <datalist id="organizacoesLista">
-                <option value="Serpents">
-                <option value="Nox">
-                <option value="NKT">
-                <option value="Ballers">
-                <option value="Goon">
-                <option value="Triads">
-            </datalist>
-
-            <label for="opcao">Opção (CNPJ/CPF/Outros):</label>
-            <input type="text" id="opcao">
-
-            <label for="telefone">Telefone (Obrigatório):</label>
-            <input type="text" id="telefone" placeholder="(055) XXX-XXX" required>
+        <div class="grid grid-venda">
             
-          </div>
+            <div>
+                <label for="clienteName">Nome do Cliente</label>
+                <input type="text" id="clienteName" list="clientesList" placeholder="Ex: Maria da Silva" required>
+                <datalist id="clientesList"></datalist>
+            </div>
 
-          <div class="grid-item">
+            <div>
+                <label for="organizacao">Organização/Tipo</label>
+                <input type="text" id="organizacao" list="organizacoesList" placeholder="Ex: Cliente Fixo, Aniversário, Bar" required>
+                <datalist id="organizacoesList"></datalist>
+                <p id="organizacaoTip" class="suggestion-tip" style="display: none;">Pressione **Enter** ou clique para usar uma sugestão salva.</p>
+            </div>
             
-            <label for="ticketsQtd">Tickets (Qtd):</label>
-            <input type="number" id="ticketsQtd" min="0" value="0">
+            <div>
+                <label for="telefone">Telefone</label>
+                <input type="text" id="telefone" placeholder="Opcional">
+            </div>
 
-            <label for="tabletsQtd">Tablets (Qtd):</label>
-            <input type="number" id="tabletsQtd" min="0" value="0">
+            <div>
+                <label for="produtos">Produtos</label>
+                <input type="text" id="produtos" placeholder="Ex: 5 Vestidos P, 2 Camisetas M" required>
+            </div>
 
-            <label for="nitroQtd">Nitro (Qtd):</label>
-            <input type="number" id="nitroQtd" min="0" value="0">
+        </div>
+
+        <div class="grid">
+            <div>
+                <label for="valorTotal">Valor Total (R$)</label>
+                <input type="number" id="valorTotal" placeholder="0.00" step="0.01" required>
+            </div>
+
+            <div>
+                <label for="negociadoras">Negociadoras</label>
+                <select id="negociadoras" required>
+                    <option value="">Selecione</option>
+                    <option value="1">1 Negociadora</option>
+                    <option value="2">2 Negociadoras</option>
+                    <option value="3">3 Negociadoras</option>
+                </select>
+            </div>
             
-            <label for="tipoValor">Tipo de Valor (Obrigatório):</label>
-            <select id="tipoValor" required>
-              <option value="Limpo">Dinheiro Limpo</option>
-              <option value="Sujo">Dinheiro Sujo</option>
-              <option value="LimpoAlianca">Dinheiro Limpo (Aliança)</option>
-              <option value="SujoAlianca">Dinheiro Sujo (Aliança)</option>
-            </select>
-          </div>
-          
-          <div class="grid-item-full">
-            <label for="obsValor">Observação de Valor (Ex: Pix, Transferência):</label>
-            <textarea id="obsValor"></textarea>
-
-            <label for="observacao">Outras Observações:</label>
-            <textarea id="observacao"></textarea>
-          </div>
-
-          <div class="grid-item-full">
+            <div>
+                <label for="taxaComissao">Taxa de Comissão (%)</label>
+                <input type="number" id="taxaComissao" placeholder="0" value="15" step="0.01" required>
+            </div>
             
+            <div>
+                <label for="observacoes">Observações</label>
+                <input type="text" id="observacoes" placeholder="Opcional">
+            </div>
+        </div>
+
+        <h3>Resultados:</h3>
+        <p>Comissão Total: <strong id="comissaoTotal" class="resultado">R$ 0,00</strong></p>
+        <p>Gasto por Pessoa: <strong id="gastoPorPessoa" class="resultado">R$ 0,00</strong></p>
+
+        <div class="actions">
             <button id="calculateBtn" class="primary">Calcular</button>
-            <button id="registerBtn" class="primary">Registrar Venda</button>
-            <button id="exportCsvBtn" class="muted">Exportar CSV</button>
-            <button id="discordBtnCalc" class="muted">Copiar p/ Discord</button>
-            
-            <div id="resultadoCalc" style="display: none;">
-              <h3>Materiais Necessários:</h3>
-              <p id="materiaisResultado"></p>
-              <h3>Valores Estimados:</h3>
-              <p id="valorBrutoResultado"></p>
-              <p id="valorTotalResultado" class="valor-total"></p>
-            </div>
-            
-          </div>
+            <button id="registerBtn" class="success" style="display: none;">Registrar Venda</button>
+            <button id="clearBtn" class="muted">Limpar Campos</button>
+            <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
         </div>
-      </section>
+      </div>
+      <div id="historyCard" class="card" style="display: none;">
+        <h2>Histórico de Vendas</h2>
+        
+        <div id="historyBackground">
+            <img src="logo-dark.png" alt="Fundo Hells Angels">
+            <p id="historicoVazio" style="text-align: center; margin-top: 20px; color: var(--cor-principal); font-weight: 600; display: none;">O histórico de vendas está vazio.</p>
 
-      <section id="historyCard" style="display: none;">
-        <h2>Histórico de Vendas Compartilhado</h2>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="filtroHistorico" placeholder="Filtrar por nome, organização ou negociadora..." style="flex-grow: 1; margin-bottom: 0;">
+            <div class="history-table-wrapper">
+                <table id="historicoTabela">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Cliente</th>
+                            <th>Organização/Tipo</th>
+                            <th>Telefone</th>
+                            <th>Produtos</th>
+                            <th>Valor</th>
+                            <th>Negociadoras</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
             </div>
-        
-        <div id="historicoTabelaContainer">
-            <table id="historicoVendas">
-              <thead>
-                <tr>
-                  <th>Data/Hora</th>
-                  <th>Cliente</th>
-                  <th>Organização/Tipo</th>
-                  <th>Telefone</th>
-                  <th>Produtos</th>
-                  <th>Valor Total</th>
-                  <th>Negociadora</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                </tbody>
-            </table>
+
+            <div class="actions" style="justify-content: space-between;">
+                <button id="toggleCalcBtn" class="muted">Voltar para Calculadora</button>
+                <button id="clearHistoryBtn" class="primary">Apagar Histórico</button>
+            </div>
         </div>
-      </section>
-
-    </div></main>
-  
-  <div id="toast" class="toast"></div>
-
-  <script>
-    // Variáveis Globais (agora 'vendas' será atualizada pelo listener do Firebase)
-    let vendas = []; 
-    let vendaEmEdicaoId = null; 
-
-    // Mapeamento dos elementos DOM
-    const els = {
-      // Elementos Principais
-      mainCard: document.getElementById('mainCard'),
-      logoLink: document.getElementById('logo-link'),
-      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
-      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
-      calcSection: document.getElementById('calcSection'),
-      historyCard: document.getElementById('historyCard'),
-      themeBtn: document.getElementById('themeBtn'),
-      tutorialBtn: document.getElementById('tutorialBtn'),
-
-      // Elementos da Calculadora
-      nomeCliente: document.getElementById('nomeCliente'),
-      organizacao: document.getElementById('organizacao'),
-      opcao: document.getElementById('opcao'),
-      telefone: document.getElementById('telefone'),
-      ticketsQtd: document.getElementById('ticketsQtd'),
-      tabletsQtd: document.getElementById('tabletsQtd'),
-      nitroQtd: document.getElementById('nitroQtd'),
-      tipoValor: document.getElementById('tipoValor'),
-      obsValor: document.getElementById('obsValor'),
-      observacao: document.getElementById('observacao'),
-      calculateBtn: document.getElementById('calculateBtn'),
-      registerBtn: document.getElementById('registerBtn'),
-      exportCsvBtn: document.getElementById('exportCsvBtn'),
-      discordBtnCalc: document.getElementById('discordBtnCalc'),
-      resultadoCalc: document.getElementById('resultadoCalc'),
-      materiaisResultado: document.getElementById('materiaisResultado'),
-      valorBrutoResultado: document.getElementById('valorBrutoResultado'),
-      valorTotalResultado: document.getElementById('valorTotalResultado'),
-
-      // Elementos do Histórico
-      filtroHistorico: document.getElementById('filtroHistorico'),
-      historicoVendas: document.getElementById('historicoVendas'),
-
-      // NOVOS ELEMENTOS DE AUTENTICAÇÃO
-      usernameInput: document.getElementById('usernameInput'),
-      passwordInput: document.getElementById('passwordInput'),
-      loginBtn: document.getElementById('loginBtn'),
-      registerAuthBtn: document.getElementById('registerAuthBtn'),
-      authScreen: document.getElementById('authScreen'),
-      authError: document.getElementById('authError'),
-      logoutBtn: document.getElementById('logoutBtn'),
-      // FIM NOVOS ELEMENTOS DE AUTENTICAÇÃO
-    };
-
-    // Constantes de Valores
-    const PRECOS_BASE = {
-        Tickets: {
-            material: 'R$ 525 (Dinheiro Sujo)',
-            Limpo: 9800,
-            Sujo: 11700,
-            LimpoAlianca: 8000,
-            SujoAlianca: 10000
-        },
-        Tablets: {
-            material: '20 Cobre, 40 Plástico, 2 Fita Adesiva, 2 Lixo Eletrônico',
-            Limpo: 17000,
-            Sujo: 20000,
-            LimpoAlianca: 15000,
-            SujoAlianca: 18000
-        },
-        Nitro: {
-            material: '20 Alumínio, 20 Cobre, 45 Vidro, 1 Fita Adesiva, 1 Porca, 1 Parafuso',
-            Limpo: 42500,
-            Sujo: 50000,
-            LimpoAlianca: 38000,
-            SujoAlianca: 45000
-        }
-    };
+      </div>
+      </div>
+  <div id="toast-container"></div>
+  <script type="module">
     
-    // ========================================================================
-    // === CONFIGURAÇÃO FIREBASE E AUTENTICAÇÃO ===
-    // ========================================================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc", // Sua Chave de API
-        authDomain: "hells-angels-438c2.firebaseapp.com",
-        projectId: "hells-angels-438c2",
-        storageBucket: "hells-angels-438c2.firebasestorage.app",
-        messagingSenderId: "429406215315",
-        appId: "1:429406215315:web:b9a153138589ba52308166"
-    };
-
-    let firebaseApp;
-    let auth;
-    let db;
-    let globalUser = null;
-    const VENDAS_COLLECTION = 'hells_vendas_shared';
-    const FAKE_EMAIL_DOMAIN = '@hells-angels.com';
-
-    try {
-        firebaseApp = firebase.initializeApp(firebaseConfig);
-        auth = firebaseApp.auth();
-        db = firebaseApp.firestore();
-    } catch (e) {
-        console.error("Erro ao inicializar Firebase. Verifique sua configuração.", e);
-    }
-
-    const showAuthError = (message) => {
-        els.authError.textContent = message;
-        els.authError.style.display = 'block';
-        setTimeout(() => els.authError.style.display = 'none', 5000);
-    };
-
-    const handleLogin = async () => {
-        const username = els.usernameInput.value.trim();
-        const password = els.passwordInput.value.trim();
-        if (!username || !password) {
-            showAuthError("Preencha o nome de usuário e a senha.");
-            return;
-        }
-        const email = `${username}${FAKE_EMAIL_DOMAIN}`;
-        
-        try {
-            await auth.signInWithEmailAndPassword(email, password);
-        } catch (error) {
-            let errorMessage = "Erro ao fazer login. Verifique as credenciais.";
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                errorMessage = "Nome de usuário ou senha inválidos.";
-            }
-            showAuthError(errorMessage);
-            console.error("Login Error:", error);
-        }
-    };
-
-    const handleRegister = async () => {
-        const username = els.usernameInput.value.trim();
-        const password = els.passwordInput.value.trim();
-        if (!username || !password || password.length < 6) {
-            showAuthError("O nome de usuário e a senha são obrigatórios. A senha deve ter pelo menos 6 caracteres.");
-            return;
-        }
-        const email = `${username}${FAKE_EMAIL_DOMAIN}`;
-        
-        try {
-            await auth.createUserWithEmailAndPassword(email, password);
-            await auth.currentUser.updateProfile({ displayName: username });
-            showToast(`Conta criada com sucesso para ${username}!`, 'success', 3000);
-        } catch (error) {
-            let errorMessage = "Erro ao criar conta. Tente outro nome de usuário.";
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = "Nome de usuário já está em uso.";
-            }
-            showAuthError(errorMessage);
-            console.error("Registration Error:", error);
-        }
-    };
-
-    const logout = async () => {
-        try {
-            await auth.signOut();
-            showToast("Você foi desconectado.", 'success', 2000);
-        } catch (error) {
-            showToast("Erro ao fazer logout.", 'error');
-            console.error("Logout Error:", error);
-        }
-    };
-
-    // ========================================================================
-    // === LÓGICA DE HISTÓRICO COMPARTILHADO (FIREBASE FIRESTORE) ===
-    // ========================================================================
-
-    // Função que substitui saveVendas()
-    const saveVendaToFirestore = async (vendaData, vendaId = null) => {
-        if (!db) return;
-        try {
-            const dataToSave = {
-                ...vendaData,
-                negociadora: globalUser ? globalUser.displayName : 'Desconhecido'
-            };
-
-            if (vendaId) {
-                // Edição
-                const vendaRef = db.collection(VENDAS_COLLECTION).doc(vendaId);
-                await vendaRef.update({
-                    ...dataToSave,
-                    dataAtualizacao: firebase.firestore.FieldValue.serverTimestamp(),
-                });
-                showToast("Venda editada e salva no servidor.", 'success');
-            } else {
-                // Nova Venda
-                await db.collection(VENDAS_COLLECTION).add({
-                    ...dataToSave,
-                    dataRegistro: firebase.firestore.FieldValue.serverTimestamp(),
-                });
-                showToast("Venda registrada e salva no servidor.", 'success');
-            }
-        } catch (error) {
-            showToast("Erro ao salvar venda no servidor.", 'error');
-            console.error("Firestore Save Error:", error);
-        }
-    };
+    // =====================================================================================
+    //               CONFIGURAÇÃO E FUNÇÕES DO FIREBASE AUTHENTICATION (SDK v9)
+    // =====================================================================================
     
-    // Função que substitui loadVendas()
-    const loadVendasFromFirestore = (filtro = '') => {
-        if (!db) return;
+    // *************************************************************************************
+    // ** ATENÇÃO: SUBSTITUA OS VALORES ABAIXO PELOS DADOS DO SEU PROJETO FIREBASE REAL! **
+    // *************************************************************************************
+const firebaseConfig = {
+  apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc", 
+  authDomain: "hells-angels-438c2.firebaseapp.com", 
+  projectId: "hells-angels-438c2", 
+  storageBucket: "hells-angels-438c2.firebasestorage.app", 
+  messagingSenderId: "429406215315", 
+  appId: "1:429406215315:web:b9a153138589ba52308166" 
+};
 
-        db.collection(VENDAS_COLLECTION)
-          .orderBy('dataRegistro', 'desc') 
-          .onSnapshot((snapshot) => {
-            let vendasCarregadas = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                // O Firebase salva o Timestamp, precisamos formatá-lo
-                const timestamp = data.dataRegistro ? data.dataRegistro.toDate() : new Date();
-                const dataFormatada = timestamp.toLocaleString('pt-BR');
-                
-                vendasCarregadas.push({ 
-                    id: doc.id, 
-                    dataFormatada: dataFormatada,
-                    ...data 
-                });
-            });
+    // Importações do Firebase SDK v9 (Modular)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      signOut,
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    
+    // Importações do Cloud Firestore (Necessário para armazenar o Nome de Usuário)
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        query, 
+        where, 
+        getDocs,
+        limit
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-            window.vendas = vendasCarregadas; // Sincroniza a lista global
-            renderHistoricoComDados(vendasCarregadas, filtro); 
-            
-        }, (error) => {
-            showToast("Erro ao carregar histórico do servidor.", 'error');
-            console.error("Firestore Load Error:", error);
-        });
+
+    // Inicializa o Firebase, o Auth e o Firestore
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const USERS_COLLECTION = "usernames"; // Coleção para mapear username -> email
+    
+    // Função global showToast (Definida para ser usada em todo o script)
+    window.showToast = window.showToast || function(message, type = 'info', duration = 3000) {
+        console.log(`[Toast ${type.toUpperCase()}]: ${message}`);
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+
+        const toast = document.createElement('div');
+        toast.classList.add('toast', type);
+        toast.textContent = message;
+        toastContainer.prepend(toast);
+
+        void toast.offsetWidth; 
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, duration);
     };
 
-    const deleteVendaFromFirestore = async (vendaId) => {
-        if (!db) return;
-        try {
-            await db.collection(VENDAS_COLLECTION).doc(vendaId).delete();
-            showToast("Venda excluída do servidor.", 'success', 2000);
-        } catch (error) {
-            showToast("Erro ao excluir venda do servidor.", 'error');
-            console.error("Firestore Delete Error:", error);
-        }
-    };
     
-    // ========================================================================
-    // === FUNÇÕES DE CÁLCULO E VALIDAÇÃO ===
-    // ========================================================================
-    
-    function formatMoney(amount) {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
-    }
-
-    function getVendaData() {
-        const nomeCliente = els.nomeCliente.value.trim();
-        const organizacao = els.organizacao.value.trim();
-        const opcao = els.opcao.value.trim();
-        const telefone = els.telefone.value.trim();
-        const ticketsQtd = parseInt(els.ticketsQtd.value) || 0;
-        const tabletsQtd = parseInt(els.tabletsQtd.value) || 0;
-        const nitroQtd = parseInt(els.nitroQtd.value) || 0;
-        const tipoValor = els.tipoValor.value;
-        const obsValor = els.obsValor.value.trim();
-        const observacao = els.observacao.value.trim();
+    /**
+     * Tenta fazer login com Nome de Usuário e Senha.
+     * @param {string} username 
+     * @param {string} password 
+     */
+    window.loginUser = async function(username, password) {
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      
+      try {
+        // 1. Consultar o Firestore para encontrar o e-mail
+        const userQuery = query(
+            collection(db, USERS_COLLECTION),
+            where("username", "==", username.toLowerCase().trim()),
+            limit(1)
+        );
         
-        return { nomeCliente, organizacao, opcao, telefone, ticketsQtd, tabletsQtd, nitroQtd, tipoValor, obsValor, observacao };
-    }
-
-    function calculate(vendaData) {
-        let total = 0;
-        let materiais = [];
-        let valoresBrutos = [];
-        const { ticketsQtd, tabletsQtd, nitroQtd, tipoValor } = vendaData;
-
-        // Tickets
-        if (ticketsQtd > 0) {
-            total += ticketsQtd * PRECOS_BASE.Tickets[tipoValor];
-            materiais.push(`${ticketsQtd} Tickets: ${PRECOS_BASE.Tickets.material} cada.`);
-            valoresBrutos.push(`${ticketsQtd} Tickets @ ${formatMoney(PRECOS_BASE.Tickets[tipoValor])} = ${formatMoney(ticketsQtd * PRECOS_BASE.Tickets[tipoValor])}`);
-        }
-
-        // Tablets
-        if (tabletsQtd > 0) {
-            total += tabletsQtd * PRECOS_BASE.Tablets[tipoValor];
-            materiais.push(`${tabletsQtd} Tablets: ${PRECOS_BASE.Tablets.material} cada.`);
-            valoresBrutos.push(`${tabletsQtd} Tablets @ ${formatMoney(PRECOS_BASE.Tablets[tipoValor])} = ${formatMoney(tabletsQtd * PRECOS_BASE.Tablets[tipoValor])}`);
-        }
-
-        // Nitro
-        if (nitroQtd > 0) {
-            total += nitroQtd * PRECOS_BASE.Nitro[tipoValor];
-            materiais.push(`${nitroQtd} Nitro: ${PRECOS_BASE.Nitro.material} cada.`);
-            valoresBrutos.push(`${nitroQtd} Nitro @ ${formatMoney(PRECOS_BASE.Nitro[tipoValor])} = ${formatMoney(nitroQtd * PRECOS_BASE.Nitro[tipoValor])}`);
+        const snapshot = await getDocs(userQuery);
+        
+        if (snapshot.empty) {
+            throw new Error('auth/user-not-found-custom');
         }
         
-        return { total, materiais, valoresBrutos };
-    }
-
-    function updateCalculations() {
-        const vendaData = getVendaData();
-        const { total, materiais, valoresBrutos } = calculate(vendaData);
+        const userData = snapshot.docs[0].data();
+        const email = userData.email;
         
-        if (total > 0) {
-            els.resultadoCalc.style.display = 'block';
-            els.materiaisResultado.innerHTML = materiais.length > 0 ? materiais.join('<br>') : 'Nenhum material necessário.';
-            els.valorBrutoResultado.innerHTML = valoresBrutos.length > 0 ? valoresBrutos.join('<br>') : 'Nenhum valor individual.';
-            els.valorTotalResultado.textContent = `TOTAL DA VENDA: ${formatMoney(total)} (${vendaData.obsValor || vendaData.tipoValor})`;
+        // 2. Fazer login com o e-mail e senha encontrados
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        console.log("Login OK:", userCredential.user.email);
+        window.showToast(`Bem-vinda(o), ${username}!`, "success");
+        
+      } catch (error) {
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        let msg = "Erro desconhecido ao fazer login.";
+        if (error.code === 'auth/wrong-password') {
+          msg = "Senha incorreta.";
+        } else if (error.code === 'auth/user-not-found-custom') {
+          msg = `Nome de usuário "${username}" não encontrado.`;
+        } else if (error.code === 'auth/invalid-credential') {
+            msg = "Nome de usuário ou senha inválidos.";
         } else {
-            els.resultadoCalc.style.display = 'none';
+            // Outros erros, como rede, etc.
+            msg = "Erro no login. Verifique sua conexão e tente novamente.";
         }
         
-        return total;
+        console.error("Erro de Login:", error.code, error.message);
+        window.showToast(msg, "error");
+      }
     }
 
-    function clearAllFields() {
-        els.nomeCliente.value = '';
-        els.organizacao.value = '';
-        els.opcao.value = '';
-        els.telefone.value = '';
-        els.ticketsQtd.value = 0;
-        els.tabletsQtd.value = 0;
-        els.nitroQtd.value = 0;
-        els.tipoValor.value = 'Limpo'; 
-        els.obsValor.value = '';
-        els.observacao.value = '';
-        vendaEmEdicaoId = null;
-        els.registerBtn.textContent = 'Registrar Venda';
-        updateCalculations();
-    }
-
-    function validateFields(data) {
-        if (!data.nomeCliente || !data.telefone) {
-            showToast("O nome do cliente e o telefone são obrigatórios.", "error");
-            return false;
-        }
-        if (data.ticketsQtd + data.tabletsQtd + data.nitroQtd === 0) {
-            showToast("A quantidade de produtos não pode ser zero.", "error");
-            return false;
-        }
-        return true;
-    }
-
-    // ========================================================================
-    // === FUNÇÕES DE INTERFACE ===
-    // ========================================================================
-
-    function showToast(message, type = 'info', duration = 3000) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast show ${type}`;
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, duration);
-    }
-    
-    function toggleView(showHistory) {
-        if (showHistory) {
-            els.calcSection.style.display = 'none';
-            els.historyCard.style.display = 'block';
-            els.toggleHistoryBtn.classList.add('primary');
-            els.toggleHistoryBtn.classList.remove('muted');
-            els.toggleCalcBtn.classList.add('muted');
-            els.toggleCalcBtn.classList.remove('primary');
-            // Recarrega os dados do Firestore (Embora o listener faça isso)
-            loadVendasFromFirestore(els.filtroHistorico.value || ''); 
-        } else {
-            els.calcSection.style.display = 'block';
-            els.historyCard.style.display = 'none';
-            els.toggleCalcBtn.classList.add('primary');
-            els.toggleCalcBtn.classList.remove('muted');
-            els.toggleHistoryBtn.classList.add('muted');
-            els.toggleHistoryBtn.classList.remove('primary');
-        }
-    }
-    
-    function copyToClipboard(text, successMessage) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast(successMessage, 'success');
-        }).catch(err => {
-            console.error('Erro ao copiar: ', err);
-            showToast('Erro ao copiar para a área de transferência.', 'error');
-        });
-    }
-
-    // Função que renderiza a tabela com os dados do Firebase (substitui a original)
-    function renderHistoricoComDados(vendasCarregadas, filtro = '') {
-        const tbody = els.historicoVendas.querySelector('tbody');
-        tbody.innerHTML = '';
+    /**
+     * Tenta cadastrar um novo usuário (E-mail, Nome de Usuário e Senha).
+     * @param {string} username
+     * @param {string} email 
+     * @param {string} password 
+     */
+    window.registerUser = async function(username, email, password) {
+        document.getElementById('loadingScreen').classList.remove('hidden');
+        const sanitizedUsername = username.toLowerCase().trim();
         
-        const filtroLower = filtro.toLowerCase();
-        
-        const vendasFiltradas = vendasCarregadas.filter(venda => {
-            if (!filtroLower) return true;
-            return (
-                venda.nomeCliente.toLowerCase().includes(filtroLower) ||
-                venda.organizacao.toLowerCase().includes(filtroLower) ||
-                venda.negociadora.toLowerCase().includes(filtroLower) ||
-                (venda.opcao && venda.opcao.toLowerCase().includes(filtroLower))
+        try {
+            // 1. Verificar se o Nome de Usuário já existe
+            const checkQuery = query(
+                collection(db, USERS_COLLECTION),
+                where("username", "==", sanitizedUsername),
+                limit(1)
             );
-        });
-
-        if (vendasFiltradas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhuma venda encontrada.</td></tr>';
-            return;
+            
+            const checkSnapshot = await getDocs(checkQuery);
+            if (!checkSnapshot.empty) {
+                throw new Error('auth/username-already-in-use');
+            }
+            
+            // 2. Criar o usuário no Firebase Auth (usando e-mail)
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            // 3. Salvar o mapeamento (username -> email) no Firestore
+            await addDoc(collection(db, USERS_COLLECTION), {
+                uid: userCredential.user.uid,
+                username: sanitizedUsername,
+                email: email
+            });
+            
+            console.log("Cadastro OK:", userCredential.user.email);
+            window.showToast(`Conta criada! Bem-vinda(o), ${username}!`, "success");
+            
+        } catch (error) {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            
+            let msg = "Erro desconhecido ao cadastrar.";
+            if (error.code === 'auth/username-already-in-use') {
+                msg = `Nome de Usuário "${username}" já está em uso.`;
+            } else if (error.code === 'auth/email-already-in-use') {
+                msg = "Este e-mail já está em uso.";
+            } else if (error.code === 'auth/weak-password') {
+                msg = "A senha deve ter no mínimo 6 caracteres.";
+            } else if (error.code === 'auth/invalid-email') {
+                msg = "Formato de e-mail inválido.";
+            }
+            
+            console.error("Erro de Cadastro:", error.code, error.message);
+            window.showToast(msg, "error");
         }
+    }
+    
+    /**
+     * Desloga o usuário
+     */
+    window.logoutUser = async function() {
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      await signOut(auth);
+      window.showToast("Logout realizado.", "info");
+    }
 
-        vendasFiltradas.forEach(venda => {
-            const tr = document.createElement('tr');
+    /**
+     * Monitora o estado de autenticação e decide qual tela mostrar.
+     */
+    window.setupAuthStateListener = function() {
+      onAuthStateChanged(auth, (user) => {
+        const loginScreen = document.getElementById('loginScreen');
+        const mainContent = document.getElementById('mainCard');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loadingScreen = document.getElementById('loadingScreen');
+        
+        if (user) {
+          // Usuário logado
+          mainContent.style.display = 'block';
+          loginScreen.style.display = 'none';
+          logoutBtn.style.display = 'block'; 
+          
+          // Opcional: Salvar o username atual na sessão se necessário
+          // console.log("Usuário logado:", user.email, "UID:", user.uid); 
+        } else {
+          // Usuário deslogado
+          mainContent.style.display = 'none';
+          loginScreen.style.display = 'flex'; 
+          logoutBtn.style.display = 'none'; 
+          
+          // Volta para o modo de Login
+          setAuthMode('login'); 
+          console.log("Nenhum usuário logado.");
+        }
+        
+        loadingScreen.classList.add('hidden');
+      });
+    }
+
+    // Chama a função para monitorar o estado ao iniciar.
+    window.setupAuthStateListener(); 
+    
+    
+    // =====================================================================================
+    //                    CÓDIGO JAVASCRIPT PRINCIPAL DO APP (Continuação)
+    // =====================================================================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+    
+        const els = {
+            // Campos da Calculadora (Mantidos)
+            clienteName: document.getElementById('clienteName'),
+            organizacao: document.getElementById('organizacao'),
+            telefone: document.getElementById('telefone'),
+            produtos: document.getElementById('produtos'),
+            valorTotal: document.getElementById('valorTotal'),
+            negociadoras: document.getElementById('negociadoras'),
+            taxaComissao: document.getElementById('taxaComissao'),
+            observacoes: document.getElementById('observacoes'),
+
+            // Resultados (Mantidos)
+            comissaoTotal: document.getElementById('comissaoTotal'),
+            gastoPorPessoa: document.getElementById('gastoPorPessoa'),
+
+            // Botões (Mantidos)
+            calculateBtn: document.getElementById('calculateBtn'),
+            registerBtn: document.getElementById('registerBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
+            toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+            clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+            themeBtn: document.getElementById('themeBtn'),
+            tourBtn: document.getElementById('tourBtn'),
             
-            // Calcula o valor total para exibição
-            const { total } = calculate(venda);
+            // Novos/Alterados elementos do Login
+            logoutBtn: document.getElementById('logoutBtn'), 
+            loginUsername: document.getElementById('loginUsername'), // Nome de Usuário
+            loginPassword: document.getElementById('loginPassword'), 
+            registerEmail: document.getElementById('registerEmail'), // Email para cadastro (oculto)
+            authActionBtn: document.getElementById('authActionBtn'), // Botão de Ação (Entrar/Cadastrar)
+            toggleAuthModeBtn: document.getElementById('toggleAuthModeBtn'), // Botão de alternar modo
+            loginTitle: document.getElementById('loginTitle'),
+            emailField: document.getElementById('emailField'), // Div do campo Email
+
+            // Telas/Containers (Mantidos)
+            calcCard: document.getElementById('calcCard'),
+            historyCard: document.getElementById('historyCard'),
+            historicoTabela: document.getElementById('historicoTabela').getElementsByTagName('tbody')[0],
+            historicoVazio: document.getElementById('historicoVazio'),
+            welcomeScreen: document.getElementById('welcomeScreen'),
+            startAppBtn: document.getElementById('startAppBtn'),
+            logoLink: document.getElementById('logoLink'),
             
-            // Constrói a lista de produtos
-            let produtos = [];
-            if (venda.ticketsQtd > 0) produtos.push(`${venda.ticketsQtd} Tickets`);
-            if (venda.tabletsQtd > 0) produtos.push(`${venda.tabletsQtd} Tablets`);
-            if (venda.nitroQtd > 0) produtos.push(`${venda.nitroQtd} Nitro`);
+            // Datalists (Mantidos)
+            clientesList: document.getElementById('clientesList'),
+            organizacoesList: document.getElementById('organizacoesList'),
+            organizacaoTip: document.getElementById('organizacaoTip')
+        };
+        
+        // Estado Global
+        let vendas = [];
+        let vendaEmEdicaoId = null;
+        const LOCAL_STORAGE_KEY = 'vendasHA';
+        const CONFIG_STORAGE_KEY = 'configHA';
+        let isFirstTimeUser = localStorage.getItem(CONFIG_STORAGE_KEY) === null;
+        let authMode = 'login'; // 'login' ou 'register'
+        
+        // --- FUNÇÕES DE UTILIDADE (Mantidas) ---
 
-            // Dados da linha
-            tr.innerHTML = `
-                <td>${venda.dataFormatada || 'N/A'}</td>
-                <td>${venda.nomeCliente}</td>
-                <td>${venda.organizacao} (${venda.tipoValor})</td>
-                <td>${venda.telefone}</td>
-                <td>${produtos.join(', ')}</td>
-                <td>${formatMoney(total)} (${venda.obsValor || 'Dinheiro'})</td>
-                <td>${venda.negociadora || 'Desconhecido'}</td>
-                <td>
-                    <button class="btn-action btn-discord" data-id="${venda.id}">📋 Discord</button>
-                    <button class="btn-action btn-edit" data-id="${venda.id}">✏️ Editar</button>
-                    <button class="btn-action btn-delete" data-id="${venda.id}">🗑️ Excluir</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        /**
+         * Formata um número para a moeda brasileira.
+         * @param {number} valor 
+         * @returns {string}
+         */
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
+        }
+        
+        // showToast já está definido no escopo global acima.
 
-        // Adiciona event listeners para os botões do histórico
-        tbody.querySelectorAll('.btn-edit').forEach(button => {
-            button.addEventListener('click', (e) => editVenda(e.target.dataset.id));
-        });
-        tbody.querySelectorAll('.btn-delete').forEach(button => {
-            button.addEventListener('click', (e) => {
-                if(confirm('Tem certeza que deseja excluir esta venda do histórico compartilhado?')) {
-                    deleteVendaFromFirestore(e.target.dataset.id);
+        // ... (Resto das Funções: loadVendas, saveVendas, calculateCommission, renderHistorico, 
+        //       clearAllFields, toggleView, clearTour, updateThemeLogo, startTour, etc.) ...
+        
+        
+        // --- NOVO: Função para alternar o modo Login/Cadastro ---
+        
+        /**
+         * Alterna a interface entre Login e Cadastro.
+         * @param {string} mode 'login' ou 'register'
+         */
+        function setAuthMode(mode) {
+            authMode = mode;
+            els.loginTitle.textContent = mode === 'login' ? 'Acesso ao Sistema' : 'Criar Nova Conta';
+            els.authActionBtn.textContent = mode === 'login' ? 'Entrar' : 'Cadastrar';
+            els.toggleAuthModeBtn.textContent = mode === 'login' ? 'Quero me Cadastrar' : 'Voltar para Login';
+            els.emailField.style.display = mode === 'register' ? 'block' : 'none';
+            els.loginUsername.focus();
+        }
+        
+        /**
+         * Listener de evento para a tela de login/cadastro.
+         */
+        function setupLoginListeners() {
+            // Alternar entre Login e Cadastro
+            els.toggleAuthModeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setAuthMode(authMode === 'login' ? 'register' : 'login');
+            });
+            
+            // Ação principal (Login ou Cadastro)
+            els.authActionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const username = els.loginUsername.value.trim();
+                const password = els.loginPassword.value;
+                
+                if (!username || !password) {
+                    window.showToast("Preencha o nome de usuário e a senha.", "error");
+                    return;
+                }
+                
+                if (authMode === 'login') {
+                    // Tenta Fazer Login
+                    window.loginUser(username, password); 
+                } else {
+                    // Tenta Cadastrar
+                    const email = els.registerEmail.value.trim();
+                    if (!email) {
+                        window.showToast("Preencha o e-mail para o cadastro.", "error");
+                        return;
+                    }
+                    if (password.length < 6) {
+                        window.showToast("A senha deve ter no mínimo 6 caracteres.", "error");
+                        return;
+                    }
+                    window.registerUser(username, email, password);
                 }
             });
-        });
-        tbody.querySelectorAll('.btn-discord').forEach(button => {
-            button.addEventListener('click', (e) => copyDiscordFromHistory(e.target.dataset.id));
-        });
-    }
-
-    function editVenda(vendaId) {
-        const venda = vendas.find(v => v.id === vendaId);
-        if (!venda) {
-            showToast("Venda não encontrada.", "error");
-            return;
-        }
-
-        // Preenche os campos da calculadora
-        els.nomeCliente.value = venda.nomeCliente || '';
-        els.organizacao.value = venda.organizacao || '';
-        els.opcao.value = venda.opcao || '';
-        els.telefone.value = venda.telefone || '';
-        els.ticketsQtd.value = venda.ticketsQtd || 0;
-        els.tabletsQtd.value = venda.tabletsQtd || 0;
-        els.nitroQtd.value = venda.nitroQtd || 0;
-        els.tipoValor.value = venda.tipoValor || 'Limpo';
-        els.obsValor.value = venda.obsValor || '';
-        els.observacao.value = venda.observacao || '';
-        
-        vendaEmEdicaoId = vendaId; 
-        els.registerBtn.textContent = 'Salvar Edição';
-        
-        updateCalculations();
-        toggleView(false); // Volta para a tela da calculadora
-        showToast(`Editando venda de ${venda.nomeCliente}`, 'info', 2000);
-    }
-    
-    // Funções de Cópia para Discord
-    function getDiscordSummary(vendaData, total) {
-        const produtos = [];
-        if (vendaData.ticketsQtd > 0) produtos.push(`Tickets: ${vendaData.ticketsQtd}`);
-        if (vendaData.tabletsQtd > 0) produtos.push(`Tablets: ${vendaData.tabletsQtd}`);
-        if (vendaData.nitroQtd > 0) produtos.push(`Nitro: ${vendaData.nitroQtd}`);
-        
-        const negociadora = globalUser ? globalUser.displayName : 'Desconhecido';
-
-        return `**[VENDA HA]**
-Cliente: ${vendaData.nomeCliente}
-Organização: ${vendaData.organizacao} (${vendaData.opcao || 'N/A'})
-Telefone: ${vendaData.telefone}
-Produtos: ${produtos.join(', ')}
-Valor Total: ${formatMoney(total)} (${vendaData.obsValor || vendaData.tipoValor})
-Negociadora: ${negociadora}
-Observações: ${vendaData.observacao || 'N/A'}`;
-    }
-
-    function copyDiscordFromCalc() {
-        const vendaData = getVendaData();
-        const { total } = calculate(vendaData);
-        if (total === 0) {
-            showToast("Calcule uma venda antes de copiar.", "error");
-            return;
-        }
-        const summary = getDiscordSummary(vendaData, total);
-        copyToClipboard(summary, "Resumo da venda copiado para o Discord!");
-    }
-
-    function copyDiscordFromHistory(vendaId) {
-        const venda = vendas.find(v => v.id === vendaId);
-        if (!venda) return;
-        
-        const { total } = calculate(venda);
-        const summary = getDiscordSummary(venda, total);
-        
-        copyToClipboard(summary, `Resumo da venda de ${venda.nomeCliente} copiado!`);
-    }
-
-    // ========================================================================
-    // === LISTENERS E INICIALIZAÇÃO ===
-    // ========================================================================
-
-    // Função para tratar formatação do telefone
-    function formatTelefone(input) {
-        let value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
-        if (value.length > 0) {
-            value = `(055) ${value}`;
-        }
-        if (value.length > 6) {
-            value = value.substring(0, 6) + ' ' + value.substring(6);
-        }
-        if (value.length > 10) {
-            value = value.substring(0, 10) + '-' + value.substring(10);
-        }
-        input.value = value.substring(0, 15);
-    }
-    
-    // Tutorial (Mantido, mas a implementação do 'intro.js' deve ser adicionada se necessário)
-    function startTour() {
-        showToast("O tutorial precisa de uma biblioteca externa (como o Intro.js) para funcionar corretamente.", "info");
-    }
-    function clearTour() { /* Função dummy */ }
-    
-    function updateThemeLogo() {
-        // Se a logo precisar mudar entre light e dark mode (ex: logo-light.png/logo-dark.png)
-        const isDark = document.body.classList.contains('dark');
-        const logo = document.getElementById('authLogo');
-        if (logo) logo.src = isDark ? 'logo-dark.png' : 'logo-light.png';
-    }
-
-
-    // --- Listener de Status de Autenticação Principal (Controla a visão) ---
-    const checkAuthStatus = () => {
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Logado
-                globalUser = user;
-                els.authScreen.classList.remove('show');
-                els.authScreen.classList.add('hidden');
-                els.mainCard.style.display = 'block'; // Mostra o conteúdo
-                els.logoutBtn.style.display = 'block';
-                els.logoLink.style.display = 'block';
-                
-                loadVendasFromFirestore(els.filtroHistorico.value || ''); // Inicia o carregamento do histórico compartilhado
-                showToast(`Bem-vindo, ${user.displayName || user.email.split('@')[0]}!`, 'success', 2000);
-                
-            } else {
-                // Deslogado
-                globalUser = null;
-                els.authScreen.classList.add('show');
-                els.authScreen.classList.remove('hidden');
-                els.mainCard.style.display = 'none'; // Oculta o conteúdo
-                els.logoutBtn.style.display = 'none';
-                els.logoLink.style.display = 'none';
-                clearAllFields(); // Limpa campos ao deslogar
-            }
-        });
-    };
-
-    // --- Configurações Iniciais e Listeners ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Simulação de carregamento do tema
-        document.body.classList.add('dark');
-        els.themeBtn.textContent = '☀️ Modo Claro';
-        updateThemeLogo();
-        
-        // Listeners da Calculadora
-        els.calculateBtn.addEventListener('click', updateCalculations);
-        els.ticketsQtd.addEventListener('input', updateCalculations);
-        els.tabletsQtd.addEventListener('input', updateCalculations);
-        els.nitroQtd.addEventListener('input', updateCalculations);
-        els.tipoValor.addEventListener('change', updateCalculations);
-        els.obsValor.addEventListener('input', updateCalculations);
-        
-        els.telefone.addEventListener('input', (e) => formatTelefone(e.target));
-        
-        els.registerBtn.addEventListener('click', async () => {
-            const vendaData = getVendaData();
-            const total = updateCalculations();
             
-            if (validateFields(vendaData)) {
-                
-                // Salva a venda no Firebase (seja nova ou edição)
-                const finalData = { ...vendaData, total };
-                await saveVendaToFirestore(finalData, vendaEmEdicaoId);
-                
-                clearAllFields();
-            }
-        });
-        
-        els.exportCsvBtn.addEventListener('click', () => {
-             showToast("A funcionalidade de Exportar CSV precisa ser adaptada para o novo cálculo de materiais. Calcule a venda e copie o resultado manualmente.", "error", 4000);
-             // Para uma implementação simples, use a lógica de calculate e gere o CSV a partir dela.
-        });
-        
-        els.discordBtnCalc.addEventListener('click', copyDiscordFromCalc);
-        
-        // Listeners do Histórico e Navegação
-        if (els.filtroHistorico) {
-            els.filtroHistorico.addEventListener('input', () => {
-                // Recarrega do Firebase com o filtro
-                renderHistoricoComDados(window.vendas, els.filtroHistorico.value); 
+            // Listener para LOGOUT
+            els.logoutBtn.addEventListener('click', (e) => {
+                 e.preventDefault();
+                 if (confirm('Tem certeza que deseja sair do sistema?')) {
+                    window.logoutUser();
+                 }
             });
         }
         
+        // --- CHAMADAS INICIAIS ---
+        
+        // 1. Inicializa o estado do tema
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.classList.remove('light', 'dark');
+            document.body.classList.add(savedTheme);
+            els.themeBtn.textContent = savedTheme === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Noturno';
+        } else {
+            document.body.classList.add('light');
+        }
+        updateThemeLogo(); 
+        
+        // 2. Carrega os dados (Simulando o carregamento, isso será substituído por Firestore/Realtime DB)
+        loadVendas();
+        renderHistorico();
+        
+        // 3. Adiciona os Listeners de Login
+        setupLoginListeners();
+        
+        // ... (Resto dos Listeners e chamadas originais) ...
+        
+        
+        // --- Listeners de Eventos (Adaptados) ---
+        
+        els.clearHistoryBtn.addEventListener('click', () => {
+          if (confirm('Tem certeza que deseja apagar todo o Histórico de Vendas? Esta ação não pode ser desfeita.')) {
+            vendas = []; 
+            saveVendas(); 
+            renderHistorico(); 
+            window.showToast("Histórico de vendas completamente apagado!", "error");
+          }
+        });
+
         els.themeBtn.addEventListener('click',() => {
-            document.body.classList.toggle('dark');
-            document.body.classList.toggle('light');
-            els.themeBtn.textContent = document.body.classList.contains('dark') ? '☀️ Modo Claro' : '🌙 Modo Noturno';
-            updateThemeLogo(); 
+          const isDark = document.body.classList.toggle('dark');
+          document.body.classList.toggle('light', !isDark);
+          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+          els.themeBtn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Noturno';
+          
+          updateThemeLogo(); 
         });
         
-        els.tutorialBtn.addEventListener('click', startTour);
-        els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
-        
-        // Se estiver editando, cancelar edição ao trocar para a calculadora
-        els.toggleCalcBtn.addEventListener('click', () => {
-            if (vendaEmEdicaoId) { 
-                vendaEmEdicaoId = null;
-                els.registerBtn.textContent = 'Registrar Venda';
-                clearAllFields();
-                showToast("Edição pendente cancelada.", "error", 2000);
-            }
-            toggleView(false);
-        });
-        
-        els.logoLink.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            if (vendaEmEdicaoId) {
-                vendaEmEdicaoId = null;
-                els.registerBtn.textContent = 'Registrar Venda';
-                clearAllFields();
-                showToast("Edição pendente cancelada.", "error", 2000);
-            }
-            toggleView(false); 
-            clearTour(); 
-        });
-        
-        // Listeners de Autenticação
-        els.loginBtn.addEventListener('click', handleLogin);
-        els.registerAuthBtn.addEventListener('click', handleRegister);
-        els.logoutBtn.addEventListener('click', logout);
-        
-        // Inicia a verificação de status de autenticação (IMPORTANTE)
-        checkAuthStatus();
-    });
+        // ... (Outros Listeners) ...
+    
+    }); 
+    // FIM document.addEventListener('DOMContentLoaded')
+    
+    // (Resto das funções que não precisam de `els` para funcionar - Mantenha todas as funções utilitárias do seu código original aqui, exceto a showToast que foi adaptada)
+    // ...
+    
+    
+  </script>
+  
+  <script nomodule>
+      // Fallback para navegadores que não suportam módulos (Firebase modular requer módulo)
+      document.getElementById('loadingScreen').innerHTML = '<h2>Seu navegador não suporta o sistema.</h2><p>Por favor, use a versão mais recente do Chrome, Firefox ou Safari.</p>';
+      document.getElementById('loadingScreen').classList.remove('hidden');
+      document.getElementById('mainCard').style.display = 'none';
   </script>
 </body>
 </html>
