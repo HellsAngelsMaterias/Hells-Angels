@@ -847,8 +847,7 @@ body.dark #historyBackground {
             
             <div>
                 <label for="telefone">Telefone:</label>
-                <input id="telefone" type="text" value="" maxlength="13"> 
-            </div>
+                <input id="telefone" type="text" value="(055) " maxlength="13"> </div>
             
             <div>
                 <label for="negociadoras">Negociadoras:</label>
@@ -948,19 +947,29 @@ body.dark #historyBackground {
         </table></div>
       </div>
   </div>
+
   <div id="toast-container"></div>
-  <script>
+
+  <div class="tour-tooltip" id="tourTooltip">
+      <h4></h4>
+      <p></p>
+      <button id="tourNextBtn">Próximo &rarr;</button>
+      <button id="tourSkipBtn">Pular Tutorial</button>
+  </div>
+
+<script>
     // --- FIREBASE CONFIGURAÇÃO (ADICIONADO E REQUER ATUALIZAÇÃO) ---
     const firebaseConfig = {
-      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
-      authDomain: "hells-angels-438c2.firebaseapp.com",
-      databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com",
-      projectId: "hells-angels-438c2",
-      storageBucket: "hells-angels-438c2.firebasestorage.app",
-      messagingSenderId: "429406215315",
-      appId: "1:429406215315:web:96b68b172247824b308166",
-      measurementId: "G-CR415MEY32"
+        apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
+        authDomain: "hells-angels-438c2.firebaseapp.com",
+        databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com",
+        projectId: "hells-angels-438c2",
+        storageBucket: "hells-angels-438c2.firebasestorage.app",
+        messagingSenderId: "429406215315",
+        appId: "1:429406215315:web:96b68b172247824b308166",
+        measurementId: "G-CR415MEY32"
     };
+
     // Inicializar o Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -970,1018 +979,1042 @@ body.dark #historyBackground {
     const VIRTUAL_DOMAIN = '@ha-auth.local';
 
     const perUnit = {
-      tickets: { moneyBruto: 525 },
-      tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
-      nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
+        tickets: { moneyBruto: 525 },
+        tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
+        nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
     };
 
     const valores = {
-      tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
-      tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo: 10000 },
-      nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
+        tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
+        tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo: 10000 }, // Corrigido 'sujo' em tickets para 10000 na aliança
+        nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
     };
 
     const valorDescricao = {
-      'limpo': 'Dinheiro Limpo',
-      'sujo': 'Dinheiro Sujo',
-      'limpo_alianca': 'Limpo (Aliança)',
-      'sujo_alianca': 'Sujo (Aliança)'
+        'limpo': 'Dinheiro Limpo',
+        'sujo': 'Dinheiro Sujo',
+        'limpo_alianca': 'Limpo (Aliança)',
+        'sujo_alianca': 'Sujo (Aliança)'
     };
 
     // Usando 'logo-dark.png' como placeholder para todas as imagens
     const logoLightModeSrc = "logo-dark.png";
     const logoDarkModeSrc = "logo-dark.png";
     const historyBackgroundSrc = "logo-dark.png";
-    
-    /**
-     * Formata o número de telefone para o padrão (055) XXX-XXX.
-     * Espera que o usuário digite apenas os 6 dígitos finais.
-     */
-    function formatPhone(value) {
-        // 1. Limpa o valor, mantendo apenas dígitos.
-        let cleaned = ('' + value).replace(/\D/g, '');
 
-        // 2. Limita o número de dígitos que o usuário pode inserir (apenas os 6 variáveis).
-        if (cleaned.length > 6) {
-            cleaned = cleaned.substring(0, 6);
-        }
-
-        // 3. Aplica o hífen (XXX-XXX)
-        if (cleaned.length > 3) {
-            cleaned = cleaned.substring(0, 3) + '-' + cleaned.substring(3, 6);
-        }
-
-        // 4. Adiciona o prefixo fixo (055) e retorna.
-        if (cleaned.length > 0) {
-            return '(055) ' + cleaned;
-        }
-
-        return ''; // Retorna vazio se não houver dígitos
-    }
-    
     function showToast(message, type = 'default', duration = 3000) {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
+        const container = document.getElementById('toast-container');
+        if (!container) return;
 
-      const toast = document.createElement('div');
-      toast.classList.add('toast');
-      if (type) {
-        toast.classList.add(type);
-      }
-      toast.textContent = message;
+        const toast = document.createElement('div');
+        toast.classList.add('toast');
+        if (type) {
+            toast.classList.add(type);
+        }
+        toast.textContent = message;
 
-      container.appendChild(toast);
+        container.appendChild(toast);
+        
+        void toast.offsetWidth; // Força reflow para aplicar a transição
+        toast.classList.add('show');
 
-      void toast.offsetWidth; // Força reflow para aplicar a transição
-      toast.classList.add('show');
-
-      setTimeout(() => {
-        toast.classList.remove('show');
         setTimeout(() => {
-          toast.remove();
-        }, 300); // Tempo da transição
-      }, duration);
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300); // Tempo da transição
+        }, duration);
     }
 
     let vendas = [];
     let vendaEmEdicaoId = null;
 
     function loadVendas() {
-      const json = localStorage.getItem('ha_vendas');
-      if (json) {
-        vendas = JSON.parse(json);
-      }
+        const json = localStorage.getItem('ha_vendas');
+        if (json) {
+            vendas = JSON.parse(json);
+        }
     }
 
     function saveVendas() {
-      localStorage.setItem('ha_vendas', JSON.stringify(vendas));
+        localStorage.setItem('ha_vendas', JSON.stringify(vendas));
     }
 
     const els = {
-      // Campos do Login (ATUALIZADOS)
-      loginScreen: document.getElementById('loginScreen'),
-      loginForm: document.getElementById('loginForm'),
-      loginUsername: document.getElementById('loginUsername'), // ATUALIZADO
-      loginPassword: document.getElementById('loginPassword'),
-      loginBtn: document.getElementById('loginBtn'),
-      errorMessage: document.getElementById('errorMessage'),
-      logoutBtn: document.getElementById('logoutBtn'),
+        // Campos do Login (ATUALIZADOS)
+        loginScreen: document.getElementById('loginScreen'),
+        loginForm: document.getElementById('loginForm'),
+        loginUsername: document.getElementById('loginUsername'), // ATUALIZADO
+        loginPassword: document.getElementById('loginPassword'),
+        loginBtn: document.getElementById('loginBtn'),
+        errorMessage: document.getElementById('errorMessage'),
+        logoutBtn: document.getElementById('logoutBtn'),
 
-      // NOVOS CAMPOS DE REGISTRO (ATUALIZADOS)
-      registrationForm: document.getElementById('registrationForm'),
-      regUsername: document.getElementById('regUsername'), // ATUALIZADO
-      regPassword: document.getElementById('regPassword'),
-      regConfirmPassword: document.getElementById('regConfirmPassword'),
-      regBtn: document.getElementById('regBtn'),
-      regErrorMessage: document.getElementById('regErrorMessage'),
-      toggleToReg: document.getElementById('toggleToReg'),
-      toggleToLogin: document.getElementById('toggleToLogin'),
-      authTitle: document.getElementById('authTitle'),
+        // NOVOS CAMPOS DE REGISTRO (ATUALIZADOS)
+        registrationForm: document.getElementById('registrationForm'),
+        regUsername: document.getElementById('regUsername'), // ATUALIZADO
+        regPassword: document.getElementById('regPassword'),
+        regConfirmPassword: document.getElementById('regConfirmPassword'),
+        regBtn: document.getElementById('regBtn'),
+        regErrorMessage: document.getElementById('regErrorMessage'),
+        toggleToReg: document.getElementById('toggleToReg'),
+        toggleToLogin: document.getElementById('toggleToLogin'),
+        authTitle: document.getElementById('authTitle'),
 
-      // Campos do Cálculo
-      qtyTickets: document.getElementById('qtyTickets'),
-      qtyTablets: document.getElementById('qtyTablets'),
-      qtyNitro: document.getElementById('qtyNitro'),
-      tipoValor: document.getElementById('tipoValor'),
+        // Campos do Cálculo
+        qtyTickets: document.getElementById('qtyTickets'),
+        qtyTablets: document.getElementById('qtyTablets'),
+        qtyNitro: document.getElementById('qtyNitro'),
+        tipoValor: document.getElementById('tipoValor'),
 
-      // Campos do Cliente/Venda
-      nomeCliente: document.getElementById('nomeCliente'),
-      dataVenda: document.getElementById('dataVenda'),
-      organizacaoTipo: document.getElementById('organizacaoTipo'),
-      organizacao: document.getElementById('organizacao'),
-      telefone: document.getElementById('telefone'),
-      negociadoras: document.getElementById('negociadoras'),
-      vendaValorObs: document.getElementById('vendaValorObs'),
+        // Campos do Cliente/Venda
+        nomeCliente: document.getElementById('nomeCliente'),
+        dataVenda: document.getElementById('dataVenda'),
+        organizacaoTipo: document.getElementById('organizacaoTipo'),
+        organizacao: document.getElementById('organizacao'),
+        telefone: document.getElementById('telefone'),
+        negociadoras: document.getElementById('negociadoras'),
+        vendaValorObs: document.getElementById('vendaValorObs'),
 
-      // Botões
-      calcBtn: document.getElementById('calcBtn'),
-      resetBtn: document.getElementById('resetBtn'),
-      csvBtn: document.getElementById('csvBtn'),
-      registerBtn: document.getElementById('registerBtn'),
-      discordBtnCalc: document.getElementById('discordBtnCalc'),
+        // Botões
+        calcBtn: document.getElementById('calcBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        csvBtn: document.getElementById('csvBtn'),
+        registerBtn: document.getElementById('registerBtn'),
+        discordBtnCalc: document.getElementById('discordBtnCalc'),
 
-      // Resultados e Histórico
-      results: document.getElementById('results'),
-      resultsBody: document.getElementById('resultsBody'),
-      valuesBody: document.getElementById('valuesBody'),
-      valorTotalGeral: document.getElementById('valorTotalGeral'),
-      salesHistory: document.getElementById('salesHistory'),
-      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
-      filtroHistorico: document.getElementById('filtroHistorico'),
+        // Resultados e Histórico
+        results: document.getElementById('results'),
+        resultsBody: document.getElementById('resultsBody'),
+        valuesBody: document.getElementById('valuesBody'),
+        valorTotalGeral: document.getElementById('valorTotalGeral'),
+        salesHistory: document.getElementById('salesHistory'),
+        clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+        filtroHistorico: document.getElementById('filtroHistorico'),
 
-      // Botões de controle fixos
-      themeBtn: document.getElementById('themeBtn'),
-      tutorialBtn: document.getElementById('tutorialBtn'),
-      mainCard: document.getElementById('mainCard'),
-      historyCard: document.getElementById('historyCard'),
-      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
-      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+        // Botões de controle fixos
+        themeBtn: document.getElementById('themeBtn'),
+        tutorialBtn: document.getElementById('tutorialBtn'),
+        mainCard: document.getElementById('mainCard'),
+        historyCard: document.getElementById('historyCard'),
+        toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
+        toggleCalcBtn: document.getElementById('toggleCalcBtn'),
 
-      // Elemento da Logo
-      appLogo: document.getElementById('appLogo'),
-      logoLink: document.getElementById('logoLink'),
+        // Elemento da Logo
+        appLogo: document.getElementById('appLogo'),
+        logoLink: document.getElementById('logoLink'),
     };
-
 
     // --- FUNÇÕES DE VISUALIZAÇÃO E AUTHENTICAÇÃO (NOVAS/ADAPTADAS) ---
 
     function showLoginScreen() {
-      // Altera o estilo do body para centralizar o login
-      document.body.style.maxWidth = 'none';
-      document.body.style.margin = '0';
-      document.body.style.height = '100vh';
-      document.body.style.display = 'flex';
-      document.body.style.justifyContent = 'center';
-      document.body.style.alignItems = 'center';
+        // Altera o estilo do body para centralizar o login
+        document.body.style.maxWidth = 'none';
+        document.body.style.margin = '0';
+        document.body.style.height = '100vh';
+        document.body.style.display = 'flex';
+        document.body.style.justifyContent = 'center';
+        document.body.style.alignItems = 'center';
 
-      els.loginScreen.style.display = 'flex';
-      els.mainCard.style.display = 'none';
-      els.historyCard.style.display = 'none';
-      els.logoLink.style.display = 'none'; // Esconde a logo do app
-      els.tutorialBtn.style.display = 'none'; // Esconde o tutorial
-      els.logoutBtn.style.display = 'none'; // Esconde o botão de sair
+        els.loginScreen.style.display = 'flex';
+        els.mainCard.style.display = 'none';
+        els.historyCard.style.display = 'none';
+        els.logoLink.style.display = 'none'; // Esconde a logo do app
+        els.tutorialBtn.style.display = 'none'; // Esconde o tutorial
+        els.logoutBtn.style.display = 'none'; // Esconde o botão de sair
 
-      clearTour(); // Para o tour caso esteja ativo
-      toggleAuthView(false); // Garante que a tela de Login é a primeira a aparecer
+        clearTour(); // Para o tour caso esteja ativo
+        toggleAuthView(false); // Garante que a tela de Login é a primeira a aparecer
     }
 
     function showMainApp() {
-      // Restaura o estilo do body para o layout do app
-      document.body.style.maxWidth = '960px';
-      document.body.style.margin = '24px auto';
-      document.body.style.height = 'auto';
-      document.body.style.display = 'block';
-      document.body.style.justifyContent = 'initial';
-      document.body.style.alignItems = 'initial';
+        // Restaura o estilo do body para o layout do app
+        document.body.style.maxWidth = '960px';
+        document.body.style.margin = '24px auto';
+        document.body.style.height = 'auto';
+        document.body.style.display = 'block';
+        document.body.style.justifyContent = 'initial';
+        document.body.style.alignItems = 'initial';
 
-      els.loginScreen.style.display = 'none';
-      els.mainCard.style.display = 'block';
-      els.historyCard.style.display = 'none';
-      els.logoLink.style.display = 'block'; // Mostra a logo
-      els.tutorialBtn.style.display = 'block'; // Mostra o tutorial
-      els.logoutBtn.style.display = 'block'; // Mostra o botão de sair
-      
-      renderHistorico(); // Garante que o histórico está carregado
+        els.loginScreen.style.display = 'none';
+        els.mainCard.style.display = 'block';
+        els.historyCard.style.display = 'none';
+        els.logoLink.style.display = 'block'; // Mostra a logo
+        els.tutorialBtn.style.display = 'block'; // Mostra o tutorial
+        els.logoutBtn.style.display = 'block'; // Mostra o botão de sair
+        
+        renderHistorico(); // Garante que o histórico está carregado
     }
 
     // Função para alternar entre Login e Registro
     function toggleAuthView(showRegistration) {
-      if (showRegistration) {
-        els.loginForm.style.display = 'none';
-        els.registrationForm.style.display = 'block';
-        els.authTitle.textContent = 'Criação de Conta';
-        els.errorMessage.textContent = ''; // Limpa erros de login
-      } else {
-        els.loginForm.style.display = 'block';
-        els.registrationForm.style.display = 'none';
-        els.authTitle.textContent = 'Acesso Restrito';
-        els.regErrorMessage.textContent = ''; // Limpa erros de registro
-      }
+        if (showRegistration) {
+            els.loginForm.style.display = 'none';
+            els.registrationForm.style.display = 'block';
+            els.authTitle.textContent = 'Criação de Conta';
+            els.errorMessage.textContent = ''; // Limpa erros de login
+        } else {
+            els.loginForm.style.display = 'block';
+            els.registrationForm.style.display = 'none';
+            els.authTitle.textContent = 'Acesso Restrito';
+            els.regErrorMessage.textContent = ''; // Limpa erros de registro
+        }
     }
 
     // Função de Login (ADAPTADA PARA USUÁRIO)
     function handleLogin(e) {
-      e.preventDefault();
-      const username = els.loginUsername.value.trim();
-      const password = els.loginPassword.value;
-      const virtualEmail = username + VIRTUAL_DOMAIN; // Mapeia para e-mail virtual
+        e.preventDefault();
+        const username = els.loginUsername.value.trim();
+        const password = els.loginPassword.value;
+        const virtualEmail = username + VIRTUAL_DOMAIN; // Mapeia para e-mail virtual
 
-      els.errorMessage.textContent = '';
-      els.loginBtn.disabled = true;
+        els.errorMessage.textContent = '';
+        els.loginBtn.disabled = true;
 
-      auth.signInWithEmailAndPassword(virtualEmail, password)
-        .then((userCredential) => {
-          showToast(`Bem-vindo(a) ${username}!`, "success");
-        })
-        .catch((error) => {
-          els.loginBtn.disabled = false; // Reativa o botão
-          let message = "Ocorreu um erro no login.";
-          switch (error.code) {
-            case 'auth/user-not-found':
-            case 'auth/wrong-password':
-              message = "Usuário ou senha incorretos."; // Mensagem genérica para segurança
-              break;
-            case 'auth/invalid-email':
-              message = "Formato de usuário inválido.";
-              break;
-            default:
-              message = "Erro: " + error.message;
-              break;
-          }
-          els.errorMessage.textContent = message;
-        });
+        auth.signInWithEmailAndPassword(virtualEmail, password)
+            .then((userCredential) => {
+                showToast(`Bem-vindo(a) ${username}!`, "success");
+            })
+            .catch((error) => {
+                els.loginBtn.disabled = false; // Reativa o botão
+                let message = "Ocorreu um erro no login.";
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        message = "Usuário ou senha incorretos."; // Mensagem genérica para segurança
+                        break;
+                    case 'auth/invalid-email':
+                        message = "Formato de usuário inválido.";
+                        break;
+                    default:
+                        message = "Erro: " + error.message;
+                        break;
+                }
+                els.errorMessage.textContent = message;
+            });
     }
 
     // Função de Registro (ADAPTADA PARA USUÁRIO)
     function handleRegistration(e) {
-      e.preventDefault();
-      const username = els.regUsername.value.trim();
-      const password = els.regPassword.value;
-      const confirmPassword = els.regConfirmPassword.value;
-      const virtualEmail = username + VIRTUAL_DOMAIN; // Mapeia para e-mail virtual
+        e.preventDefault();
+        const username = els.regUsername.value.trim();
+        const password = els.regPassword.value;
+        const confirmPassword = els.regConfirmPassword.value;
+        const virtualEmail = username + VIRTUAL_DOMAIN; // Mapeia para e-mail virtual
 
-      els.regErrorMessage.textContent = '';
-      els.regPassword.classList.remove('input-invalido');
-      els.regConfirmPassword.classList.remove('input-invalido');
+        els.regErrorMessage.textContent = '';
+        els.regPassword.classList.remove('input-invalido');
+        els.regConfirmPassword.classList.remove('input-invalido');
 
-      if (username.length < 3) {
-          els.regErrorMessage.textContent = "O nome de usuário deve ter no mínimo 3 caracteres.";
-          els.regUsername.classList.add('input-invalido');
-          return;
-      }
-      
-      if (password !== confirmPassword) {
-        els.regErrorMessage.textContent = "As senhas não coincidem.";
-        els.regPassword.classList.add('input-invalido');
-        els.regConfirmPassword.classList.add('input-invalido');
-        return;
-      }
+        if (username.length < 3) {
+            els.regErrorMessage.textContent = "O nome de usuário deve ter no mínimo 3 caracteres.";
+            els.regUsername.classList.add('input-invalido');
+            return;
+        }
 
-      if (password.length < 6) {
-          els.regErrorMessage.textContent = "A senha deve ter no mínimo 6 caracteres.";
-          els.regPassword.classList.add('input-invalido');
-          els.regConfirmPassword.classList.add('input-invalido');
-          return;
-      }
-      
+        if (password !== confirmPassword) {
+            els.regErrorMessage.textContent = "As senhas não coincidem.";
+            els.regPassword.classList.add('input-invalido');
+            els.regConfirmPassword.classList.add('input-invalido');
+            return;
+        }
 
-      els.regBtn.disabled = true;
+        if (password.length < 6) {
+            els.regErrorMessage.textContent = "A senha deve ter no mínimo 6 caracteres.";
+            els.regPassword.classList.add('input-invalido');
+            els.regConfirmPassword.classList.add('input-invalido');
+            return;
+        }
 
-      auth.createUserWithEmailAndPassword(virtualEmail, password)
-        .then((userCredential) => {
-          showToast(`Conta do usuário ${username} criada com sucesso! Você será redirecionado para o login.`, "success", 4000);
-          toggleAuthView(false); // Volta para a tela de login
-          els.regBtn.disabled = false;
-        })
-        .catch((error) => {
-          els.regBtn.disabled = false;
-          let message = "Ocorreu um erro no registro.";
-          switch (error.code) {
-            case 'auth/email-already-in-use':
-              message = `O usuário '${username}' já está em uso.`;
-              break;
-            case 'auth/weak-password':
-              message = "A senha é muito fraca. Escolha uma mais segura.";
-              break;
-            default:
-              message = "Erro: " + error.message;
-              break;
-          }
-          els.regErrorMessage.textContent = message;
+        els.regBtn.disabled = true;
+
+        auth.createUserWithEmailAndPassword(virtualEmail, password)
+            .then((userCredential) => {
+                showToast(`Conta do usuário ${username} criada com sucesso! Você será redirecionado para o login.`, "success", 4000);
+                toggleAuthView(false); // Volta para a tela de login
+                els.regBtn.disabled = false;
+            })
+            .catch((error) => {
+                els.regBtn.disabled = false;
+                let message = "Ocorreu um erro no registro.";
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        message = "Este nome de usuário já está em uso.";
+                        break;
+                    default:
+                        message = "Erro: " + error.message;
+                        break;
+                }
+                els.regErrorMessage.textContent = message;
+            });
+    }
+
+    // Função de Logout
+    function handleLogout() {
+        auth.signOut().then(() => {
+            showToast("Você foi desconectado.", "default");
+            showLoginScreen();
+        }).catch((error) => {
+            showToast("Erro ao sair: " + error.message, "error");
         });
     }
 
-    // Listener para verificar o estado da autenticação
+    // Observador do estado de autenticação (mantido)
     auth.onAuthStateChanged((user) => {
-      if (user) {
-        // Usuário logado
-        showMainApp();
-      } else {
-        // Usuário deslogado
-        showLoginScreen();
-      }
+        if (user) {
+            // Usuário logado
+            const username = user.email.replace(VIRTUAL_DOMAIN, '');
+            localStorage.setItem('ha_username', username);
+            showMainApp();
+        } else {
+            // Usuário deslogado
+            localStorage.removeItem('ha_username');
+            showLoginScreen();
+        }
     });
 
-    // --- FUNÇÕES DE LÓGICA DO APP ---
+    // --- FIM FUNÇÕES DE VISUALIZAÇÃO E AUTHENTICAÇÃO ---
 
-    function formatNumber(num) {
-      return num.toLocaleString('pt-BR');
+
+    // --- FUNÇÕES DE CALC E REGISTRO ---
+    
+    // --- FUNÇÃO PARA FORMATAR O TELEFONE (FIXO RP: (055) XXX-XXX) ---
+    function formatPhone(inputValue) {
+        const fixedPrefix = "(055) ";
+        
+        // 1. Remove tudo que não for dígito da entrada do usuário.
+        let digits = inputValue.replace(/\D/g, '');
+        
+        // 2. Remove o prefixo '055' se ele estiver presente nos dígitos (para permitir digitar sem o parênteses).
+        if (digits.startsWith('055')) {
+            // Remove os 3 dígitos do prefixo
+            digits = digits.substring(3); 
+        } 
+        
+        // 3. Limita a 6 dígitos (os que o usuário deve digitar)
+        const userDigits = digits.substring(0, 6);
+        
+        let formattedDigits = userDigits;
+        if (userDigits.length > 3) {
+            // Aplica o formato XXX-XXX
+            formattedDigits = userDigits.substring(0, 3) + '-' + userDigits.substring(3);
+        }
+        
+        // 4. Retorna o prefixo fixo + os dígitos formatados
+        return fixedPrefix + formattedDigits;
     }
 
-    function formatCurrency(num) {
-      return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    function getCalcValues() {
+        return {
+            tickets: parseInt(els.qtyTickets.value) || 0,
+            tablets: parseInt(els.qtyTablets.value) || 0,
+            nitro: parseInt(els.qtyNitro.value) || 0,
+            tipoValor: els.tipoValor.value
+        };
+    }
+
+    function calculateTotal() {
+        const { tickets, tablets, nitro, tipoValor } = getCalcValues();
+        let totalMaterials = {};
+        let totalValue = 0;
+        let totalCleanMoneySpent = 0;
+
+        // Materiais
+        if (tablets > 0) {
+            for (const mat in perUnit.tablets) {
+                totalMaterials[mat] = (totalMaterials[mat] || 0) + perUnit.tablets[mat] * tablets;
+            }
+            totalValue += valores.tablets[tipoValor] * tablets;
+        }
+
+        if (nitro > 0) {
+            for (const mat in perUnit.nitro) {
+                totalMaterials[mat] = (totalMaterials[mat] || 0) + perUnit.nitro[mat] * nitro;
+            }
+            totalValue += valores.nitro[tipoValor] * nitro;
+        }
+
+        // Tickets - Trata o custo em dinheiro limpo
+        if (tickets > 0) {
+            totalCleanMoneySpent += perUnit.tickets.moneyBruto * tickets;
+            totalValue += valores.tickets[tipoValor] * tickets;
+        }
+
+        return { totalMaterials, totalValue, totalCleanMoneySpent };
+    }
+
+    function formatCurrency(value) {
+        return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`;
     }
     
-    // Calcula os materiais e valores com base nos inputs
-    function calculateTotals() {
-      const qtyTickets = parseInt(els.qtyTickets.value) || 0;
-      const qtyTablets = parseInt(els.qtyTablets.value) || 0;
-      const qtyNitro = parseInt(els.qtyNitro.value) || 0;
-      const tipoValor = els.tipoValor.value;
-      const totalItens = qtyTickets + qtyTablets + qtyNitro;
-      
-      if (totalItens === 0) {
-          els.results.style.display = 'none';
-          return;
-      }
-
-      const totals = {};
-      let totalGeral = 0;
-
-      // 1. Calcular Materiais (Inputs de Tickets não tem materiais além do dinheiro)
-      if (qtyTickets > 0) {
-          if (!totals.moneyBruto) totals.moneyBruto = 0;
-          totals.moneyBruto += qtyTickets * perUnit.tickets.moneyBruto;
-      }
-      
-      if (qtyTablets > 0) {
-        for (const material in perUnit.tablets) {
-          if (!totals[material]) totals[material] = 0;
-          totals[material] += qtyTablets * perUnit.tablets[material];
-        }
-        totalGeral += qtyTablets * valores.tablets[tipoValor];
-      }
-
-      if (qtyNitro > 0) {
-        for (const material in perUnit.nitro) {
-          if (!totals[material]) totals[material] = 0;
-          totals[material] += qtyNitro * perUnit.nitro[material];
-        }
-        totalGeral += qtyNitro * valores.nitro[tipoValor];
-      }
-      
-      // 2. Adicionar o valor dos tickets ao total geral
-      if (qtyTickets > 0) {
-          totalGeral += qtyTickets * valores.tickets[tipoValor];
-      }
-
-      // 3. Renderizar resultados de Materiais
-      let resultsHtml = '';
-      for (const material in totals) {
-        let materialName = material.replace(/([A-Z])/g, ' $1').toLowerCase().replace('money bruto', 'Dinheiro Bruto');
-        materialName = materialName.charAt(0).toUpperCase() + materialName.slice(1);
-        resultsHtml += `<tr><td>${materialName}</td><td>${formatNumber(totals[material])}</td></tr>`;
-      }
-      els.resultsBody.innerHTML = resultsHtml;
-
-      // 4. Renderizar resultados de Valores
-      let valuesHtml = '';
-      if (qtyTickets > 0) {
-        valuesHtml += `<tr><td>Tickets (${formatNumber(qtyTickets)})</td><td>${formatCurrency(qtyTickets * valores.tickets[tipoValor])}</td></tr>`;
-      }
-      if (qtyTablets > 0) {
-        valuesHtml += `<tr><td>Tablets (${formatNumber(qtyTablets)})</td><td>${formatCurrency(qtyTablets * valores.tablets[tipoValor])}</td></tr>`;
-      }
-      if (qtyNitro > 0) {
-        valuesHtml += `<tr><td>Nitro (${formatNumber(qtyNitro)})</td><td>${formatCurrency(qtyNitro * valores.nitro[tipoValor])}</td></tr>`;
-      }
-      els.valuesBody.innerHTML = valuesHtml;
-
-      els.valorTotalGeral.textContent = formatCurrency(totalGeral);
-      els.results.style.display = 'block';
-    }
-
-    // Função para limpar todos os campos da calculadora/venda
-    function clearAllFields() {
-        // Campos de venda
-        els.nomeCliente.value = '';
-        els.organizacao.value = '';
-        els.organizacaoTipo.value = 'CNPJ';
-        els.telefone.value = '';
-        els.negociadoras.value = '';
-        els.vendaValorObs.value = '';
-
-        // Campos de cálculo
-        els.qtyTickets.value = '';
-        els.qtyTablets.value = '';
-        els.qtyNitro.value = '';
-        els.tipoValor.value = 'limpo';
-
-        // Resultados
-        els.results.style.display = 'none';
-        els.resultsBody.innerHTML = '';
-        els.valuesBody.innerHTML = '';
-        els.valorTotalGeral.textContent = 'R$ 0';
-        
-        // Limpa validação visual
-        removeInvalidClasses();
-        
-        // Reseta o botão de registro
-        els.registerBtn.classList.remove('primary');
-        els.registerBtn.classList.add('success');
-        els.registerBtn.textContent = 'Registrar Venda';
-        
-        vendaEmEdicaoId = null;
-    }
-    
-    // Função para remover as classes de validação de todos os campos
-    function removeInvalidClasses() {
+    function validateFields(isRegistration = false) {
         const fields = [
-            els.nomeCliente, els.organizacao, els.organizacaoTipo, 
-            els.telefone, els.negociadoras, els.vendaValorObs,
-            els.qtyTickets, els.qtyTablets, els.qtyNitro
+            els.nomeCliente,
+            els.organizacao,
+            els.telefone,
+            els.negociadoras,
         ];
-        fields.forEach(field => field.classList.remove('input-invalido'));
-    }
-
-    // Função de validação para registro
-    function validateFields() {
-        removeInvalidClasses();
+        
         let isValid = true;
-        const totalItens = (parseInt(els.qtyTickets.value) || 0) + 
-                         (parseInt(els.qtyTablets.value) || 0) + 
-                         (parseInt(els.qtyNitro.value) || 0);
 
-        if (totalItens === 0) {
-            showToast('A venda deve ter pelo menos 1 item (Ticket, Tablet ou Nitro).', 'error');
-            els.qtyTickets.classList.add('input-invalido');
-            els.qtyTablets.classList.add('input-invalido');
-            els.qtyNitro.classList.add('input-invalido');
-            isValid = false;
-        }
-
-        if (!els.nomeCliente.value.trim()) {
-            els.nomeCliente.classList.add('input-invalido');
-            isValid = false;
-        }
+        fields.forEach(field => {
+            if (field.value.trim() === '' || field.value === '(055) ') {
+                field.classList.add('input-invalido');
+                isValid = false;
+            } else {
+                field.classList.remove('input-invalido');
+            }
+        });
         
-        if (!els.organizacao.value.trim()) {
-            els.organizacao.classList.add('input-invalido');
-            isValid = false;
-        }
-        
-        // O telefone não é obrigatório, mas se estiver preenchido, deve ter o formato correto (13 caracteres com o prefixo)
-        if (els.telefone.value.trim() && els.telefone.value.length !== 13) {
-            els.telefone.classList.add('input-invalido');
-            isValid = false;
-        }
-
-        if (!els.negociadoras.value.trim()) {
-            els.negociadoras.classList.add('input-invalido');
-            isValid = false;
-        }
-        
-        if (!els.vendaValorObs.value.trim()) {
-            els.vendaValorObs.classList.add('input-invalido');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            showToast('Preencha todos os campos obrigatórios (marcados em vermelho) e verifique o Telefone.', 'error', 4000);
+        // Validação adicional para quantidade de produtos
+        const { tickets, tablets, nitro } = getCalcValues();
+        if (tickets === 0 && tablets === 0 && nitro === 0) {
+            if (isRegistration) { // Só é um erro de validação se estiver registrando, não só calculando
+                showToast("Adicione pelo menos 1 produto para registrar a venda.", "error");
+                isValid = false;
+            }
         }
         
         return isValid;
     }
 
 
+    function displayResults() {
+        const { totalMaterials, totalValue, totalCleanMoneySpent } = calculateTotal();
+        const { tickets, tablets, nitro, tipoValor } = getCalcValues();
+
+        // 1. Materiais
+        let materialHtml = '';
+        for (const mat in totalMaterials) {
+            materialHtml += `<tr><td>${mat.replace('_', ' ').toUpperCase()}</td><td>${totalMaterials[mat].toLocaleString('pt-BR')}</td></tr>`;
+        }
+        if (materialHtml === '') {
+            materialHtml = '<tr><td colspan="2">Nenhum material de fabricação necessário.</td></tr>';
+        }
+        els.resultsBody.innerHTML = materialHtml;
+
+        // 2. Valores
+        let valuesHtml = '';
+        
+        if (tickets > 0) {
+            valuesHtml += `<tr><td>Tickets (${tickets} un.)</td><td>${formatCurrency(valores.tickets[tipoValor] * tickets)}</td></tr>`;
+        }
+        if (tablets > 0) {
+            valuesHtml += `<tr><td>Tablets (${tablets} un.)</td><td>${formatCurrency(valores.tablets[tipoValor] * tablets)}</td></tr>`;
+        }
+        if (nitro > 0) {
+            valuesHtml += `<tr><td>Nitro (${nitro} un.)</td><td>${formatCurrency(valores.nitro[tipoValor] * nitro)}</td></tr>`;
+        }
+        
+        // Adiciona custo de tickets (se houver) como uma observação
+        if (totalCleanMoneySpent > 0) {
+            valuesHtml += `<tr><td>Custo (Tickets)</td><td>-${formatCurrency(totalCleanMoneySpent)} (Dinheiro Limpo)</td></tr>`;
+        }
+        
+        if (valuesHtml === '') {
+            valuesHtml = '<tr><td colspan="2">Adicione produtos para calcular.</td></tr>';
+        }
+
+        els.valuesBody.innerHTML = valuesHtml;
+        els.valorTotalGeral.textContent = formatCurrency(totalValue);
+        
+        // Mostra o container de resultados
+        els.results.style.display = 'block';
+    }
+
+
+    function clearAllFields(clearHistory = false) {
+        els.nomeCliente.value = '';
+        els.organizacao.value = '';
+        els.organizacaoTipo.value = 'CNPJ';
+        els.telefone.value = '(055) '; // ALTERADO AQUI
+        els.negociadoras.value = '';
+        els.vendaValorObs.value = '';
+        
+        els.qtyTickets.value = '';
+        els.qtyTablets.value = '';
+        els.qtyNitro.value = '';
+        els.tipoValor.value = 'limpo';
+        
+        els.results.style.display = 'none';
+        els.resultsBody.innerHTML = '';
+        els.valuesBody.innerHTML = '';
+        els.valorTotalGeral.textContent = 'R$ 0';
+        
+        // Remove destaques de erro
+        const allInputs = document.querySelectorAll('#mainCard input, #mainCard select');
+        allInputs.forEach(input => {
+            input.classList.remove('input-invalido');
+        });
+        
+        // Limpa a edição
+        if (vendaEmEdicaoId) {
+            vendaEmEdicaoId = null;
+            els.registerBtn.textContent = 'Registrar Venda';
+            if (clearHistory) {
+                // Não mostra toast se estiver limpando histórico
+            } else {
+                showToast("Edição pendente cancelada.", "error", 2000);
+            }
+        }
+    }
+
     function registerVenda() {
-        if (!validateFields()) {
+        if (!validateFields(true)) {
+            showToast("Preencha todos os campos obrigatórios (Cliente, Org, Telefone, Negociadoras e pelo menos 1 produto).", "error", 5000);
             return;
         }
-        
-        // Simulação de cálculo para pegar os valores finais
-        calculateTotals();
-        
-        const totalGeralTexto = els.valorTotalGeral.textContent; // "R$ X.XXX.XXX"
-        
-        const produtosVendidos = [];
-        if (parseInt(els.qtyTickets.value) > 0) {
-             produtosVendidos.push(`Tickets: ${els.qtyTickets.value}`);
-        }
-        if (parseInt(els.qtyTablets.value) > 0) {
-             produtosVendidos.push(`Tablets: ${els.qtyTablets.value}`);
-        }
-        if (parseInt(els.qtyNitro.value) > 0) {
-             produtosVendidos.push(`Nitro: ${els.qtyNitro.value}`);
-        }
-        
-        const produtosTexto = produtosVendidos.join('; ');
-        
-        const novaVenda = {
-            id: vendaEmEdicaoId || Date.now(),
-            timestamp: new Date().toISOString(), // Usado para ordenação e exibição completa
-            dataExibicao: new Date().toLocaleDateString('pt-BR'),
-            horaExibicao: new Date().toLocaleTimeString('pt-BR'),
-            cliente: els.nomeCliente.value.trim(),
+
+        const { totalMaterials, totalValue, totalCleanMoneySpent } = calculateTotal();
+        const { tickets, tablets, nitro, tipoValor } = getCalcValues();
+
+        const dataVendaObj = {
+            nomeCliente: els.nomeCliente.value.trim(),
             organizacao: els.organizacao.value.trim(),
             organizacaoTipo: els.organizacaoTipo.value,
             telefone: els.telefone.value.trim(),
             negociadoras: els.negociadoras.value.trim(),
-            valorTotal: totalGeralTexto,
-            valorObs: els.vendaValorObs.value.trim(),
-            produtos: produtosTexto,
-            tipoValor: valorDescricao[els.tipoValor.value] // Salva o nome do tipo
+            vendaValorObs: els.vendaValorObs.value.trim(),
+            
+            // Produtos vendidos
+            produtos: { tickets, tablets, nitro },
+            tipoValor: valorDescricao[tipoValor], // Converte para o texto
+            
+            // Valores calculados
+            totalMaterials,
+            totalValue,
+            totalCleanMoneySpent,
+
+            // Data e Usuário
+            timestamp: Date.now(),
+            dataLocal: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+            username: localStorage.getItem('ha_username') || 'Desconhecido'
         };
         
-        if (vendaEmEdicaoId) {
-            // Edição
-            const index = vendas.findIndex(v => v.id === vendaEmEdicaoId);
+        const isEditing = vendaEmEdicaoId !== null;
+
+        if (isEditing) {
+            // Edita a venda existente
+            const index = vendas.findIndex(v => v.timestamp === vendaEmEdicaoId);
             if (index !== -1) {
-                vendas[index] = novaVenda;
-                showToast(`Venda do(a) ${novaVenda.cliente} atualizada com sucesso!`, 'success');
+                // Mantém o timestamp original (como ID)
+                vendas[index] = { ...dataVendaObj, timestamp: vendaEmEdicaoId }; 
+                showToast(`Venda do(a) ${dataVendaObj.nomeCliente} atualizada com sucesso!`, "success", 4000);
             }
+            vendaEmEdicaoId = null;
+            els.registerBtn.textContent = 'Registrar Venda';
         } else {
-            // Nova Venda
-            vendas.push(novaVenda);
-            showToast(`Venda registrada com sucesso! Cliente: ${novaVenda.cliente}`, 'success');
+            // Adiciona nova venda
+            vendas.unshift(dataVendaObj);
+            showToast(`Venda registrada para ${dataVendaObj.nomeCliente}!`, "success", 4000);
         }
-        
+
         saveVendas();
-        clearAllFields();
-        renderHistorico(); // Atualiza a tabela do histórico
+        renderHistorico();
+        clearAllFields(true);
     }
     
-    // Função para renderizar o histórico na tabela
-    function renderHistorico(filtro = '') {
-        const tbody = els.salesHistory;
-        tbody.innerHTML = ''; // Limpa o conteúdo anterior
+    function deleteVenda(timestamp) {
+        if (confirm("Tem certeza que deseja DELETAR este registro de venda? Esta ação não pode ser desfeita.")) {
+            vendas = vendas.filter(v => v.timestamp !== timestamp);
+            saveVendas();
+            renderHistorico();
+            showToast("Registro de venda deletado.", "default", 3000);
+            // Se estiver editando a venda que foi deletada, limpa o modo de edição
+            if (vendaEmEdicaoId === timestamp) {
+                vendaEmEdicaoId = null;
+                els.registerBtn.textContent = 'Registrar Venda';
+            }
+        }
+    }
+    
+    function editVenda(timestamp) {
+        const venda = vendas.find(v => v.timestamp === timestamp);
+        if (!venda) return;
         
-        // Filtra e inverte a ordem (mais recente primeiro)
-        const vendasFiltradas = vendas.slice().reverse().filter(venda => {
-            const termo = filtro.toLowerCase();
-            return !filtro || 
-                   venda.cliente.toLowerCase().includes(termo) ||
-                   venda.organizacao.toLowerCase().includes(termo) ||
-                   venda.produtos.toLowerCase().includes(termo) ||
-                   venda.dataExibicao.includes(termo) ||
-                   venda.telefone.includes(termo) ||
-                   venda.negociadoras.toLowerCase().includes(termo);
+        // 1. Alterna para a tela da calculadora
+        toggleView(false); 
+        
+        // 2. Preenche os campos de dados da venda
+        els.nomeCliente.value = venda.nomeCliente;
+        els.organizacao.value = venda.organizacao;
+        els.organizacaoTipo.value = venda.organizacaoTipo; // Seleciona o tipo correto
+        els.telefone.value = venda.telefone;
+        els.negociadoras.value = venda.negociadoras;
+        els.vendaValorObs.value = venda.vendaValorObs;
+        
+        // 3. Preenche os campos de cálculo
+        els.qtyTickets.value = venda.produtos.tickets || '';
+        els.qtyTablets.value = venda.produtos.tablets || '';
+        els.qtyNitro.value = venda.produtos.nitro || '';
+        
+        // 4. Determina o tipo de valor original (texto para chave)
+        let tipoValorKey = Object.keys(valorDescricao).find(key => valorDescricao[key] === venda.tipoValor) || 'limpo';
+        els.tipoValor.value = tipoValorKey;
+
+        // 5. Recalcula para exibir os resultados na calculadora
+        displayResults();
+
+        // 6. Define o modo de edição
+        vendaEmEdicaoId = timestamp;
+        els.registerBtn.textContent = 'Atualizar Venda';
+        
+        showToast(`Editando venda de ${venda.nomeCliente}. Clique em "Atualizar Venda" para salvar.`, "default", 5000);
+        // Rola para o topo para garantir a visibilidade
+        window.scrollTo(0, 0);
+    }
+    
+    function formatToDiscord(venda) {
+        const produtos = [];
+        if (venda.produtos.tickets > 0) produtos.push(`${venda.produtos.tickets} Tickets`);
+        if (venda.produtos.tablets > 0) produtos.push(`${venda.produtos.tablets} Tablets`);
+        if (venda.produtos.nitro > 0) produtos.push(`${venda.produtos.nitro} Nitro`);
+        
+        const materiais = [];
+        for (const mat in venda.totalMaterials) {
+             materiais.push(` - ${venda.totalMaterials[mat]} ${mat.replace('_', ' ').toUpperCase()}`);
+        }
+
+        const totalValueFormatted = formatCurrency(venda.totalValue);
+        const totalCostFormatted = venda.totalCleanMoneySpent > 0 ? `\n(Custo: -${formatCurrency(venda.totalCleanMoneySpent)} Dinheiro Limpo)` : '';
+        
+        const discordMessage = `
+**[ 𝐇𝐄𝐋𝐋𝐒 𝐀𝐍𝐆𝐄𝐋𝐒 - 𝐕𝐄𝐍𝐃𝐀 𝐑𝐏 ]**
+━━━━━━━━━━━━━━
+**Cliente:** ${venda.nomeCliente}
+**Org/Opção:** ${venda.organizacao} (${venda.organizacaoTipo})
+**Telefone:** ${venda.telefone}
+**Negociadora(s):** ${venda.negociadoras}
+**Data/Hora:** ${venda.dataLocal}
+━━━━━━━━━━━━━━
+**Produtos:** ${produtos.join(', ')}
+**Valor Total (Estimado - ${venda.tipoValor}):** ${totalValueFormatted} ${totalCostFormatted}
+**Obs. de Pagamento:** ${venda.vendaValorObs || 'N/A'}
+━━━━━━━━━━━━━━
+**MATERIAIS NECESSÁRIOS:**
+${materiais.join('\n')}
+`;
+        return discordMessage;
+    }
+
+    function copyToClipboard(text, successMessage) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(successMessage, "success", 3000);
+        }).catch(err => {
+            console.error('Erro ao copiar para a área de transferência', err);
+            showToast("Erro ao copiar. Tente novamente.", "error", 3000);
+        });
+    }
+
+    function generateDiscordMessage(isFromHistory = false, timestamp = null) {
+        let venda;
+        let message;
+        
+        if (isFromHistory) {
+            venda = vendas.find(v => v.timestamp === timestamp);
+            if (!venda) return;
+            message = formatToDiscord(venda);
+            copyToClipboard(message, "Mensagem da venda copiada para o Discord!");
+            return;
+        }
+
+        if (!validateFields(false)) {
+            showToast("Preencha os campos obrigatórios para gerar a mensagem Discord.", "error", 5000);
+            return;
+        }
+        
+        // Cria um objeto de venda temporário para formatação
+        const { totalMaterials, totalValue, totalCleanMoneySpent } = calculateTotal();
+        const { tickets, tablets, nitro, tipoValor } = getCalcValues();
+
+        const dataVendaObj = {
+            nomeCliente: els.nomeCliente.value.trim(),
+            organizacao: els.organizacao.value.trim(),
+            organizacaoTipo: els.organizacaoTipo.value,
+            telefone: els.telefone.value.trim(),
+            negociadoras: els.negociadoras.value.trim(),
+            vendaValorObs: els.vendaValorObs.value.trim(),
+            produtos: { tickets, tablets, nitro },
+            tipoValor: valorDescricao[tipoValor],
+            totalMaterials,
+            totalValue,
+            totalCleanMoneySpent,
+            dataLocal: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        };
+        
+        if (dataVendaObj.produtos.tickets === 0 && dataVendaObj.produtos.tablets === 0 && dataVendaObj.produtos.nitro === 0) {
+            showToast("Adicione produtos para gerar a mensagem Discord.", "error");
+            return;
+        }
+
+        message = formatToDiscord(dataVendaObj);
+        copyToClipboard(message, "Mensagem de cálculo copiada para o Discord!");
+    }
+
+
+    // --- FUNÇÕES DE HISTÓRICO ---
+    
+    function renderHistorico() {
+        const salesHistoryBody = els.salesHistory;
+        salesHistoryBody.innerHTML = ''; // Limpa a tabela
+        
+        const termoFiltro = els.filtroHistorico.value.toLowerCase();
+
+        const vendasFiltradas = vendas.filter(venda => {
+            if (!termoFiltro) return true;
+            
+            // Cria uma string para busca que inclui todos os campos importantes
+            const searchString = `${venda.nomeCliente} ${venda.organizacao} ${venda.telefone} ${venda.negociadoras} ${venda.dataLocal} ${venda.vendaValorObs} ${venda.tipoValor} 
+                                ${venda.produtos.tickets} ${venda.produtos.tablets} ${venda.produtos.nitro} ${formatCurrency(venda.totalValue)}`.toLowerCase();
+                                
+            return searchString.includes(termoFiltro);
         });
 
         if (vendasFiltradas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">Nenhuma venda encontrada.</td></tr>`;
+            const row = salesHistoryBody.insertRow();
+            row.innerHTML = `<td colspan="8" style="text-align:center; font-style: italic;">Nenhuma venda encontrada.</td>`;
             return;
         }
 
         vendasFiltradas.forEach(venda => {
-            const row = tbody.insertRow();
-
-            // Coluna 1: Data/Hora
-            row.insertCell().innerHTML = 
-                `<span class="history-datetime-line">${venda.dataExibicao}</span>` + 
-                `<span class="history-datetime-line">${venda.horaExibicao}</span>`;
+            const row = salesHistoryBody.insertRow();
             
+            // Coluna 1: Data/Hora
+            const date = new Date(venda.timestamp);
+            const dataLinha = date.toLocaleDateString('pt-BR');
+            const horaLinha = date.toLocaleTimeString('pt-BR');
+            row.insertCell().innerHTML = `
+                <span class="history-datetime-line">${dataLinha}</span>
+                <span class="history-datetime-line" style="font-weight: 600;">${horaLinha}</span>
+            `;
+
             // Coluna 2: Cliente
-            row.insertCell().textContent = venda.cliente;
+            row.insertCell().textContent = venda.nomeCliente;
 
             // Coluna 3: Organização/Tipo
-            row.insertCell().innerHTML = `<strong>${venda.organizacao}</strong><br><span style="font-size: 11px; opacity: 0.8;">(${venda.organizacaoTipo})</span>`;
+            row.insertCell().innerHTML = `
+                <span class="history-datetime-line">${venda.organizacao}</span>
+                <span class="history-datetime-line" style="font-size: 11px; opacity: 0.8;">(${venda.organizacaoTipo})</span>
+            `;
             
             // Coluna 4: Telefone
-            row.insertCell().textContent = venda.telefone || '-'; 
-            
-            // Coluna 5: Produtos
-            row.insertCell().textContent = venda.produtos;
+            row.insertCell().textContent = venda.telefone;
 
-            // Coluna 6: Valor Total / Observação
-            row.insertCell().innerHTML = 
-                `<div class="valor-total-cell">` +
-                    `<span>${venda.valorTotal}</span>` + 
-                    `<span class="valor-obs-text">${venda.valorObs}</span>` + 
-                `</div>`;
+            // Coluna 5: Produtos
+            const produtos = [];
+            if (venda.produtos.tickets > 0) produtos.push(`${venda.produtos.tickets} Tickets`);
+            if (venda.produtos.tablets > 0) produtos.push(`${venda.produtos.tablets} Tablets`);
+            if (venda.produtos.nitro > 0) produtos.push(`${venda.produtos.nitro} Nitro`);
+            row.insertCell().textContent = produtos.join(', ') || 'N/A';
+
+            // Coluna 6: Valor Total
+            const valorCell = row.insertCell();
+            const totalValueFormatted = formatCurrency(venda.totalValue);
+            valorCell.classList.add('valor-total-cell');
             
+            let obsText = venda.tipoValor;
+            if (venda.totalCleanMoneySpent > 0) {
+                 obsText += ` (-${formatCurrency(venda.totalCleanMoneySpent)} Custo Limpo)`;
+            }
+
+            valorCell.innerHTML = `
+                <span>${totalValueFormatted}</span>
+                <span class="valor-obs-text">${obsText}</span>
+            `;
+
             // Coluna 7: Negociadoras
             row.insertCell().textContent = venda.negociadoras;
-            
+
             // Coluna 8: Ações
             const actionsCell = row.insertCell();
             actionsCell.classList.add('history-actions-cell');
             actionsCell.innerHTML = `
-                <button class="action-btn muted" onclick="editVenda(${venda.id})">Editar</button>
-                <button class="action-btn primary" onclick="copyDiscordMessage(${venda.id})">Discord</button>
-                <button class="action-btn muted" onclick="deleteVenda(${venda.id})">Excluir</button>
+                <button class="action-btn muted" onclick="editVenda(${venda.timestamp})">Editar</button>
+                <button class="action-btn primary" onclick="generateDiscordMessage(true, ${venda.timestamp})">Discord</button>
+                <button class="action-btn" style="background: var(--cor-erro); color: #fff;" onclick="deleteVenda(${venda.timestamp})">X</button>
             `;
         });
     }
 
-    // Função de exclusão
-    function deleteVenda(id) {
-        if (confirm('Tem certeza que deseja excluir este registro de venda?')) {
-            vendas = vendas.filter(v => v.id !== id);
-            saveVendas();
-            renderHistorico();
-            showToast('Venda excluída.', 'error', 2000);
-        }
-    }
-    
-    // Função de Edição
-    function editVenda(id) {
-        const venda = vendas.find(v => v.id === id);
-        if (!venda) return;
-        
-        // 1. Alterna para a tela de calculadora
-        toggleView(false); 
-        
-        // 2. Limpa os campos e seta o ID de edição
-        clearAllFields(); 
-        vendaEmEdicaoId = id;
-
-        // 3. Preenche os campos de Dados da Venda
-        els.nomeCliente.value = venda.cliente;
-        els.organizacao.value = venda.organizacao;
-        els.organizacaoTipo.value = venda.organizacaoTipo;
-        els.telefone.value = venda.telefone;
-        els.negociadoras.value = venda.negociadoras;
-        els.vendaValorObs.value = venda.valorObs;
-        
-        // 4. Preenche os campos de Cálculo
-        const produtos = venda.produtos.split('; ');
-        let ticketQty = 0;
-        let tabletQty = 0;
-        let nitroQty = 0;
-        
-        produtos.forEach(p => {
-            if (p.includes('Tickets:')) {
-                ticketQty = parseInt(p.replace('Tickets:', '').trim()) || 0;
-            } else if (p.includes('Tablets:')) {
-                tabletQty = parseInt(p.replace('Tablets:', '').trim()) || 0;
-            } else if (p.includes('Nitro:')) {
-                nitroQty = parseInt(p.replace('Nitro:', '').trim()) || 0;
-            }
-        });
-
-        els.qtyTickets.value = ticketQty;
-        els.qtyTablets.value = tabletQty;
-        els.qtyNitro.value = nitroQty;
-        
-        // 5. Preenche o Tipo de Valor (Faz o mapeamento reverso de descrição para chave)
-        const tipoKey = Object.keys(valorDescricao).find(key => valorDescricao[key] === venda.tipoValor);
-        els.tipoValor.value = tipoKey || 'limpo'; // Default para limpo se não achar
-        
-        // 6. Recalcula os totais para exibir os resultados (Total Geral)
-        calculateTotals();
-        
-        // 7. Atualiza o botão de registro
-        els.registerBtn.classList.remove('success');
-        els.registerBtn.classList.add('primary');
-        els.registerBtn.textContent = 'Salvar Edição';
-        
-        showToast(`Editando venda de ${venda.cliente}. Salve para confirmar.`, 'default', 3000);
-    }
-    
-    // Função para copiar o código Discord formatado
-    function copyDiscordMessage(id) {
-        const venda = vendas.find(v => v.id === id);
-        if (!venda) return;
-        
-        const message = `\`\`\`
-**[ NOVO REGISTRO HA ]**
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-**CLIENTE:** ${venda.cliente}
-**ORGANIZAÇÃO:** ${venda.organizacao} (${venda.organizacaoTipo})
-**TELEFONE:** ${venda.telefone || 'N/A'}
-**PRODUTOS:** ${venda.produtos.replace(/; /g, ' | ')}
-**VALOR FINAL:** ${venda.valorTotal} (${venda.tipoValor})
-**PAGAMENTO:** ${venda.valorObs}
-**NEGOCIADOR(ES):** ${venda.negociadoras}
-**DATA:** ${venda.dataExibicao} ${venda.horaExibicao}
-\`\`\``;
-
-        navigator.clipboard.writeText(message).then(() => {
-            showToast('Mensagem Discord copiada para a área de transferência!', 'success');
-        }).catch(err => {
-            showToast('Erro ao copiar a mensagem.', 'error');
-            console.error('Erro ao copiar: ', err);
-        });
-    }
-
-    // Função para exportar CSV
-    function exportCSV() {
-        if (vendas.length === 0) {
-            showToast('Não há dados para exportar.', 'default');
-            return;
-        }
-
-        const header = ["ID", "Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Produtos", "Valor Total", "Observação", "Negociadoras", "Tipo de Valor"];
-        const rows = [header];
-
-        vendas.forEach(venda => {
-            rows.push([
-                venda.id,
-                venda.timestamp,
-                venda.cliente,
-                venda.organizacao,
-                venda.organizacaoTipo,
-                venda.telefone,
-                venda.produtos,
-                venda.valorTotal,
-                venda.valorObs,
-                venda.negociadoras,
-                venda.tipoValor
-            ]);
-        });
-
-        let csvContent = "data:text/csv;charset=utf-8," 
-            + rows.map(e => e.join(",")).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `historico_vendas_ha_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link); // Required for Firefox
-        link.click();
-        document.body.removeChild(link);
-        
-        showToast('Exportação CSV iniciada.', 'success');
-    }
-
-    // Função para limpar todo o histórico
-    function clearHistory() {
-        if (confirm('ATENÇÃO: Você tem certeza que deseja APAGAR TODO O HISTÓRICO DE VENDAS? Esta ação não pode ser desfeita.')) {
-            vendas = [];
-            saveVendas();
-            renderHistorico();
-            showToast('Histórico de vendas apagado com sucesso.', 'success', 3000);
-        }
-    }
-    
-    // Função para alternar entre Calculadora e Histórico
     function toggleView(showHistory) {
         if (showHistory) {
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'block';
-            renderHistorico();
+            els.toggleHistoryBtn.textContent = 'Voltar à Calculadora';
+            renderHistorico(); // Garante que o histórico está atualizado
         } else {
-            els.historyCard.style.display = 'none';
             els.mainCard.style.display = 'block';
+            els.historyCard.style.display = 'none';
+            els.toggleHistoryBtn.textContent = 'Ver Histórico';
         }
-        clearTour(); // Para o tour ao alternar de tela
     }
-    
-    // Função para copiar o código Discord do cálculo atual
-    function copyDiscordMessageCalc() {
-        calculateTotals(); // Garante que os resultados estão calculados
-        const totalItens = (parseInt(els.qtyTickets.value) || 0) + 
-                           (parseInt(els.qtyTablets.value) || 0) + 
-                           (parseInt(els.qtyNitro.value) || 0);
 
-        if (totalItens === 0) {
-            showToast('Nenhum item para calcular/copiar.', 'error');
+    function clearHistory() {
+        if (confirm("ATENÇÃO: Você tem certeza que deseja APAGAR TODO O HISTÓRICO DE VENDAS? Esta ação é irreversível.")) {
+            vendas = [];
+            saveVendas();
+            renderHistorico();
+            clearAllFields(true); // Limpa campos de edição e mostra toast
+            showToast("Histórico de vendas completamente apagado.", "error", 4000);
+        }
+    }
+
+    function exportToCsv() {
+        if (vendas.length === 0) {
+            showToast("Não há dados para exportar.", "error");
             return;
         }
-        
-        const totalGeralTexto = els.valorTotalGeral.textContent; 
-        const tipoValorTexto = valorDescricao[els.tipoValor.value];
-        
-        const produtosVendidos = [];
-        if (parseInt(els.qtyTickets.value) > 0) {
-             produtosVendidos.push(`Tickets: ${els.qtyTickets.value}`);
-        }
-        if (parseInt(els.qtyTablets.value) > 0) {
-             produtosVendidos.push(`Tablets: ${els.qtyTablets.value}`);
-        }
-        if (parseInt(els.qtyNitro.value) > 0) {
-             produtosVendidos.push(`Nitro: ${els.qtyNitro.value}`);
-        }
-        
-        const produtosTexto = produtosVendidos.join(' | ');
 
-        const message = `\`\`\`
-**[ CÁLCULO HA ]**
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-**CLIENTE:** ${els.nomeCliente.value.trim() || 'N/A'}
-**ORGANIZAÇÃO:** ${els.organizacao.value.trim() || 'N/A'}
-**PRODUTOS:** ${produtosTexto}
-**VALOR TOTAL:** ${totalGeralTexto} (${tipoValorTexto})
-**OBSERVAÇÃO:** ${els.vendaValorObs.value.trim() || 'N/A'}
-**NEGOCIADOR(ES):** ${els.negociadoras.value.trim() || 'N/A'}
-\`\`\``;
+        // Cabeçalhos CSV
+        let csv = 'Data/Hora,Cliente,Organização,Tipo,Telefone,Negociadoras,Obs. Valor,Tickets,Tablets,Nitro,Tipo de Valor,Valor Total,Custo Limpo,Materiais\n';
 
-        navigator.clipboard.writeText(message).then(() => {
-            showToast('Mensagem Discord de CÁLCULO copiada!', 'success');
-        }).catch(err => {
-            showToast('Erro ao copiar a mensagem.', 'error');
-            console.error('Erro ao copiar: ', err);
+        vendas.forEach(venda => {
+            const date = new Date(venda.timestamp);
+            const dateTime = date.toLocaleString('pt-BR');
+            
+            const materiaisList = Object.keys(venda.totalMaterials).map(mat => 
+                `${venda.totalMaterials[mat]} ${mat.replace('_', ' ').toUpperCase()}`
+            ).join('; ');
+            
+            const row = [
+                `"${dateTime}"`,
+                `"${venda.nomeCliente}"`,
+                `"${venda.organizacao}"`,
+                `"${venda.organizacaoTipo}"`,
+                `"${venda.telefone}"`,
+                `"${venda.negociadoras}"`,
+                `"${venda.vendaValorObs}"`,
+                venda.produtos.tickets,
+                venda.produtos.tablets,
+                venda.produtos.nitro,
+                `"${venda.tipoValor}"`,
+                venda.totalValue,
+                venda.totalCleanMoneySpent,
+                `"${materiaisList}"`
+            ].join(',');
+            
+            csv += row + '\n';
         });
-    }
 
-    // Função para alternar o tema
-    function toggleTheme() {
-        if (document.body.classList.contains('light')) {
-            document.body.classList.remove('light');
-            document.body.classList.add('dark');
-            localStorage.setItem('ha_theme', 'dark');
-            els.themeBtn.textContent = '☀️ Modo Claro';
-            els.appLogo.src = logoDarkModeSrc;
-        } else {
-            document.body.classList.remove('dark');
-            document.body.classList.add('light');
-            localStorage.setItem('ha_theme', 'light');
-            els.themeBtn.textContent = '🌙 Modo Noturno';
-            els.appLogo.src = logoLightModeSrc;
-        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Hells_Angels_Vendas_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast("Dados exportados como CSV!", "success", 3000);
     }
     
-    // --- FUNÇÕES E VARIÁVEIS DO TOUR / TUTORIAL ---
-    let tourStep = 0;
+    
+    // --- FUNÇÕES DE TEMA (MODO CLARO/ESCURO) ---
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark');
+        const theme = isDark ? 'dark' : 'light';
+        localStorage.setItem('ha_theme', theme);
+        els.themeBtn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Noturno';
+        els.appLogo.src = isDark ? logoDarkModeSrc : logoLightModeSrc;
+    }
+    
+    // --- FUNÇÕES DO TOUR / TUTORIAL ---
     const tourSteps = [
-        {
-            element: '#nomeCliente',
-            title: '1. Dados do Cliente',
-            content: 'Comece preenchendo o nome do cliente e a organização a qual ele pertence. Estes dados são obrigatórios para o registro da venda.',
-            position: 'bottom'
+        { 
+            target: '#nomeCliente', 
+            title: '1. Dados da Venda', 
+            content: 'Comece preenchendo os dados do cliente, organização e telefone de RP (no formato fixo (055) XXX-XXX).',
+            placement: 'bottom' 
         },
-        {
-            element: '#telefone',
-            title: '2. Telefone e Negociadoras',
-            content: 'O telefone é formatado automaticamente para (055) XXX-XXX. Informe também as negociadoras envolvidas e as observações sobre o pagamento (Ex: 2x no Pix).',
-            position: 'bottom'
+        { 
+            target: '#organizacao', 
+            title: 'Sugestões', 
+            content: 'O campo Organização tem sugestões das principais GGs para agilizar o preenchimento.',
+            placement: 'bottom' 
         },
-        {
-            element: '#qtyTickets',
-            title: '3. Quantidade de Produtos',
-            content: 'Insira a quantidade de Tickets, Tablets e/ou Nitro que deseja calcular ou vender.',
-            position: 'top'
+        { 
+            target: '#vendaValorObs', 
+            title: 'Observação da Venda', 
+            content: 'Use este campo para anotar como o pagamento foi efetuado (limpo, sujo, troca, etc.). A anotação aparece no histórico.',
+            placement: 'bottom' 
         },
-        {
-            element: '#tipoValor',
-            title: '4. Tipo de Valor',
-            content: 'Escolha o tipo de dinheiro (Limpo/Sujo) e se é uma venda para Aliados (preços especiais).',
-            position: 'top'
+        { 
+            target: '#qtyTickets', 
+            title: '2. Cálculo de Produtos', 
+            content: 'Aqui você insere a quantidade de cada item vendido.',
+            placement: 'bottom' 
         },
-        {
-            element: '#calcBtn',
-            title: '5. Calcular e Resultados',
-            content: 'Clique em "Calcular" para ver o total de materiais necessários e o valor final estimado da venda.',
-            position: 'right'
+        { 
+            target: '#tipoValor', 
+            title: 'Tipo de Valor', 
+            content: 'Selecione se o valor é Limpo/Sujo e se a venda é para uma Aliança (que tem preço diferenciado).',
+            placement: 'bottom' 
         },
-        {
-            element: '#registerBtn',
-            title: '6. Registrar Venda',
-            content: 'Após o cálculo, clique aqui para salvar a venda no seu histórico. Ele vira "Salvar Edição" se você estiver editando uma venda antiga.',
-            position: 'bottom'
+        { 
+            target: '#calcBtn', 
+            title: '3. Ações', 
+            content: 'Clique em "Calcular" para ver o total de materiais necessários e o valor total estimado.',
+            placement: 'right' 
         },
-        {
-            element: '#toggleHistoryBtn',
-            title: '7. Histórico',
-            content: 'Visualize todas as suas vendas registradas. A partir da tabela, você pode Editar, Excluir ou Copiar a mensagem formatada para o Discord.',
-            position: 'right'
+        { 
+            target: '#registerBtn', 
+            title: 'Registrar Venda', 
+            content: 'Após o cálculo, use "Registrar Venda" para salvar no histórico local do seu navegador.',
+            placement: 'right' 
         },
-        {
-            element: '#discordBtnCalc',
-            title: '8. Mensagem Discord',
-            content: 'Use este botão para copiar rapidamente os dados de CÁLCULO formatados no padrão Discord (ideal para logs ou relatórios).',
-            position: 'right'
+        { 
+            target: '#toggleHistoryBtn', 
+            title: 'Histórico', 
+            content: 'Use "Ver Histórico" para acessar a lista de vendas, editar, deletar ou gerar mensagens para o Discord.',
+            placement: 'right' 
         }
     ];
+    
+    let currentStep = 0;
+    const tourTooltip = els.tourTooltip;
+    const tourNextBtn = document.getElementById('tourNextBtn');
+    const tourSkipBtn = document.getElementById('tourSkipBtn');
 
-    function createTooltip(step) {
-        const existingTooltip = document.querySelector('.tour-tooltip');
-        if (existingTooltip) existingTooltip.remove();
+    function positionTooltip(target, placement) {
+        const targetRect = target.getBoundingClientRect();
+        const tooltipRect = tourTooltip.getBoundingClientRect();
+        let top = 0;
+        let left = 0;
+
+        // Limpa classes anteriores de destaque
+        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        target.classList.add('tour-highlight');
         
-        const targetElement = document.querySelector(step.element);
-        if (!targetElement) return;
+        // Garante que o elemento está visível na tela
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        const tooltip = document.createElement('div');
-        tooltip.classList.add('tour-tooltip');
-        tooltip.innerHTML = `
-            <h4>${step.title}</h4>
-            <p>${step.content}</p>
-            <div>
-                ${tourStep > 0 ? `<button onclick="prevStep()">Anterior</button>` : ''}
-                <button onclick="nextStep()">${tourStep < tourSteps.length - 1 ? 'Próximo' : 'Finalizar'}</button>
-            </div>
-        `;
-
-        document.body.appendChild(tooltip);
-
-        // Adiciona classe de destaque ao elemento
-        targetElement.classList.add('tour-highlight');
-
-        // Posicionamento do Tooltip
-        const rect = targetElement.getBoundingClientRect();
-        
-        // Posicionamento padrão (ajusta conforme a necessidade)
-        let top = 0, left = 0;
-
-        switch (step.position) {
-            case 'top':
-                top = rect.top - tooltip.offsetHeight - 15;
-                left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
+        // Ajusta a posição do tooltip com base no "placement"
+        switch (placement) {
+            case 'bottom':
+                top = targetRect.bottom + 10 + window.scrollY;
+                left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + window.scrollX;
                 break;
             case 'right':
-                top = rect.top + rect.height / 2 - tooltip.offsetHeight / 2;
-                left = rect.right + 15;
+                top = targetRect.top + window.scrollY;
+                left = targetRect.right + 10 + window.scrollX;
                 break;
-            case 'left':
-                top = rect.top + rect.height / 2 - tooltip.offsetHeight / 2;
-                left = rect.left - tooltip.offsetWidth - 15;
+            case 'top':
+                top = targetRect.top - tooltipRect.height - 10 + window.scrollY;
+                left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + window.scrollX;
                 break;
-            case 'bottom':
-            default:
-                top = rect.bottom + 15;
-                left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
-                break;
+            default: // bottom
+                top = targetRect.bottom + 10 + window.scrollY;
+                left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + window.scrollX;
         }
 
-        // Ajustes para bordas da tela
-        if (left < 10) left = 10;
-        if (left + tooltip.offsetWidth > window.innerWidth - 10) {
-             left = window.innerWidth - tooltip.offsetWidth - 10;
+        // Garante que o tooltip não saia da tela horizontalmente
+        if (left < 10 + window.scrollX) {
+            left = 10 + window.scrollX;
+        } else if (left + tooltipRect.width > window.innerWidth - 10 + window.scrollX) {
+            left = window.innerWidth - tooltipRect.width - 10 + window.scrollX;
         }
-        if (top < 10) top = rect.bottom + 15; // Garante que não suba demais
-
-        tooltip.style.top = `${top + window.scrollY}px`;
-        tooltip.style.left = `${left}px`;
         
-        // Força a exibição após o posicionamento
-        setTimeout(() => tooltip.classList.add('active'), 50);
-    }
-    
-    function clearTour() {
-        tourStep = 0;
-        const existingTooltip = document.querySelector('.tour-tooltip');
-        if (existingTooltip) existingTooltip.remove();
-        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        // Garante que o tooltip não saia da tela verticalmente
+        if (top < 10 + window.scrollY) {
+             top = targetRect.bottom + 10 + window.scrollY; // Tenta forçar para baixo
+        }
+
+
+        tourTooltip.style.top = `${top}px`;
+        tourTooltip.style.left = `${left}px`;
+        tourTooltip.classList.add('active');
     }
 
-    function startTour() {
-        if (els.historyCard.style.display !== 'none') {
-            toggleView(false); // Garante que a calculadora está visível
-            setTimeout(() => {
-                tourStep = 0;
-                createTooltip(tourSteps[tourStep]);
-            }, 300); // Dá um tempo para a transição de tela
-        } else {
-            tourStep = 0;
-            createTooltip(tourSteps[tourStep]);
+    function showStep(stepIndex) {
+        if (stepIndex >= tourSteps.length) {
+            endTour();
+            return;
         }
+
+        const step = tourSteps[stepIndex];
+        const targetElement = document.querySelector(step.target);
+        
+        if (!targetElement) {
+             console.error("Elemento alvo do tutorial não encontrado:", step.target);
+             endTour();
+             return;
+        }
+        
+        tourTooltip.querySelector('h4').textContent = step.title;
+        tourTooltip.querySelector('p').textContent = step.content;
+        
+        tourNextBtn.textContent = (stepIndex === tourSteps.length - 1) ? 'Finalizar' : 'Próximo →';
+        
+        // Se a tela de histórico estiver aberta, fecha antes de posicionar o tooltip
+        if (els.historyCard.style.display !== 'none') {
+            toggleView(false); 
+        }
+
+        // Aguarda a transição de visibilidade da tela principal
+        setTimeout(() => {
+            positionTooltip(targetElement, step.placement);
+        }, 100); 
     }
 
     function nextStep() {
-        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-        if (tourStep < tourSteps.length - 1) {
-            tourStep++;
-            createTooltip(tourSteps[tourStep]);
-        } else {
-            clearTour();
-            showToast('Tutorial finalizado!', 'success', 2000);
+        currentStep++;
+        showStep(currentStep);
+    }
+    
+    function startTour() {
+        if (els.mainCard.style.display === 'none') {
+            showToast("O tutorial só pode ser iniciado na tela da calculadora. Faça login primeiro.", "error", 4000);
+            return;
         }
+        
+        currentStep = 0;
+        showStep(currentStep);
+        tourTooltip.style.display = 'block';
+        localStorage.setItem('ha_tour_completed', 'false'); // Marca o início do tour
     }
 
-    function prevStep() {
+    function endTour() {
+        tourTooltip.classList.remove('active');
+        tourTooltip.style.display = 'none';
         document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-        if (tourStep > 0) {
-            tourStep--;
-            createTooltip(tourSteps[tourStep]);
-        }
+        localStorage.setItem('ha_tour_completed', 'true');
+    }
+
+    function clearTour() {
+        endTour();
     }
     
     // --- LISTENERS ---
-    
-    // Listeners do Login/Registro
+
+    // Login/Registro
     els.loginForm.addEventListener('submit', handleLogin);
-    els.logoutBtn.addEventListener('click', () => {
-        auth.signOut().then(() => {
-            showToast("Você foi desconectado.", "default");
-        }).catch((error) => {
-            showToast("Erro ao desconectar.", "error");
-        });
-    });
+    els.logoutBtn.addEventListener('click', handleLogout);
+    els.toggleToReg.addEventListener('click', (e) => { e.preventDefault(); toggleAuthView(true); });
+    els.toggleToLogin.addEventListener('click', (e) => { e.preventDefault(); toggleAuthView(false); });
     els.registrationForm.addEventListener('submit', handleRegistration);
-    els.toggleToReg.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleAuthView(true);
-    });
-    els.toggleToLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleAuthView(false);
-    });
-    
-    // Listeners da Calculadora/Venda
-    els.calcBtn.addEventListener('click', calculateTotals);
+
+    // Cálculo
+    els.calcBtn.addEventListener('click', displayResults);
     els.resetBtn.addEventListener('click', clearAllFields);
     els.registerBtn.addEventListener('click', registerVenda);
-    els.csvBtn.addEventListener('click', exportCSV);
-    els.discordBtnCalc.addEventListener('click', copyDiscordMessageCalc);
     
-    // Listeners do Histórico
-    els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
+    // Histórico e Exportação
+    els.toggleHistoryBtn.addEventListener('click', () => toggleView(els.historyCard.style.display === 'none'));
     els.toggleCalcBtn.addEventListener('click', () => toggleView(false));
     els.clearHistoryBtn.addEventListener('click', clearHistory);
-    els.filtroHistorico.addEventListener('input', (e) => renderHistorico(e.target.value));
+    els.csvBtn.addEventListener('click', exportToCsv);
+    els.filtroHistorico.addEventListener('input', renderHistorico);
+    
+    // Discord
+    els.discordBtnCalc.addEventListener('click', () => generateDiscordMessage(false));
 
-    // Listeners da UI
+    // Tutorial
+    tourNextBtn.addEventListener('click', nextStep);
+    tourSkipBtn.addEventListener('click', endTour);
+    
+    // Tema
     els.themeBtn.addEventListener('click', toggleTheme);
     
     // Listener de tutorial
@@ -1994,7 +2027,7 @@ body.dark #historyBackground {
         if (vendaEmEdicaoId) {
             vendaEmEdicaoId = null;
             els.registerBtn.textContent = 'Registrar Venda';
-            clearAllFields();
+            clearAllFields(true); // Usa true para não mostrar o toast duplo
             showToast("Edição pendente cancelada.", "error", 2000);
         }
         
@@ -2018,17 +2051,15 @@ body.dark #historyBackground {
         els.themeBtn.textContent = savedTheme === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Noturno';
         els.appLogo.src = savedTheme === 'dark' ? logoDarkModeSrc : logoLightModeSrc;
     } else {
-        // Se não houver tema salvo, define o padrão
+         // Aplica o tema padrão e garante a logo correta
         document.body.classList.add('light');
-        els.themeBtn.textContent = '🌙 Modo Noturno';
         els.appLogo.src = logoLightModeSrc;
+        els.themeBtn.textContent = '🌙 Modo Noturno';
     }
     
-    // Define a data atual no campo
-    els.dataVenda.value = new Date().toLocaleDateString('pt-BR');
-    
-    // Inicia a autenticação (será substituído pelo onAuthStateChanged)
-    // showLoginScreen(); 
-  </script>
+    // Redireciona o usuário para o login se não estiver logado
+    auth.currentUser ? showMainApp() : showLoginScreen();
+
+</script>
 </body>
 </html>
