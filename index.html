@@ -526,19 +526,23 @@
   <div id="toast-container"></div>
   
   <script>
-    // ========================================================================
-    // === CONFIGURAÇÃO FIREBASE E AUTENTICAÇÃO (Obrigatoriamente) ===
-    // *** AS CHAVES ABAIXO SÃO DO SEU PROJETO hells-angels-438c2 ***
-    // ========================================================================
-    
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc", 
-      authDomain: "hells-angels-438c2.firebaseapp.com", 
-      projectId: "hells-angels-438c2", 
-      storageBucket: "hells-angels-438c2.firebasestorage.app", 
-      messagingSenderId: "429406215315", 
-      appId: "1:429406215315:web:b9a153138589ba52308166" 
-    };
+  // ========================================================================
+// === CONFIGURAÇÃO FIREBASE E AUTENTICAÇÃO (Obrigatoriamente) ===
+// ========================================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc", 
+  authDomain: "hells-angels-438c2.firebaseapp.com", 
+  projectId: "hells-angels-438c2", 
+  storageBucket: "hells-angels-438c2.firebasestorage.app", 
+  messagingSenderId: "429406215315", 
+  appId: "1:429406215315:web:b9a153138589ba52308166" 
+};
+
+let firebaseApp;
+let auth;
+let db;
+// ...
 
     let firebaseApp;
     let auth;
