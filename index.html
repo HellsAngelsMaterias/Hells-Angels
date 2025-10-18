@@ -539,10 +539,7 @@ const firebaseConfig = {
   appId: "1:429406215315:web:b9a153138589ba52308166" 
 };
 
-let firebaseApp;
-let auth;
-let db;
-// ...
+// ... (Declarações duplicadas de firebaseApp, auth, db removidas aqui)
 
     let firebaseApp;
     let auth;
@@ -988,11 +985,12 @@ let db;
     
     async function clearHistory() {
         if (!globalUser) return;
-        if(confirm('Tem certeza que deseja limpar **TODO** o Histórico de Vendas? Esta ação não pode ser desfeita.')) {
-            showToast("Iniciando limpeza do histórico. Aguarde...", "default", 5000);
+        if(confirm('Tem certeza que deseja limpar **SUAS** Vendas? Esta ação não pode ser desfeita.')) {
+            showToast("Iniciando limpeza das suas vendas. Aguarde...", "default", 5000);
             try {
                 // Remove até 500 documentos de uma vez
-                const vendasRef = db.collection("vendas").limit(500);
+                // FILTRO ADICIONADO: Apenas as vendas do usuário logado serão apagadas
+                const vendasRef = db.collection("vendas").where("userId", "==", globalUser.uid).limit(500);
                 
                 const deleteBatch = (query) => {
                     return query.get().then(snapshot => {
@@ -1011,7 +1009,7 @@ let db;
                 };
 
                 await deleteBatch(vendasRef);
-                showToast("Histórico de vendas completamente apagado!", "success");
+                showToast("Suas vendas foram apagadas com sucesso!", "success");
             } catch (error) {
                 console.error("Erro ao limpar histórico:", error);
                 showToast("Erro ao limpar histórico. Verifique as Regras de Segurança do Firestore.", "error");
