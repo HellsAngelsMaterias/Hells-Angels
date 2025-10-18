@@ -1975,27 +1975,21 @@ ${materialsList.join('\n')}
         // Ex: "(055) 123-456" -> "055123456"
         let digits = value.replace(/\D/g, ''); 
         
-        // 2. Remove o "055" inicial se o usuário o digitou ou se ele está vindo do campo.
-        // Isso garante que apenas os 6 dígitos variáveis do usuário sejam considerados.
-        // Se digits = "055123456", queremos digits = "123456"
-        // Se digits = "123456", queremos digits = "123456"
-        if (digits.startsWith('055') && digits.length > 3) {
-            digits = digits.substring(3);
-        }
-        
-        // 3. Limita a 6 dígitos (para o formato XXX-XXX)
+        // 2. Garante que só os 6 dígitos variáveis são usados
+        // Se o usuário tentar digitar mais, ele ignora.
         digits = digits.substring(0, 6); 
         
-        // 4. Aplica a máscara: (055) XXX-XXX (total de 13 caracteres)
+        // 3. Aplica a máscara: (055) XXX-XXX (total de 13 caracteres)
         let formatted = '(055)';
         
-        // Adiciona o primeiro grupo de 3 dígitos
+        // Adiciona o primeiro grupo de 3 dígitos (XXX)
         if (digits.length > 0) {
             formatted += ' ' + digits.substring(0, 3);
         }
         
-        // Adiciona o traço e o segundo grupo de 3 dígitos
+        // Adiciona o traço e o segundo grupo de 3 dígitos (-XXX)
         if (digits.length > 3) {
+            // Adiciona o traço automaticamente
             formatted += '-' + digits.substring(3, 6);
         }
 
