@@ -92,7 +92,7 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     
-    body.dark .login-container input[type=text], body.dark .login-container input[type=password] {
+    body.dark .login-container input[type=text], body.dark input[type=password] {
       background: #33001f;
       color: var(--cor-texto);
       border: 1px solid var(--cor-borda);
@@ -353,7 +353,8 @@
     display: table;
     border-collapse: collapse;
     table-layout: fixed; /* ajuda a manter colunas alinhadas */
-    min-width: 900px; /* força scroll em telas pequenas mantendo alinhamento */
+    /* AUMENTADO: Largura mínima da tabela para melhor visualização */
+    min-width: 1100px; 
 }
 
 /* Estilo base para células */
@@ -363,24 +364,26 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
+    /* AUMENTADO: Tamanho da fonte para melhor leitura */
+    font-size: 14px; 
 }
 
 /* Definição de larguras e alinhamentos por coluna - ajustáveis conforme necessidade */
-#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 90px; text-align: center; } /* Data/Hora */
-#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 160px; text-align: left; }   /* Cliente */
-#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; text-align: center; } /* Organização/Tipo */
-#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; text-align: center; } /* Telefone */
-#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; text-align: left; }   /* Produtos */
-#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 140px; text-align: center; } /* Valor */
+#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; text-align: center; } /* Data/Hora - Aumentado */
+#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 150px; text-align: left; }   /* Cliente - Aumentado */
+#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 150px; text-align: center; } /* Organização/Tipo */
+#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 120px; text-align: center; } /* Telefone - Aumentado */
+#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 300px; text-align: left; }   /* Produtos - Aumentado */
+#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 160px; text-align: center; } /* Valor - Aumentado */
 #historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 140px; text-align: center; } /* Negociadoras */
 #historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; text-align: center; } /* Ações */
+
 
 /* Ajuste para a linha de data/hora (duas linhas dentro da mesma célula) */
 .history-datetime-line {
     display: block;
     line-height: 1.1;
-    font-size: 12px;
+    font-size: 13px; /* Aumentado */
 }
 
 /* Faz com que valores longos quebrem visualmente melhor em células menores quando necessário */
@@ -472,7 +475,8 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border: 1px solid var(--cor-borda);
       margin-bottom: 20px;
-      min-height: 400px; 
+      /* ALTERADO AQUI: Aumentado o min-height para mais espaço */
+      min-height: 600px; 
       overflow: hidden;
     }
     
@@ -651,7 +655,8 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 900px;
+    /* ALTERADO AQUI: Mantido em 1100px para acomodar melhor as colunas */
+    min-width: 1100px; 
     background: transparent; 
 }
 
@@ -660,7 +665,8 @@
     text-align: center;
     vertical-align: middle;
     white-space: nowrap;
-    font-size: 14px; 
+    /* ALTERADO AQUI: Tamanho da fonte para melhor leitura */
+    font-size: 15px; 
     border-bottom: 1px solid var(--cor-borda);
 }
 
@@ -677,20 +683,21 @@ body.dark #historyCard td {
 
 
 /* Alinhamento individual por coluna - larguras ajustadas */
-#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }   /* Data/Hora - Aumentado */
-#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 140px; }  /* Cliente - Aumentado */
+/* ALTERADO AQUI: Reajustando larguras para 1100px total e melhor leitura */
+#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }   /* Data/Hora */
+#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 160px; }  /* Cliente - Aumentado */
 #historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; }  /* Organização */
-#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; }  /* Telefone */
-#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }  /* Produtos - Aumentado */
-#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }  /* Valor - Aumentado */
-#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }  /* Negociadoras */
+#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 120px; }  /* Telefone */
+#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }  /* Produtos */
+#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 140px; }  /* Valor */
+#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 140px; }  /* Negociadoras */
 #historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; }  /* Ações */
 
 /* Data e hora */
 .history-datetime-line {
     display: block;
     line-height: 1.2; 
-    font-size: 13px; 
+    font-size: 14px; /* Aumentado */
 }
 
 /* Valor Total - tornando o valor em negrito */
@@ -699,7 +706,7 @@ body.dark #historyCard td {
 }
 
 .valor-obs-text {
-    font-size: 12px; /* Aumentado */
+    font-size: 13px; /* Aumentado */
     color: var(--cor-principal);
 }
 
@@ -720,7 +727,7 @@ body.dark #historyCard td {
 
 /* Aumenta altura total da linha */
 #historyCard tr {
-    height: 40px;
+    height: 45px; /* Aumentado um pouco */
 }
 
 /* NOVO: Estilo para o cabeçalho TH */
