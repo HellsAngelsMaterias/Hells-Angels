@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  
+  <link rel="icon" type="image/png" href="logo-dark.png">
+  
+  <title>Hells Angels - Login</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  
+  <style>
+    :root {
+      --cor-fundo: #fff0f6;
+      --cor-texto: #4a0033;
+      --cor-principal: #e60073;
+      --cor-card: #ffffff;
+      --cor-borda: #ffb3d9;
+      --cor-btn-primario: #e60073;
+      --cor-btn-texto: #fff;
+      --cor-btn-secundario: #ffd6eb;
+      --cor-btn-secundario-texto: #4a0033;
+      --cor-erro: #cc0000;
+      --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
+    }
+
+    body.dark {
+      --cor-fundo: #1a000d; 
+      --cor-texto: #ffccf0; 
+      --cor-principal: #ff0080; 
+      --cor-card: #2c001a; 
+      --cor-borda: #e60073; 
+      --cor-btn-primario: #ff0080; 
+      --cor-btn-texto: #fff;
+      --cor-btn-secundario: #4d002a; 
+      --cor-btn-secundario-texto: #ffccf0; 
+      --cor-glow-pulsante: rgba(255, 0, 128, 0.6);
+    }
+    
+    body.dark input[type=number], body.dark input[type=text], body.dark select, body.dark input[type=password] {
+      background: #33001f;
+      color: var(--cor-texto);
+      border: 1px solid var(--cor-borda);
+    }
+    
+    #logoLink {
+        position: fixed;
+        top: 16px; 
+        left: 16px; 
+        width: auto; 
+        max-height: 80px; 
+        cursor: pointer;
+        z-index: 9998; 
+    }
+    
+    .app-logo {
+      max-height: 80px; 
+      width: auto;
+      transition: opacity 0.3s ease, filter 0.3s ease;
+      display: block; 
+    }
+    
+    #appLogo:hover {
+        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante));
+        opacity: 0.9;
+    }
+
+    #authLogo {
+      max-width: 80%;
+      max-height: 120px; 
+      margin-bottom: 25px;
+      display: block;
+    }
+    
+    #authScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--cor-card);
+      z-index: 10000; 
+      display: none; 
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center;
+      text-align: center;
+      transition: opacity 0.5s ease;
+      padding: 20px; 
+      box-sizing: border-box; 
+    }
+    
+    #authScreen.show {
+        display: flex; 
+    }
+
+    #authScreen.hidden {
+      opacity: 0;
+      pointer-events: none; 
+    }
+    
+    #authScreen h2 {
+      font-size: 36px;
+      margin-top: 10px; 
+      margin-bottom: 20px;
+      color: var(--cor-principal);
+      font-weight: 900;
+    }
+    
+    .auth-input {
+        width: 80%;
+        max-width: 300px;
+        margin: 8px 0;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid var(--cor-borda);
+    }
+    
+    #authError {
+        color: var(--cor-erro);
+        font-weight: 600;
+        margin-top: 10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 20px;
+      background: var(--cor-fundo);
+      color: var(--cor-texto);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+    
+    #mainCard {
+        display: none; 
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--cor-principal);
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--cor-principal);
+    }
+    
+    /* Outros estilos CSS necessários */
+    
+    .card {
+        background-color: var(--cor-card);
+        border: 1px solid var(--cor-borda);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        transition: background-color 0.25s, border-color 0.25s;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+        color: var(--cor-texto);
+    }
+
+    input[type="number"], input[type="text"], select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid var(--cor-borda);
+        border-radius: 4px;
+        box-sizing: border-box;
+        background-color: var(--cor-fundo);
+        color: var(--cor-texto);
+        transition: border-color 0.25s, background-color 0.25s;
+    }
+    
+    button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s, opacity 0.2s;
+        margin-right: 10px;
+        color: var(--cor-btn-texto);
+    }
+    
+    button.primary {
+        background-color: var(--cor-btn-primario);
+    }
+    button.primary:hover {
+        opacity: 0.9;
+    }
+
+    button.muted {
+        background-color: var(--cor-btn-secundario);
+        color: var(--cor-btn-secundario-texto);
+    }
+    button.muted:hover {
+        background-color: var(--cor-borda);
+    }
+    
+    button.success {
+        background-color: #00b300; 
+        color: #fff;
+    }
+    
+    button.error {
+        background-color: var(--cor-erro);
+        color: #fff;
+    }
+    
+    .actions {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    .grid-venda {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--cor-borda);
+    }
+    th {
+        background-color: var(--cor-btn-secundario);
+        color: var(--cor-btn-secundario-texto);
+        font-weight: 700;
+    }
+    .history-table-wrapper {
+        overflow-x: auto;
+    }
+    
+    .history-datetime-line {
+        display: block;
+        font-size: 0.8em;
+        line-height: 1.2;
+    }
+    
+    .valor-obs-text {
+        font-size: 0.8em;
+        display: block;
+    }
+    
+    /* TOAST STYLES */
+    #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 100000;
+    }
+    .toast {
+        background-color: #333;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-top: 10px;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        transform: translateY(10px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .toast.error { background-color: var(--cor-erro); }
+    .toast.success { background-color: var(--cor-principal); }
+    
+    /* CONTROLS */
+    .top-right-controls {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        gap: 10px;
+        z-index: 9999;
+    }
+    
+    #logoutBtn {
+        background: var(--cor-erro); 
+        color: var(--cor-btn-texto);
+        display: none; 
+    }
+    
+    /* Tour */
+    .tour-tooltip {
+        position: absolute;
+        max-width: 300px;
+        background: var(--cor-card);
+        color: var(--cor-texto);
+        border: 2px solid var(--cor-principal);
+        padding: 15px;
+        border-radius: 8px;
+        z-index: 10001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .tour-highlight {
+        box-shadow: 0 0 0 5px var(--cor-glow-pulsante), 0 0 0 10000px rgba(0, 0, 0, 0.4);
+        position: relative;
+        z-index: 10002;
+        border-radius: 4px;
+    }
+    .tour-tooltip h4 {
+        margin-top: 0;
+        color: var(--cor-principal);
+    }
+    
+    /* Adaptação móvel */
+    @media (max-width: 768px) {
+        .grid-venda {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    </style>
+</head>
+<body class="light">
+  
+  <a href="#" id="logoLink" style="display:none;"> 
+    <img id="appLogo" src="logo-dark.png" alt="Hells Angels Logo" class="app-logo">
+  </a>
+  
+  <div id="authScreen" class="show"> 
+      <img id="authLogo" src="logo-dark.png" alt="Auth Logo"> 
+      <h2>Acesso Hells Angels</h2>
+      
+      <input type="text" id="usernameInput" class="auth-input" placeholder="Nome de Usuário">
+      <input type="password" id="passwordInput" class="auth-input" placeholder="Senha">
+      
+      <button id="loginBtn" class="primary" style="margin-top: 10px; padding: 10px 30px;">Entrar</button>
+      <button id="registerAuthBtn" class="muted" style="margin-top: 10px; padding: 10px 30px;">Criar Nova Conta</button>
+      
+      <p id="authError"></p>
+  </div>
+  
+  <div class="top-right-controls">
+      <button class="control-btn" id="logoutBtn">🚪 Logout</button>
+      <button class="control-btn" id="tutorialBtn" style="display:none;">💡 Tutorial</button>
+      <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
+  </div>
+  
+  <div class="card" id="mainCard" style="display:none;">
+    <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+    
+    <div class="card-venda">
+        <h2>Dados da Venda</h2>
+        <div class="grid grid-venda">
+            <div>
+                <label for="nomeCliente">Nome:</label>
+                <input id="nomeCliente" type="text" value="">
+            </div>
+            <div>
+                <label for="dataVenda">Data:</label>
+                <input id="dataVenda" type="text" readonly> 
+            </div>
+            
+            <div>
+                <label for="organizacao">Organização:</label>
+                <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
+                
+                <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
+                
+                <datalist id="sugestoesOrganizacao">
+                    <option value="Serpents"></option>
+                    <option value="Nox"></option>
+                    <option value="NKT"></option>
+                    <option value="Ruptura"></option>
+                    <option value="Midnight"></option>
+                    <option value="Meraki"></option>
+                    <option value="Lotus"></option>
+                    <option value="Hydra"></option>
+                    <option value="Hooligans"></option>
+                    <option value="Families"></option>
+                    <option value="Cartel"></option>
+                    <option value="Blood Street"></option>
+                    <option value="Blood Reapers"></option>
+                    <option value="Blue Diamond"></option>
+                    <option value="Black Heart"></option>
+                    <option value="Ballas"></option>
+                    <option value="Aura"></option>
+                    <option value="Anarquia"></option>
+                    <option value="8 Anjo"></option>
+                    <option value="Vagos"></option>
+                    <option value="Vertice"></option>
+                    <option value="Void"></option>
+                    <option value="Solo"></option>
+                </datalist>
+            </div>
+            <div>
+                <label for="organizacaoTipo">Opção (CNPJ/CPF):</label>
+                <select id="organizacaoTipo">
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="CPF">CPF</option>
+                    <option value="OUTROS">Outros</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="telefone">Telefone:</label>
+                <input id="telefone" type="text" value="" maxlength="13"> 
+            </div>
+            
+            <div>
+                <label for="negociadoras">Negociadoras:</label>
+                <input id="negociadoras" type="text" value="">
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <label for="vendaValorObs">Valor - Observação (Como foi o pagamento):</label>
+                <input id="vendaValorObs" type="text" value="">
+            </div>
+        </div>
+    </div>
+    
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--cor-borda);">
+
+    <h2>Cálculo de Produtos</h2>
+    <p class="small">Informe quantos produtos deseja fabricar/vender e escolha o tipo de valor.</p>
+
+    <div class="grid">
+      <div>
+        <label for="qtyTickets">Quantidade de Tickets</label>
+        <input id="qtyTickets" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="qtyTablets">Quantidade de Tablets</label>
+        <input id="qtyTablets" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="qtyNitro">Quantidade de Nitro</label>
+        <input id="qtyNitro" type="number" min="0" value="">
+      </div>
+      <div>
+        <label for="tipoValor">Tipo de Valor</label>
+        <select id="tipoValor">
+          <option value="limpo">Dinheiro Limpo</option>
+          <option value="sujo">Dinheiro Sujo</option>
+          <option value="limpo_alianca">Limpo (Aliança)</option>
+          <option value="sujo_alianca">Sujo (Aliança)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="calcBtn" class="primary">Calcular</button>
+      <button id="resetBtn" class="muted">Limpar Campos</button>
+      <button id="registerBtn" class="success">Registrar Venda</button>
+      <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
+      <button id="csvBtn" class="muted">Exportar CSV</button>
+      <button id="discordBtnCalc" class="muted">Discord</button> 
+    </div>
+
+    <div id="resultsContainer">
+      <div id="results" style="margin-top:16px;display:none">
+        <h3>Totais necessários</h3>
+        <table>
+          <thead><tr><th>Material</th><th>Quantidade total</th></tr></thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+
+        <h3>Valores Estimados</h3>
+        <table>
+          <thead><tr><th>Produto</th><th>Valor Total</th></tr></thead>
+          <tbody id="valuesBody"></tbody>
+          <tfoot>
+            <tr><th>Total Geral</th><th id="valorTotalGeral">R$ 0</th></tr>
+          </tfoot>
+        </table>
+        <p class="result-note" style="font-size: 12px; margin-top: 8px;">Os valores variam conforme o tipo selecionado (limpo, sujo, aliança).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none">
+      <div id="historyBackground" class="card">
+        <h2>Histórico de Vendas Registradas</h2>
+        <img id="historyImg" src="logo-dark.png" alt="Fundo Histórico"> 
+        
+        <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico (Nome, Data, Item, etc.)" style="margin-bottom: 10px; width: 100%;">
+        
+        <div class="actions">
+          <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
+          <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
+        </div>
+        <div class="history-table-wrapper"><table id="historicoVendas">
+          <thead>
+              <tr>
+                  <th>Data/Hora</th>
+                  <th>Cliente</th>
+                  <th>Organização/Tipo</th>
+                  <th>Telefone</th>
+                  <th>Produtos (Unidade)</th>
+                  <th>Valor Total</th>
+                  <th>Negociadoras</th>
+                  <th>Ações</th> 
+              </tr>
+          </thead>
+          <tbody id="salesHistory"></tbody>
+        </table></div>
+      </div>
+  </div>
+  
+  <div id="toast-container"></div>
+  
+  <script>
+    // ========================================================================
+    // === CONFIGURAÇÃO FIREBASE E AUTENTICAÇÃO (Obrigatoriamente) ===
+    // *** AS CHAVES ABAIXO SÃO DO SEU PROJETO hells-angels-438c2 ***
+    // ========================================================================
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc", 
+      authDomain: "hells-angels-438c2.firebaseapp.com", 
+      projectId: "hells-angels-438c2", 
+      storageBucket: "hells-angels-438c2.firebasestorage.app", 
+      messagingSenderId: "429406215315", 
+      appId: "1:429406215315:web:b9a153138589ba52308166" 
+    };
+
+    let firebaseApp;
+    let auth;
+    let db;
+    let globalUser = null;
+
+    try {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        auth = firebaseApp.auth();
+        db = firebaseApp.firestore();
+    } catch (e) {
+        console.error("Erro ao inicializar Firebase. Verifique sua configuração.", e);
+        // showToast("Erro de configuração: Verifique o console.", "error", 5000); // Não mostrar no início para não assustar
+    }
+    
+    const FAKE_EMAIL_DOMAIN = '@hells-angels.com'; // Domínio para o truque de Username/Senha
+    
+    const els = {
+      // (Campos e Botões da Calculadora Mantidos)
+      qtyTickets: document.getElementById('qtyTickets'),
+      qtyTablets: document.getElementById('qtyTablets'),
+      qtyNitro: document.getElementById('qtyNitro'),
+      tipoValor: document.getElementById('tipoValor'),
+      nomeCliente: document.getElementById('nomeCliente'),
+      dataVenda: document.getElementById('dataVenda'),
+      organizacaoTipo: document.getElementById('organizacaoTipo'),
+      organizacao: document.getElementById('organizacao'),
+      telefone: document.getElementById('telefone'),
+      negociadoras: document.getElementById('negociadoras'),
+      vendaValorObs: document.getElementById('vendaValorObs'),
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      csvBtn: document.getElementById('csvBtn'),
+      registerBtn: document.getElementById('registerBtn'),
+      discordBtnCalc: document.getElementById('discordBtnCalc'), 
+      results: document.getElementById('results'),
+      resultsBody: document.getElementById('resultsBody'),
+      valuesBody: document.getElementById('valuesBody'),
+      valorTotalGeral: document.getElementById('valorTotalGeral'),
+      salesHistory: document.getElementById('salesHistory'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      filtroHistorico: document.getElementById('filtroHistorico'), 
+      themeBtn: document.getElementById('themeBtn'),
+      tutorialBtn: document.getElementById('tutorialBtn'), 
+      mainCard: document.getElementById('mainCard'), 
+      historyCard: document.getElementById('historyCard'), 
+      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), 
+      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+      appLogo: document.getElementById('appLogo'), 
+      logoLink: document.getElementById('logoLink'), 
+      
+      // NOVO: Elementos da tela de Login
+      authScreen: document.getElementById('authScreen'),
+      authLogo: document.getElementById('authLogo'), 
+      usernameInput: document.getElementById('usernameInput'),
+      passwordInput: document.getElementById('passwordInput'),
+      loginBtn: document.getElementById('loginBtn'),
+      registerAuthBtn: document.getElementById('registerAuthBtn'),
+      authError: document.getElementById('authError'),
+      logoutBtn: document.getElementById('logoutBtn')
+    };
+    
+    let unsubscribeFirestore = null; 
+    let vendas = []; 
+    let vendaEmEdicaoId = null; 
+
+    // O restante das constantes e a função showToast (MANTIDAS)
+    const perUnit = {
+      tickets: { moneyBruto: 525 },
+      tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
+      nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 }
+    };
+
+    const valores = {
+      tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 },
+      tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo_alianca: 10000 },
+      nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 }
+    };
+    
+    const valorDescricao = {
+        'limpo': 'Dinheiro Limpo',
+        'sujo': 'Dinheiro Sujo',
+        'limpo_alianca': 'Limpo (Aliança)',
+        'sujo_alianca': 'Sujo (Aliança)'
+    };
+    
+    // Funções de formatação e utilidade
+    function showToast(message, type = 'default', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return; 
+
+        const toast = document.createElement('div');
+        toast.classList.add('toast');
+        if (type) {
+            toast.classList.add(type);
+        }
+        toast.textContent = message;
+        
+        container.appendChild(toast);
+        
+        void toast.offsetWidth; 
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 300); 
+        }, duration);
+    }
+    
+    function formatNome(key){return key.replace(/_/g,' ').replace(/(^|\s)\S/g,s=>s.toUpperCase());}
+    function numberWithCommas(x){return (Number(x)||0).toLocaleString('pt-BR');}
+
+    function capitalizeWords(event) {
+        let input = event.target;
+        let value = input.value;
+        if (!value) return;
+
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        
+        let formattedValue = value.toLowerCase().replace(/(^|\s)\S/g, (match) => {
+            return match.toUpperCase();
+        });
+
+        input.value = formattedValue;
+        input.setSelectionRange(start, end);
+    }
+    
+    function formatarTelefone(event) {
+        let input = event.target;
+        let value = input.value.replace(/\D/g, ""); 
+        
+        const prefixo = "055"; 
+        
+        if (value.startsWith(prefixo)) {
+            value = value.substring(3);
+        }
+        
+        value = value.substring(0, 6); 
+        
+        let formattedValue = '';
+
+        formattedValue += `(${prefixo}) `;
+
+        if (value.length > 0) {
+            formattedValue += value.substring(0, 3);
+        }
+        if (value.length > 3) {
+            formattedValue += '-' + value.substring(3, 6);
+        }
+
+        input.value = formattedValue;
+        input.maxLength = 13; 
+    }
+
+    function updateDateTime() {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        
+        const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); 
+        
+        els.dataVenda.value = `${day}/${month} ${hora}`; 
+    }
+    
+    setInterval(updateDateTime, 60000); 
+
+    updateDateTime(); 
+    
+    function toggleView(showHistory) {
+        if (showHistory) {
+            els.mainCard.style.display = 'none';
+            els.historyCard.style.display = 'block';
+            renderHistorico(els.filtroHistorico.value); 
+        } else {
+            els.mainCard.style.display = 'block';
+            els.historyCard.style.display = 'none';
+        }
+        
+        clearTour();
+    }
+    
+    function clearAllFields() {
+        els.qtyTickets.value = '';
+        els.qtyTablets.value = '';
+        els.qtyNitro.value = '';
+        els.tipoValor.value = 'limpo';
+        
+        els.nomeCliente.value = '';
+        els.organizacaoTipo.value = 'CNPJ';
+        els.organizacao.value = '';
+        els.telefone.value = ''; 
+        els.negociadoras.value = '';
+        els.vendaValorObs.value = '';
+        
+        els.results.style.display='none';
+        updateDateTime(); 
+        
+        clearValidationErrors(); 
+        clearTour();
+        
+        vendaEmEdicaoId = null;
+        els.registerBtn.textContent = 'Registrar Venda';
+    }
+
+    function calculateTotals() {
+      const qTickets = Math.max(0, Math.floor(Number(els.qtyTickets.value) || 0));
+      const qTablets = Math.max(0, Math.floor(Number(els.qtyTablets.value) || 0));
+      const qNitro = Math.max(0, Math.floor(Number(els.qtyNitro.value) || 0));
+      const tipo = els.tipoValor.value;
+
+      const totals = {};
+      totals['Dinheiro Sujo (R$)'] = qTickets * perUnit.tickets.moneyBruto; 
+
+      for (const [mat, qtd] of Object.entries(perUnit.tablets)) {
+        totals[formatNome(mat)] = (totals[formatNome(mat)] || 0) + qtd * qTablets;
+      }
+      for (const [mat, qtd] of Object.entries(perUnit.nitro)) {
+        totals[formatNome(mat)] = (totals[formatNome(mat)] || 0) + qtd * qNitro;
+      }
+
+      const valoresTotais = {};
+      valoresTotais['Tickets'] = (valores.tickets?.[tipo] || 0) * qTickets;
+      valoresTotais['Tablets'] = (valores.tablets?.[tipo] || 0) * qTablets;
+      valoresTotais['Nitro'] = (valores.nitro?.[tipo] || 0) * qNitro;
+
+      const valorTotalGeral = Object.values(valoresTotais).reduce((a,b)=>a+b,0);
+
+      return { totals, valoresTotais, valorTotalGeral, qTickets, qTablets, qNitro, tipo };
+    }
+
+    function renderResults(data) {
+      const { totals, valoresTotais, valorTotalGeral } = data;
+      els.resultsBody.innerHTML = '';
+      els.valuesBody.innerHTML = '';
+
+      const keys = Object.keys(totals);
+      keys.sort((a,b)=> (a.startsWith('D') ? -1 : a.localeCompare(b))); 
+
+      for (const k of keys) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${k}</td><td>${numberWithCommas(totals[k])}</td>`;
+        els.resultsBody.appendChild(tr);
+      }
+
+      for (const [produto, valor] of Object.entries(valoresTotais)) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${produto}</td><td>R$ ${numberWithCommas(valor)}</td>`;
+        els.valuesBody.appendChild(tr);
+      }
+
+      els.valorTotalGeral.textContent = `R$ ${numberWithCommas(valorTotalGeral)}`;
+      els.results.style.display = 'block';
+    }
+    
+    function clearValidationErrors() {
+        const requiredFields = [els.nomeCliente, els.organizacao, els.telefone, els.negociadoras];
+        requiredFields.forEach(field => {
+            field.classList.remove('input-invalido');
+        });
+    }
+
+    function validateFields() {
+        clearValidationErrors(); 
+        let isValid = true;
+        
+        let requiredFields = [els.nomeCliente, els.telefone, els.negociadoras];
+        
+        if (els.organizacaoTipo.value === 'CNPJ') {
+            requiredFields.push(els.organizacao);
+        }
+
+        requiredFields.forEach(field => {
+            if (field.value.trim() === '' || field.value.trim().toLowerCase() === 'n/a' || field.value.trim() === '(055)') {
+                field.classList.add('input-invalido');
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            showToast("Preencha todos os campos obrigatórios em vermelho.", "error");
+        }
+        
+        return isValid;
+    }
+    
+    // --- FUNÇÕES FIREBASE: REGISTRAR, ATUALIZAR, APAGAR ---
+    
+    async function registerSale() {
+        if (!globalUser) {
+            showToast("Você precisa estar logado para registrar.", "error");
+            return;
+        }
+        if (!validateFields()) {
+            return; 
+        }
+        
+        const data = calculateTotals();
+        const { valorTotalGeral, qTickets, qTablets, qNitro, tipo } = data;
+        
+        if (valorTotalGeral <= 0 && qTickets === 0 && qTablets === 0 && qNitro === 0) {
+            showToast("O valor total da venda deve ser maior que R$ 0 ou ter produtos para registrar.", "error");
+            return;
+        }
+
+        const nome = els.nomeCliente.value.trim() || 'N/A';
+        const tipoOrg = els.organizacaoTipo.value; 
+        const org = els.organizacao.value.trim() || 'N/A';
+        const tel = els.telefone.value.trim() || 'N/A';
+        const negociadoras = els.negociadoras.value.trim() || 'N/A';
+        let valorObs = els.vendaValorObs.value.trim() || 'N/A';
+        
+        let descTipo = '';
+        if (tipo !== 'limpo' && tipo !== 'limpo_alianca') {
+            descTipo = valorDescricao[tipo] || '';
+        }
+        
+        if (descTipo && valorObs.toLowerCase() !== 'n/a') {
+            valorObs = `${descTipo} | ${valorObs}`;
+        } else if (descTipo) {
+            valorObs = descTipo;
+        } else if (valorObs.toLowerCase() === 'n/a') {
+            valorObs = 'N/A';
+        }
+
+        
+        const dataHoraVenda = els.dataVenda.value; 
+
+        const produtos = [];
+        if(qTablets>0) produtos.push(`Tablet (${qTablets})`);
+        if(qNitro>0) produtos.push(`Nitros (${qNitro})`);
+        if(qTickets>0) produtos.push(`Tickets (${qTickets})`);
+        
+        const produtosStr = produtos.length > 0 ? produtos.join(', ') : 'Nenhum Produto';
+        
+        const newSaleData = {
+            dataHora: dataHoraVenda, 
+            cliente: nome,
+            organizacao: `${tipoOrg} - ${org}`,
+            telefone: tel,
+            produtos: produtosStr,
+            valor: data.valorTotalGeral, 
+            valorObs: valorObs,
+            negociadoras: negociadoras,
+            qTickets: qTickets, 
+            qTablets: qTablets,
+            qNitro: qNitro,
+            tipo: tipo,
+            userId: globalUser.uid,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        try {
+            if (vendaEmEdicaoId) {
+                await db.collection("vendas").doc(vendaEmEdicaoId).update(newSaleData);
+                showToast("Edição salva com sucesso no Histórico Compartilhado!", "success");
+            } else {
+                await db.collection("vendas").add(newSaleData);
+                showToast(`Venda registrada para ${nome} no Histórico Compartilhado!`, "success");
+            }
+            
+            clearAllFields();
+        } catch (error) {
+            console.error("Erro ao registrar/atualizar venda:", error);
+            showToast("Erro ao salvar a venda. Tente novamente.", "error");
+        }
+    }
+    
+    async function deleteVenda(id) {
+        if (!globalUser) return;
+        if (confirm("Tem certeza que deseja apagar este registro de venda?")) {
+            try {
+                await db.collection("vendas").doc(id).delete();
+                showToast("Registro apagado com sucesso!", "error");
+            } catch (error) {
+                console.error("Erro ao apagar venda:", error);
+                showToast("Erro ao apagar a venda. Tente novamente.", "error");
+            }
+        }
+    }
+
+    function editVenda(id) {
+        const venda = vendas.find(v => v.id === id);
+        if (!venda) return;
+        
+        // **Verificação de Propriedade:** Apenas o usuário que criou pode editar/apagar
+        if (venda.userId !== globalUser.uid) {
+            showToast("Você só pode editar suas próprias vendas.", "error");
+            return;
+        }
+
+        els.nomeCliente.value = venda.cliente;
+        const [tipoOrg, nomeOrg] = venda.organizacao.split(' - '); 
+        els.organizacao.value = (nomeOrg && nomeOrg !== 'N/A') ? nomeOrg : ''; 
+        els.organizacaoTipo.value = (tipoOrg && tipoOrg !== 'N/A') ? tipoOrg : 'CNPJ'; 
+        
+        let telParaEdicao = venda.telefone.replace(/\D/g, "");
+        if (telParaEdicao.startsWith('055')) {
+            telParaEdicao = telParaEdicao.substring(3);
+        }
+        
+        const ddd = telParaEdicao.substring(0, 3);
+        const num = telParaEdicao.substring(3, 6);
+        els.telefone.value = `(055) ${ddd}${num ? '-' + num : ''}`.trim(); 
+        
+        els.negociadoras.value = (venda.negociadoras && venda.negociadoras.toLowerCase() !== 'n/a') ? venda.negociadoras : '';
+        
+        let obsPura = venda.valorObs || 'N/A';
+        let tipoEncontrado = 'limpo';
+        
+        for (const [tipoKey, desc] of Object.entries(valorDescricao)) {
+            if (obsPura.includes(desc)) {
+                tipoEncontrado = tipoKey;
+                obsPura = obsPura.replace(desc, '').replace(/\|/g, '').trim();
+                break;
+            }
+        }
+        
+        els.tipoValor.value = tipoEncontrado; 
+        els.vendaValorObs.value = (obsPura && obsPura.toLowerCase() !== 'n/a') ? obsPura : ''; 
+        
+        
+        els.qtyTickets.value = venda.qTickets || '';
+        els.qtyTablets.value = venda.qTablets || '';
+        els.qtyNitro.value = venda.qNitro || '';
+        
+        
+        els.dataVenda.value = venda.dataHora;
+        
+        vendaEmEdicaoId = id; 
+        
+        toggleView(false); 
+        
+        els.registerBtn.textContent = 'Salvar Edição';
+        showToast(`Editando venda de ${venda.cliente}`, "default", 2000);
+        
+        const currentData = calculateTotals();
+        renderResults(currentData); 
+    }
+    
+    async function clearHistory() {
+        if (!globalUser) return;
+        if(confirm('Tem certeza que deseja limpar **TODO** o Histórico de Vendas? Esta ação não pode ser desfeita.')) {
+            showToast("Iniciando limpeza do histórico. Aguarde...", "default", 5000);
+            try {
+                // Remove até 500 documentos de uma vez
+                const vendasRef = db.collection("vendas").limit(500);
+                
+                const deleteBatch = (query) => {
+                    return query.get().then(snapshot => {
+                        if (snapshot.size === 0) return Promise.resolve();
+
+                        const batch = db.batch();
+                        snapshot.docs.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        return batch.commit().then(() => {
+                            if (snapshot.size === 500) return deleteBatch(query);
+                            return Promise.resolve();
+                        });
+                    });
+                };
+
+                await deleteBatch(vendasRef);
+                showToast("Histórico de vendas completamente apagado!", "success");
+            } catch (error) {
+                console.error("Erro ao limpar histórico:", error);
+                showToast("Erro ao limpar histórico. Verifique as Regras de Segurança do Firestore.", "error");
+            }
+        }
+    }
+
+    // --- FUNÇÃO FIREBASE: RENDERIZAR HISTÓRICO COMPARTILHADO ---
+    function renderHistorico(searchTerm = '') {
+        const tbody = els.salesHistory;
+        tbody.innerHTML = '';
+        
+        const termo = searchTerm.toLowerCase().trim();
+        
+        const vendasFiltradas = vendas.filter(venda => {
+            if (!termo) return true; 
+            
+            const content = `${venda.cliente} ${venda.organizacao} ${venda.telefone} ${venda.produtos} ${venda.valor} ${venda.valorObs} ${venda.negociadoras} ${venda.dataHora} ${venda.userId}`.toLowerCase();
+            
+            return content.includes(termo);
+        });
+
+        if (vendasFiltradas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Nenhum registro encontrado.</td></tr>';
+            return;
+        }
+
+        vendasFiltradas.forEach(data => {
+            const isOwner = globalUser && globalUser.uid === data.userId;
+            
+            const [dataStr, horaStr] = data.dataHora.split(' ');
+            const valorBase = `R$ ${numberWithCommas(data.valor)}`;
+            
+            const valorComObs = (data.valorObs && data.valorObs.toLowerCase() !== 'n/a') ? 
+                `<span>${valorBase}</span><span class="valor-obs-text" style="color: var(--cor-principal);">(${data.valorObs})</span>` :
+                `<span>${valorBase}</span>`;
+                
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 0;">
+                    <span class="history-datetime-line">${dataStr}</span>
+                    <span class="history-datetime-line">${horaStr}</span>
+                </td>
+                <td>${data.cliente}</td>
+                <td>${data.organizacao}</td> 
+                <td>${data.telefone}</td>
+                <td>${data.produtos}</td>
+                <td class="valor-total-cell">${valorComObs}</td>
+                <td>${data.negociadoras}</td>
+                
+                <td class="history-actions-cell"> 
+                    <button class="muted action-btn" onclick="copyDiscordFromHistory(this)">Discord</button>
+                    ${isOwner ? 
+                    `<button class="muted action-btn" onclick="editVenda('${data.id}')" style="background-color: #ff9900;">Editar</button>
+                    <button class="error action-btn" onclick="deleteVenda('${data.id}')">Excluir</button>` 
+                    : `<span>Apenas Leitura</span>`}
+                </td>
+            `;
+            
+            tr.saleData = data; 
+            
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- FUNÇÃO FIREBASE: LISTENER DO FIRESTORE (SINCRONIZAÇÃO) ---
+    function setupFirestoreListener() {
+        if (!db) return; // Se o Firebase não inicializou, sai
+
+        if (unsubscribeFirestore) {
+            unsubscribeFirestore();
+        }
+
+        unsubscribeFirestore = db.collection("vendas")
+            .orderBy("timestamp", "desc") 
+            .onSnapshot((snapshot) => {
+                vendas = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    // Converte o Timestamp do Firestore para um formato de data legível
+                    const dataHoraFormatada = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                    
+                    return {
+                        id: doc.id,
+                        ...data,
+                        dataHora: dataHoraFormatada
+                    };
+                });
+                
+                renderHistorico(els.filtroHistorico.value); 
+                console.log("Histórico sincronizado com sucesso.");
+            }, (error) => {
+                console.error("Erro ao sincronizar histórico:", error);
+                showToast("Erro na sincronização do histórico.", "error");
+            });
+    }
+
+    // --- FUNÇÕES FIREBASE: AUTENTICAÇÃO ---
+    
+    function showAuthScreen(showError = false) {
+        els.mainCard.style.display = 'none';
+        els.historyCard.style.display = 'none';
+        els.logoutBtn.style.display = 'none';
+        els.tutorialBtn.style.display = 'none';
+        els.logoLink.style.display = 'none';
+        
+        els.authScreen.classList.remove('hidden');
+        els.authScreen.classList.add('show');
+        els.authScreen.style.display = 'flex';
+        
+        if (!showError) {
+            els.authError.textContent = '';
+        }
+        
+        els.usernameInput.focus();
+    }
+    
+    function showAppScreen() {
+        els.authScreen.classList.add('hidden');
+        
+        setTimeout(() => {
+            els.authScreen.classList.remove('show');
+            els.authScreen.style.display = 'none';
+            els.mainCard.style.display = 'block';
+            els.logoutBtn.style.display = 'block';
+            els.tutorialBtn.style.display = 'block';
+            els.logoLink.style.display = 'block';
+            clearAllFields(); 
+            setupFirestoreListener(); 
+        }, 500); 
+    }
+    
+    function formatUsernameToEmail(username) {
+        // Usa o domínio fixo para simular o username
+        return `${username.toLowerCase().trim()}${FAKE_EMAIL_DOMAIN}`;
+    }
+    
+    async function handleLogin() {
+        if (!auth) return showToast("Configuração Firebase inválida.", "error");
+
+        const username = els.usernameInput.value.trim();
+        const password = els.passwordInput.value.trim();
+        
+        if (!username || !password) {
+            els.authError.textContent = "Preencha o nome de usuário e a senha.";
+            return;
+        }
+        
+        const email = formatUsernameToEmail(username);
+        els.authError.textContent = "Aguarde...";
+        
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            // O listener de estado do Firebase fará o resto
+        } catch (error) {
+            let errorMessage = "Erro ao entrar. Credenciais inválidas.";
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = "Nome de usuário não encontrado.";
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = "Senha incorreta.";
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = "Nome de usuário inválido.";
+            }
+            els.authError.textContent = errorMessage;
+            showToast(errorMessage, "error");
+        }
+    }
+
+    async function handleRegister() {
+        if (!auth) return showToast("Configuração Firebase inválida.", "error");
+
+        const username = els.usernameInput.value.trim();
+        const password = els.passwordInput.value.trim();
+        
+        if (!username || !password || username.length < 3 || password.length < 6) {
+            els.authError.textContent = "Usuário deve ter 3+ caracteres e Senha 6+.";
+            return;
+        }
+
+        const email = formatUsernameToEmail(username);
+        els.authError.textContent = "Aguarde...";
+        
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            // Atualiza o display name para o nome de usuário (não o e-mail falso)
+            await userCredential.user.updateProfile({
+                displayName: username
+            });
+            showToast(`Conta criada para ${username}! Login realizado.`, "success", 4000);
+            // O listener de estado do Firebase fará o resto
+        } catch (error) {
+            let errorMessage = "Erro ao criar conta.";
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = "Nome de usuário já está em uso.";
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = "A senha é muito fraca (mínimo 6 caracteres).";
+            }
+            els.authError.textContent = errorMessage;
+            showToast(errorMessage, "error");
+        }
+    }
+    
+    async function handleLogout() {
+        try {
+            if (unsubscribeFirestore) {
+                unsubscribeFirestore();
+            }
+            await auth.signOut();
+            vendas = []; 
+            renderHistorico(); 
+            showToast("Logout realizado com sucesso.", "default");
+        } catch (error) {
+            console.error("Erro no logout:", error);
+            showToast("Erro ao fazer logout.", "error");
+        }
+    }
+    
+    // Ouve as mudanças no estado de autenticação (logado/deslogado)
+    auth?.onAuthStateChanged(user => {
+        if (user) {
+            globalUser = user;
+            showAppScreen();
+            document.title = `Hells Angels - Logado como ${user.displayName || 'Usuário'}`;
+        } else {
+            globalUser = null;
+            showAuthScreen();
+            document.title = 'Hells Angels - Login';
+        }
+    });
+
+    // --- EVENT LISTENERS (ATUALIZADOS) ---
+
+    els.calcBtn.addEventListener('click',()=>renderResults(calculateTotals()));
+    els.registerBtn.addEventListener('click', registerSale); 
+    
+    els.resetBtn.addEventListener('click', clearAllFields);
+    
+    els.clearHistoryBtn.addEventListener('click', clearHistory); 
+    
+    // Listeners de Login
+    els.loginBtn.addEventListener('click', handleLogin);
+    els.registerAuthBtn.addEventListener('click', handleRegister);
+    els.logoutBtn.addEventListener('click', handleLogout);
+    
+    // Enter key no login
+    els.usernameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            els.passwordInput.focus();
+        }
+    });
+    els.passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleLogin();
+        }
+    });
+
+    // ... (Outros Listeners Mantidos) ...
+    els.telefone.addEventListener('input', formatarTelefone);
+    els.nomeCliente.addEventListener('input', capitalizeWords);
+    els.organizacao.addEventListener('input', capitalizeWords);
+    els.negociadoras.addEventListener('input', capitalizeWords);
+    els.vendaValorObs.addEventListener('input', capitalizeWords);
+    // REMOVI O copyDiscordFromCalc pois a função não foi incluída no código fornecido.
+    // els.discordBtnCalc.addEventListener('click', copyDiscordFromCalc); 
+    
+    // Adicionando uma função dummy para evitar erro (Se a original estiver fora do código)
+    function copyDiscordFromCalc() {
+        showToast("Funcionalidade de Discord precisa ser implementada.", "error");
+    }
+    function copyDiscordFromHistory(button) {
+         showToast("Funcionalidade de Discord precisa ser implementada.", "error");
+    }
+
+    if (els.filtroHistorico) {
+        els.filtroHistorico.addEventListener('input', () => {
+            renderHistorico(els.filtroHistorico.value);
+        });
+    }
+
+    els.themeBtn.addEventListener('click',()=>{
+      document.body.classList.toggle('dark');
+      document.body.classList.toggle('light');
+      els.themeBtn.textContent=document.body.classList.contains('dark')?'☀️ Modo Claro':'🌙 Modo Noturno';
+      // updateThemeLogo(); // Se sua logo tem versões light/dark
+    });
+    
+    
+    els.toggleHistoryBtn.addEventListener('click', () => toggleView(true));
+    els.toggleCalcBtn.addEventListener('click', () => {
+        if (vendaEmEdicaoId) { 
+            vendaEmEdicaoId = null;
+            els.registerBtn.textContent = 'Registrar Venda';
+            clearAllFields();
+            showToast("Edição pendente cancelada.", "error", 2000);
+        }
+        toggleView(false);
+    });
+    
+    // (Lógica do Tour e enter key nos campos da calculadora)
+    
+  </script>
+</body>
+</html>
