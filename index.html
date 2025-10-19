@@ -1085,30 +1085,14 @@ body.dark #historyBackground {
       return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
-    /** Capitaliza o primeiro caractere de cada palavra, exceto preposições curtas */
+    /** Capitaliza o primeiro caractere de cada palavra. */
     const capitalizeText = (text) => {
         if (!text) return '';
-        // Converte para string e remove espaços extras no início/fim
-        text = String(text).trim(); 
-
-        // Se for 'N/A' (Not Applicable) ou similar, não capitaliza
-        if (text.toUpperCase() === 'N/A' || text.toUpperCase() === 'S/ OBS') {
-            return text;
-        }
-
-        return text.toLowerCase().split(' ').map(word => {
-            // Lista de palavras que NÃO devem ser capitalizadas (exceto no início da frase/campo)
-            const minorWords = ['a', 'o', 'e', 'de', 'da', 'do', 'em', 'para', 'com', 'por', 'ou', 'se', 'no', 'na', 'um', 'uma'];
-            
-            // Mantém a palavra minúscula se for uma preposição e não for a primeira palavra da *entrada total*
-            // A lógica abaixo capitaliza a primeira palavra da string, mas mantém as preposições minúsculas
-            if (minorWords.includes(word) && text.toLowerCase().indexOf(word) > 0) {
-                return word;
-            }
-            
-            // Capitaliza o resto
-            return word.charAt(0).toUpperCase() + word.slice(1);
-        }).join(' ');
+        // Esta versão não usa .trim() para permitir o uso da tecla de espaço
+        // e garante que a primeira letra de cada palavra seja maiúscula.
+        return text.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
     };
     
     /** Função para mostrar uma notificação de "brinde" */
