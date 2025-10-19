@@ -20,7 +20,7 @@
       --cor-btn-secundario-texto: #4a0033;
       --cor-erro: #cc0000;
       /* NOVO: Cor para o brilho pulsante */
-      --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
+      --cor-glow-pulsante: rgba(230, 0, 115, 0.8); /* Cor Principal com opacidade */
     }
 
     body.dark {
@@ -34,7 +34,7 @@
       --cor-btn-secundario: #4d002a; 
       --cor-btn-secundario-texto: #ffccf0; 
       /* NOVO: Cor para o brilho pulsante no modo escuro */
-      --cor-glow-pulsante: rgba(255, 0, 128, 0.6);
+      --cor-glow-pulsante: rgba(255, 0, 128, 0.6); /* Cor Principal Escura com opacidade */
     }
     
     body.dark input[type=number], body.dark input[type=text], body.dark select {
@@ -63,7 +63,7 @@
     /* --- NOVO: Estilo para a dica de sugestão da Organização --- */
     .suggestion-tip {
         font-size: 11px;
-        color: var(--cor-principal);
+        color: var(--cor-principal); /* Usa a cor principal para destaque */
         margin-top: 4px;
         margin-bottom: 0;
         font-weight: 500;
@@ -143,12 +143,13 @@
     .app-logo {
       max-height: 80px; 
       width: auto;
-      transition: opacity 0.3s ease, filter 0.3s ease;
+      transition: opacity 0.3s ease, filter 0.3s ease; /* Adicionado filter para a transição do hover */
       display: block; 
     }
     
     /* NOVO: Efeito de iluminação ao passar o mouse na Logo (na calculadora) */
     #appLogo:hover {
+        /* Brilho da logo ao passar o mouse */
         filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante));
         opacity: 0.9;
     }
@@ -160,6 +161,7 @@
       max-height: 120px; 
       margin-bottom: 25px;
       display: block;
+      /* NÃO ADICIONAR EFEITO DE HOVER AQUI */
     }
     
     #welcomeScreen {
@@ -206,9 +208,8 @@
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      /* CORREÇÃO DE LARGURA: Volta para uma largura menor e centraliza (1000px é o novo "normal") */
-      max-width: 1000px; 
-      margin: 24px auto; 
+      max-width: 960px;
+      margin: 24px auto;
       padding: 20px;
       background: var(--cor-fundo);
       color: var(--cor-texto);
@@ -281,7 +282,7 @@
     }
     
     .grid-venda {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: 1fr 1fr;
     }
 
     table {
@@ -292,7 +293,7 @@
     }
 
     th, td {
-      padding: 6px;
+      padding: 6px; /* Reduzido o padding para caber mais na tela do celular */
       border-bottom: 1px solid var(--cor-borda);
       text-align: left;
     }
@@ -312,6 +313,7 @@
     margin-top: 8px;
 }
 
+/* Garante que o container interno não atrapalhe a rolagem */
 #historyBackground {
     overflow: hidden;
 }
@@ -321,9 +323,8 @@
     width: 100%;
     display: table;
     border-collapse: collapse;
-    table-layout: fixed; 
-    /* AUMENTADO: Mantém a largura de 1500px para o scroll horizontal */
-    min-width: 1500px;
+    table-layout: fixed; /* ajuda a manter colunas alinhadas */
+    min-width: 900px; /* força scroll em telas pequenas mantendo alinhamento */
 }
 
 /* Estilo base para células */
@@ -334,6 +335,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
+}
+
+/* Ajuste para a linha de data/hora (duas linhas dentro da mesma célula) */
+.history-datetime-line {
+    display: block;
+    line-height: 1.1;
+    font-size: 12px;
 }
 
 /* Faz com que valores longos quebrem visualmente melhor em células menores quando necessário */
@@ -362,7 +370,7 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 14px;
-      transition: opacity 0.2s ease, box-shadow 0.3s ease;
+      transition: opacity 0.2s ease, box-shadow 0.3s ease; /* Adicionado box-shadow para transição do glow */
     }
 
     button:hover { opacity: 0.85; }
@@ -388,7 +396,7 @@
     .primary { background: var(--cor-btn-primario); color: var(--cor-btn-texto); }
     .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
     .success { background: #00b33c; color: #fff; }
-    .danger { background: var(--cor-erro); color: #fff; }
+    .danger { background: var(--cor-erro); color: #fff; } /* Novo: Botão de Perigo */
 
     /* Container para agrupar e posicionar botões (Modo Noturno e Tutorial) */
     .top-right-controls {
@@ -411,6 +419,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         border: none;
         transition: opacity 0.2s ease;
+        /* ANIMAÇÃO pulse-glow REMOVIDA DAQUI */
     }
     .control-btn:hover {
         opacity: 0.85;
@@ -418,6 +427,7 @@
     
     /* --- Estilo para o Fundo do Histórico --- */
     #historyBackground {
+      /* ALTERAÇÃO: Fundo semi-transparente (70%) */
       background: rgba(255, 255, 255, 0.7); 
       position: relative; 
       padding: 18px;
@@ -436,7 +446,7 @@
       transform: translate(-50%, -50%);
       width: 100%;
       height: auto;
-      opacity: 0.3; 
+      opacity: 0.3; /* ALTERAÇÃO: Aumentado para maior visibilidade */ 
       z-index: 1; 
       object-fit: contain; 
     }
@@ -446,12 +456,18 @@
       z-index: 2;
     }
     
-    /* --- CORREÇÃO DE ALINHAMENTO DAS CÉLULAS --- */
+    #historyCard table {
+        font-size: 12px;
+    }
+    
+    /* --- CORREÇÃO DE ALINHAMENTO DAS CÉLULAS (Principal Alteração) --- */
+    /* Garante que o conteúdo fique no topo para alinhar a borda inferior */
+    
 #historyCard th, #historyCard td {
     padding: 8px 6px;
     text-align: center;
-    vertical-align: middle;
-    white-space: nowrap;
+    vertical-align: middle; /* Centraliza verticalmente */
+    white-space: nowrap;    /* Evita quebras desnecessárias */
 }
 
 /* Corrige o bloco de data/hora */
@@ -468,38 +484,55 @@
     display: block;
     font-size: 12px;
 }
+
+    
+    /* Estilo para cada linha do texto dentro da célula de Data/Hora */
+    .history-datetime-line {
+        display: block;
+        line-height: 1.2; 
+        padding: 6px 0 0 6px; /* Adiciona o padding de volta (topo e esquerda) */
+    }
+    
+    /* Reduz o espaçamento vertical para compactar o texto na célula de Valor Total (que tem quebra de linha) */
     
 .valor-total-cell {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: center;      /* Centraliza horizontalmente */
+    justify-content: center;  /* Centraliza verticalmente */
     padding: 4px 0;
     line-height: 1.3;
     text-align: center;
 }
 
+.valor-total-cell span {
+    display: block;
+}
+
 .valor-obs-text {
     font-size: 11px;
     color: var(--cor-principal);
-    margin-top: 2px;
+    margin-top: 2px; /* Pequeno espaçamento entre o valor e a observação */
 }
 
+    
+    /* --- FIM CORREÇÃO DE ALINHAMENTO --- */
+    
     
     /* Estilo para colocar os botões do histórico na mesma linha (Responsivo) */
     .history-actions-cell {
         display: flex;
-        gap: 5px;
-        flex-wrap: nowrap;
-        padding-top: 4px;
+        gap: 5px; /* Espaçamento entre os botões */
+        flex-wrap: nowrap; /* Garante que fiquem na mesma linha */
+        padding-top: 4px; /* Ajuste para o padding das outras células */
     }
     
     .history-actions-cell button {
         padding: 4px 8px;
         font-size: 11px;
-        margin-top: 2px;
+        margin-top: 2px; /* Pequeno ajuste de margem */
         border-radius: 4px;
-        white-space: nowrap;
+        white-space: nowrap; /* Impede a quebra de linha dos botões */
     }
 
     /* --- Estilos para Notificação Toast --- */
@@ -583,56 +616,55 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    min-width: 1500px;
+    min-width: 900px;
     background: transparent; 
 }
 
 #historyCard th, #historyCard td {
-    padding: 6px 8px;
+    padding: 6px 8px; /* Aumentado de 4px 6px */
     text-align: center;
     vertical-align: middle;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 14px; /* Aumentado de 13px */
     border-bottom: 1px solid var(--cor-borda);
 }
 
 /* NOVO: Fundo para as células de dados para garantir a legibilidade */
 #historyCard td {
     background: var(--cor-card); 
-    opacity: 0.95;
+    opacity: 0.95; /* Leve transparência para manter o efeito do fundo */
 }
 
 body.dark #historyCard td {
-    background: var(--cor-card);
+    background: var(--cor-card); /* Cor do card escuro */
     opacity: 0.95;
 }
 
 
-/* CORREÇÃO: Alinhamento individual por coluna - larguras ajustadas (Totalizando 1500px) */
-#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 110px; }   /* Data/Hora */
-#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 180px; }  /* Cliente */
-#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 170px; }  /* Organização */
-#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 120px; }  /* Telefone */
-#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 350px; }  /* Produtos - Aumentado */
-#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 180px; }  /* Valor - Aumentado */
-#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 150px; }  /* Negociadoras */
-#historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 120px; }  /* Registrado Por */
-#historyCard th:nth-child(9), #historyCard td:nth-child(9) { width: 120px; }  /* Ações */
+/* Alinhamento individual por coluna - larguras ajustadas */
+#historyCard th:nth-child(1), #historyCard td:nth-child(1) { width: 100px; }   /* Data/Hora - Aumentado */
+#historyCard th:nth-child(2), #historyCard td:nth-child(2) { width: 140px; }  /* Cliente - Aumentado */
+#historyCard th:nth-child(3), #historyCard td:nth-child(3) { width: 160px; }  /* Organização */
+#historyCard th:nth-child(4), #historyCard td:nth-child(4) { width: 110px; }  /* Telefone */
+#historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }  /* Produtos - Aumentado */
+#historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }  /* Valor - Aumentado */
+#historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }  /* Negociadoras */
+#historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 150px; }  /* Ações */
 
 /* Data e hora */
 .history-datetime-line {
     display: block;
-    line-height: 1.2;
-    font-size: 13px;
+    line-height: 1.2; /* Aumentado */
+    font-size: 13px; /* Aumentado */
 }
 
 /* Valor Total - tornando o valor em negrito */
 .valor-total-cell span:first-child {
-    font-weight: 700;
+    font-weight: 700; /* Negrito */
 }
 
 .valor-obs-text {
-    font-size: 12px;
+    font-size: 12px; /* Aumentado */
     color: var(--cor-principal);
 }
 
@@ -658,21 +690,23 @@ body.dark #historyCard td {
 
 /* NOVO: Estilo para o cabeçalho TH */
 #historyCard th {
-    background: var(--cor-principal);
-    color: var(--cor-btn-texto);
+    background: var(--cor-principal); /* Usa a cor principal para o cabeçalho */
+    color: var(--cor-btn-texto);     /* Texto branco */
 }
 
 /* NOVO: Fundo semi-transparente para modo escuro */
 body.dark #historyBackground {
+  /* Cor escura do card #2c001a (que é 44, 0, 26 em RGB) com 70% de opacidade */
   background: rgba(44, 0, 26, 0.7); 
 }
 /* --- FIM DO ESTILO FINAL DA TABELA DE HISTÓRICO --- */
 
 /* --- NOVO ESTILO PARA TELA DE LOGIN (#authScreen) --- */
 #authScreen {
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    /* Melhorar o visual do card de login */
+    padding: 25px; /* Mais padding */
+    border-radius: 16px; /* Mais arredondado */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Sombra mais profunda */
 }
 
 /* Título com divisor */
@@ -680,8 +714,8 @@ body.dark #historyBackground {
     text-align: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--cor-borda);
-    font-size: 26px;
+    border-bottom: 2px solid var(--cor-borda); /* Linha divisória */
+    font-size: 26px; /* Maior */
 }
 
 /* Melhorar inputs do login */
@@ -691,20 +725,21 @@ body.dark #historyBackground {
     font-size: 16px;
     border-radius: 8px;
     border: 1px solid var(--cor-borda);
+    /* Transição de foco mais suave */
     transition: all 0.3s ease;
 }
 
 #authScreen input[type=text]:focus, 
 #authScreen input[type=password]:focus {
     border-color: var(--cor-principal) !important;
-    box-shadow: 0 0 10px rgba(230, 0, 115, 0.5);
+    box-shadow: 0 0 10px rgba(230, 0, 115, 0.5); /* Brilho mais intenso */
 }
 
 /* Fazer botões ocuparem a largura total na tela de login */
 #authScreen .actions {
     margin-top: 20px;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Pilha de botões */
     gap: 10px;
 }
 
@@ -757,16 +792,11 @@ body.dark #historyBackground {
           <button id="registerUserBtn" class="muted">Cadastrar</button>
       </div>
       <p id="authMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
-      <p style="text-align: center; font-size: 12px; margin-top: 10px; color: var(--cor-principal);"><a href="#" onclick="alert('Por favor, entre em contato com o Admin do sistema para recuperar sua senha.'); return false;" style="color: var(--cor-principal);">Esqueci a Senha?</a></p>
   </div>
-  
   <div class="card" id="mainCard" style="display:none">
-    <div style="display:flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;"> 
-        <h1 style="margin-top: 5px; flex-grow: 1;">Calculadora e Registro de Vendas Hells Angels</h1>
-        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-            <span id="userInfoDisplay" style="font-weight: 600; color: var(--cor-principal); font-size: 16px;"></span>
-            <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
-        </div>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h1>Calculadora e Registro de Vendas Hells Angels</h1>
+        <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
     </div>
     
     <div class="card-venda">
@@ -895,21 +925,7 @@ body.dark #historyBackground {
         <p class="result-note" style="font-size: 12px; margin-top: 8px;">Os valores variam conforme o tipo selecionado (limpo, sujo, aliança).</p>
       </div>
     </div>
-    
-    <div id="adminPanel" class="card" style="display:none; margin-top: 30px; border: 2px solid var(--cor-principal);">
-        <h2>🔑 Gerenciamento de Tags (ADMIN)</h2>
-        <p style="font-size: 14px;">Atribua a tag 'hells' a outros usuários. Apenas o ADMIN pode ver este painel e limpar o histórico.</p>
-        <hr style="margin: 10px 0; border: 0; border-top: 1px solid var(--cor-borda);">
-
-        <label for="adminTargetUsername">Nome de Usuário Alvo:</label>
-        <input id="adminTargetUsername" type="text" placeholder="Nome do usuário (ex: Clara)">
-        
-        <div class="actions" style="margin-top: 10px;">
-            <button id="assignRoleBtn" class="primary">Atribuir Tag 'HELLS'</button>
-        </div>
-        <p id="adminMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
-    </div>
-    </div>
+  </div>
 
   <div class="card" id="historyCard" style="display:none">
       <div id="historyBackground" class="card">
@@ -919,7 +935,7 @@ body.dark #historyBackground {
         <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico (Nome, Data, Item, etc.)" style="margin-bottom: 10px; width: 100%;">
         
         <div class="actions">
-          <button id="clearHistoryBtn" class="danger" style="display:none;">Limpar TODO Histórico</button> 
+          <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
           <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
         </div>
         <div class="history-table-wrapper"><table id="historicoVendas">
@@ -946,9 +962,10 @@ body.dark #historyBackground {
     // ------------------------------------
     // 1. IMPORTAÇÕES E CONFIGURAÇÃO FIREBASE
     // ------------------------------------
+    // URLs de importação do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     
     // Configuração do Firebase
     const firebaseConfig = {
@@ -968,9 +985,9 @@ body.dark #historyBackground {
     const db = getDatabase(app);
     
     // VARIÁVEIS GLOBAIS
-    let vendas = []; 
-    let vendaEmEdicaoId = null; 
-    let currentUser = null; 
+    let vendas = []; // O histórico será preenchido pelo Firebase
+    let vendaEmEdicaoId = null; // ID da venda sendo editada
+    let currentUser = null; // Para guardar o usuário logado
     
     // ------------------------------------
     // 2. CONSTANTES E VALORES
@@ -995,6 +1012,7 @@ body.dark #historyBackground {
         'sujo_alianca': 'Sujo (Aliança)'
     };
 
+    // Usando 'logo-dark.png' como placeholder para todas as imagens
     const logoLightModeSrc = "logo-dark.png";
     const logoDarkModeSrc = "logo-dark.png";
     const historyBackgroundSrc = "logo-dark.png";
@@ -1003,43 +1021,56 @@ body.dark #historyBackground {
     // Mapeamento de elementos DOM
     const els = {
       // Inputs da Venda
-      qtyTickets: document.getElementById('qtyTickets'), qtyTablets: document.getElementById('qtyTablets'),
-      qtyNitro: document.getElementById('qtyNitro'), tipoValor: document.getElementById('tipoValor'),
-      nomeCliente: document.getElementById('nomeCliente'), organizacao: document.getElementById('organizacao'),
-      organizacaoTipo: document.getElementById('organizacaoTipo'), telefone: document.getElementById('telefone'),
-      negociadoras: document.getElementById('negociadoras'), vendaValorObs: document.getElementById('vendaValorObs'),
-      dataVenda: document.getElementById('dataVenda'), filtroHistorico: document.getElementById('filtroHistorico'),
+      qtyTickets: document.getElementById('qtyTickets'),
+      qtyTablets: document.getElementById('qtyTablets'),
+      qtyNitro: document.getElementById('qtyNitro'),
+      tipoValor: document.getElementById('tipoValor'),
+      nomeCliente: document.getElementById('nomeCliente'),
+      organizacao: document.getElementById('organizacao'),
+      organizacaoTipo: document.getElementById('organizacaoTipo'),
+      telefone: document.getElementById('telefone'),
+      negociadoras: document.getElementById('negociadoras'),
+      vendaValorObs: document.getElementById('vendaValorObs'),
+      dataVenda: document.getElementById('dataVenda'),
+      filtroHistorico: document.getElementById('filtroHistorico'),
       
       // Containers e Resultados
-      resultsBody: document.getElementById('resultsBody'), valuesBody: document.getElementById('valuesBody'),
-      valorTotalGeral: document.getElementById('valorTotalGeral'), results: document.getElementById('results'),
-      mainCard: document.getElementById('mainCard'), historyCard: document.getElementById('historyCard'),
+      resultsBody: document.getElementById('resultsBody'),
+      valuesBody: document.getElementById('valuesBody'),
+      valorTotalGeral: document.getElementById('valorTotalGeral'),
+      results: document.getElementById('results'),
+      mainCard: document.getElementById('mainCard'),
+      historyCard: document.getElementById('historyCard'),
       salesHistory: document.getElementById('salesHistory'),
       
       // Botões
-      calcBtn: document.getElementById('calcBtn'), resetBtn: document.getElementById('resetBtn'), 
-      registerBtn: document.getElementById('registerBtn'), toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), 
-      toggleCalcBtn: document.getElementById('toggleCalcBtn'), clearHistoryBtn: document.getElementById('clearHistoryBtn'), 
-      csvBtn: document.getElementById('csvBtn'), discordBtnCalc: document.getElementById('discordBtnCalc'),
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      registerBtn: document.getElementById('registerBtn'),
+      toggleHistoryBtn: document.getElementById('toggleHistoryBtn'),
+      toggleCalcBtn: document.getElementById('toggleCalcBtn'),
+      clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+      csvBtn: document.getElementById('csvBtn'),
+      discordBtnCalc: document.getElementById('discordBtnCalc'),
       
       // Controles Globais
-      themeBtn: document.getElementById('themeBtn'), tutorialBtn: document.getElementById('tutorialBtn'),
-      logoLink: document.getElementById('logoLink'), appLogo: document.getElementById('appLogo'),
+      themeBtn: document.getElementById('themeBtn'),
+      tutorialBtn: document.getElementById('tutorialBtn'),
+      logoLink: document.getElementById('logoLink'),
+      appLogo: document.getElementById('appLogo'),
       historyImg: document.getElementById('historyImg'),
       
       // Autenticação e Boas-Vindas
-      welcomeScreen: document.getElementById('welcomeScreen'), enterBtn: document.getElementById('enterBtn'),
-      welcomeLogo: document.getElementById('welcomeLogo'), authScreen: document.getElementById('authScreen'),
-      username: document.getElementById('username'), password: document.getElementById('password'),
-      loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'),
-      authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'),
-      
-      // NOVOS Elementos de Hierarquia
-      userInfoDisplay: document.getElementById('userInfoDisplay'),
-      adminPanel: document.getElementById('adminPanel'),
-      adminTargetUsername: document.getElementById('adminTargetUsername'), 
-      assignRoleBtn: document.getElementById('assignRoleBtn'),
-      adminMessage: document.getElementById('adminMessage')
+      welcomeScreen: document.getElementById('welcomeScreen'),
+      enterBtn: document.getElementById('enterBtn'),
+      welcomeLogo: document.getElementById('welcomeLogo'),
+      authScreen: document.getElementById('authScreen'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'),
+      registerUserBtn: document.getElementById('registerUserBtn'),
+      authMessage: document.getElementById('authMessage'),
+      logoutBtn: document.getElementById('logoutBtn')
     };
     
     // ------------------------------------
@@ -1057,19 +1088,25 @@ body.dark #historyBackground {
     /** Capitaliza o primeiro caractere de cada palavra, exceto preposições curtas */
     const capitalizeText = (text) => {
         if (!text) return '';
+        // Converte para string e remove espaços extras no início/fim
         text = String(text).trim(); 
 
+        // Se for 'N/A' (Not Applicable) ou similar, não capitaliza
         if (text.toUpperCase() === 'N/A' || text.toUpperCase() === 'S/ OBS') {
             return text;
         }
 
         return text.toLowerCase().split(' ').map(word => {
+            // Lista de palavras que NÃO devem ser capitalizadas (exceto no início da frase/campo)
             const minorWords = ['a', 'o', 'e', 'de', 'da', 'do', 'em', 'para', 'com', 'por', 'ou', 'se', 'no', 'na', 'um', 'uma'];
             
+            // Mantém a palavra minúscula se for uma preposição e não for a primeira palavra da *entrada total*
+            // A lógica abaixo capitaliza a primeira palavra da string, mas mantém as preposições minúsculas
             if (minorWords.includes(word) && text.toLowerCase().indexOf(word) > 0) {
                 return word;
             }
             
+            // Capitaliza o resto
             return word.charAt(0).toUpperCase() + word.slice(1);
         }).join(' ');
     };
@@ -1082,12 +1119,15 @@ body.dark #historyBackground {
       toast.textContent = message;
       toastContainer.appendChild(toast);
       
+      // Mostra o toast
       setTimeout(() => {
         toast.classList.add('show');
       }, 10);
       
+      // Remove o toast após a duração
       setTimeout(() => {
         toast.classList.remove('show');
+        // Espera a transição acabar antes de remover do DOM
         setTimeout(() => {
           toastContainer.removeChild(toast);
         }, 300);
@@ -1101,22 +1141,32 @@ body.dark #historyBackground {
     };
 
     // --- CÓDIGO FINAL PARA A MÁSCARA DE TELEFONE NO FORMATO (055) XXX-XXX (GTA RP) ---
-    const PREFIX = "(055) "; 
+
+    const PREFIX = "(055) "; // Prefixo fixo de GTA RP
 
     /** Função que aplica a máscara (055) XXX-XXX */
     const phoneMask = (value) => {
+        // 1. Remove tudo que não for dígito da entrada do usuário
         let digits = value.replace(/\D/g, ""); 
+        
+        // 2. Remove o DDD '055' se estiver lá, para podermos forçá-lo depois
         if (digits.startsWith("055")) {
             digits = digits.substring(3);
         }
+        
+        // 3. Limita o número de dígitos (apenas 6 para o número principal)
         digits = digits.substring(0, 6); 
         
+        // 4. Constrói o número principal
         let formattedNumber = "";
         if (digits.length > 3) {
+            // Aplica o hífen: XXX-XXX
             formattedNumber = digits.substring(0, 3) + "-" + digits.substring(3);
         } else {
             formattedNumber = digits;
         }
+        
+        // 5. Adiciona o prefixo fixo
         return PREFIX + formattedNumber;
     }
 
@@ -1126,6 +1176,7 @@ body.dark #historyBackground {
             let rawValue = e.target.value;
             let maskedValue = phoneMask(rawValue);
 
+            // Se o valor de entrada for menor que o prefixo fixo, força o prefixo
             if (rawValue.length < PREFIX.length) {
                 e.target.value = PREFIX;
             } else {
@@ -1133,6 +1184,7 @@ body.dark #historyBackground {
             }
         });
 
+        // Garante que o campo comece com o prefixo ao ser focado
         els.telefone.addEventListener('focus', (e) => {
             if (!e.target.value || e.target.value.length < PREFIX.length) {
                 e.target.value = PREFIX;
@@ -1140,7 +1192,7 @@ body.dark #historyBackground {
         });
     }
 
-    // --- FIM DO CÓDIGO DA MÁSCARA ---
+    // --- FIM DO CÓDIGO ---
 
     /** Define a data da venda para a data atual */
     const updateDataVenda = () => {
@@ -1151,6 +1203,29 @@ body.dark #historyBackground {
     
     // Atualiza a data ao carregar
     updateDataVenda();
+    
+    // --- NOVO: LÓGICA DE CAPITALIZAÇÃO AUTOMÁTICA ---
+    const camposParaCapitalizar = [
+      els.nomeCliente,
+      els.organizacao,
+      els.negociadoras,
+      els.vendaValorObs
+    ];
+
+    camposParaCapitalizar.forEach(campo => {
+      if (campo) {
+        campo.addEventListener('input', (e) => {
+          // Pega a posição do cursor para não atrapalhar a digitação
+          const start = e.target.selectionStart;
+          const end = e.target.selectionEnd;
+          // Aplica a capitalização
+          e.target.value = capitalizeText(e.target.value);
+          // Restaura a posição do cursor
+          e.target.setSelectionRange(start, end);
+        });
+      }
+    });
+    // --- FIM DO CÓDIGO NOVO ---
     
     // ------------------------------------
     // 4. LÓGICA DE CÁLCULO
@@ -1164,7 +1239,15 @@ body.dark #historyBackground {
       const tipoValor = els.tipoValor.value;
       
       const totalQuantities = {
-        cobre: 0, plastico: 0, fita_adesiva: 0, lixo_eletronico: 0, aluminio: 0, vidro: 0, porca: 0, parafuso: 0, moneyBruto: 0,
+        cobre: 0,
+        plastico: 0,
+        fita_adesiva: 0,
+        lixo_eletronico: 0,
+        aluminio: 0,
+        vidro: 0,
+        porca: 0,
+        parafuso: 0,
+        moneyBruto: 0,
       };
       
       let totalValue = 0;
@@ -1198,10 +1281,12 @@ body.dark #historyBackground {
       
       const hasQuantities = qtyTickets > 0 || qtyTablets > 0 || qtyNitro > 0;
       
+      // Atualiza a interface
       if (hasQuantities) {
         updateResults(totalQuantities, productValues, totalValue);
       } else {
         els.results.style.display = 'none';
+        showToast("Nenhuma quantidade inserida. Insira a quantidade para calcular.", "error", 2000);
       }
       
       return { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities };
@@ -1211,15 +1296,18 @@ body.dark #historyBackground {
     const updateResults = (totals, productValues, totalValue) => {
       els.results.style.display = 'block';
       
+      // 1. Materiais
       els.resultsBody.innerHTML = '';
       for (const material in totals) {
         if (totals[material] > 0) {
           const row = els.resultsBody.insertRow();
+          // Garante que os nomes de material também comecem com maiúscula
           row.insertCell().textContent = capitalizeText(material.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' '));
           row.insertCell().textContent = totals[material].toLocaleString('pt-BR');
         }
       }
       
+      // 2. Valores por Produto
       els.valuesBody.innerHTML = '';
       productValues.forEach(item => {
         const row = els.valuesBody.insertRow();
@@ -1227,6 +1315,7 @@ body.dark #historyBackground {
         row.insertCell().textContent = formatCurrency(item.value);
       });
       
+      // 3. Valor Total Geral
       els.valorTotalGeral.textContent = formatCurrency(totalValue);
     };
     
@@ -1244,9 +1333,11 @@ body.dark #historyBackground {
       els.vendaValorObs.value = '';
       els.results.style.display = 'none';
       
+      // Limpa validação
       const inputs = document.querySelectorAll('.input-invalido');
       inputs.forEach(input => input.classList.remove('input-invalido'));
 
+      // Reset da edição
       if (vendaEmEdicaoId) {
           vendaEmEdicaoId = null;
           els.registerBtn.textContent = 'Registrar Venda';
@@ -1259,11 +1350,13 @@ body.dark #historyBackground {
     
     /** Valida se os campos de venda estão preenchidos */
     const validateFields = () => {
+        // Lista de campos que SÃO OBRIGATÓRIOS: todos, exceto vendaValorObs
         const fields = [
             els.nomeCliente,
-            els.organizacao, 
-            els.telefone,    
+            els.organizacao, // <-- OBRIGATÓRIO
+            els.telefone,    // <-- OBRIGATÓRIO
             els.negociadoras,
+            // els.vendaValorObs, <--- NÃO OBRIGATÓRIO
         ];
         let isValid = true;
         
@@ -1276,6 +1369,8 @@ body.dark #historyBackground {
             }
         });
 
+        // A validação específica da máscara do telefone foi removida.
+        
         return isValid;
     };
     
@@ -1293,7 +1388,7 @@ body.dark #historyBackground {
           return;
       }
       
-      if (!currentUser || !currentUser.displayName || !currentUser.uid) {
+      if (!currentUser || !currentUser.displayName) {
           showToast("Erro: Usuário não autenticado ou nome não definido.", "error", 3000);
           return;
       }
@@ -1319,13 +1414,12 @@ body.dark #historyBackground {
         
         // Dados do Usuário
         registradoPor: currentUser.displayName,
-        registradoPorUid: currentUser.uid, // Adiciona o UID para controle de permissão
       };
 
       const dbRef = ref(db, 'vendas');
 
       if (vendaEmEdicaoId) {
-          // Lógica de EDIÇÃO
+          // Lógica de EDIÇÃO (Substitui o item existente)
           set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda)
               .then(() => {
                   showToast("Venda atualizada com sucesso!", "success");
@@ -1338,7 +1432,7 @@ body.dark #historyBackground {
                   showToast(`Erro ao atualizar venda: ${error.message}`, "error", 5000);
               });
       } else {
-          // Lógica de NOVO REGISTRO
+          // Lógica de NOVO REGISTRO (Adiciona um novo item)
           push(dbRef, newVenda)
               .then(() => {
                   showToast("Venda registrada com sucesso!", "success");
@@ -1355,16 +1449,8 @@ body.dark #historyBackground {
     const editVenda = (id) => {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
-
-        // Verifica permissão de edição (ADMIN/HELLS/OWNER)
-        const isOwner = venda.registradoPorUid === currentUser.uid;
-        const isAdminOrHells = currentUser.role === 'admin' || currentUser.role === 'hells';
         
-        if (!isOwner && !isAdminOrHells) {
-            showToast("Você só pode editar suas próprias vendas.", "error", 3000);
-            return;
-        }
-        
+        // 1. Preenche os campos de venda
         els.qtyTickets.value = venda.qtyTickets || 0;
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
@@ -1377,37 +1463,25 @@ body.dark #historyBackground {
         els.negociadoras.value = venda.negociadoras || '';
         els.vendaValorObs.value = venda.vendaValorObs || '';
         
+        // 2. Calcula e exibe os resultados (opcional)
         calculate();
 
+        // 3. Marca a venda como em edição e atualiza o botão
         vendaEmEdicaoId = id;
         els.registerBtn.textContent = 'Atualizar Venda';
 
+        // 4. Volta para a tela da calculadora
         toggleView(false);
         showToast(`Editando venda de ${venda.cliente}`, "default", 3000);
     };
 
     /** Remove uma venda do Firebase */
     const removeVenda = (id) => {
-        const venda = vendas.find(v => v.id === id);
-        if (!venda) return;
-        
-        // Verifica permissão de exclusão
-        const isOwner = venda.registradoPorUid === currentUser.uid;
-        const isAdmin = currentUser.role === 'admin';
-        const isHells = currentUser.role === 'hells';
-
-        // Lógica: ADMIN apaga tudo. HELLS apaga a própria e a de MEMBRO. MEMBRO só a própria.
-        const canDelete = isAdmin || isOwner || (isHells && venda.registradoPorUid !== currentUser.uid);
-
-        if (!canDelete) { 
-             showToast("Você não tem permissão para apagar esta venda.", "error", 3000);
-             return;
-        }
-
         if (confirm("Tem certeza que deseja remover esta venda do histórico?")) {
             remove(ref(db, `vendas/${id}`))
                 .then(() => {
                     showToast("Venda removida com sucesso.", "success");
+                    // O onValue se encarrega de atualizar a lista.
                 })
                 .catch((error) => {
                     console.error("Erro ao remover venda:", error);
@@ -1416,48 +1490,40 @@ body.dark #historyBackground {
         }
     };
 
-    /** Constrói a mensagem de Discord para a venda (estado atual ou histórico) */
-    const buildDiscordMessage = (venda = null) => {
-        const isHistory = !!venda;
-        
-        const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = isHistory ? {
-             qtyTickets: venda.qtyTickets, qtyTablets: venda.qtyTablets, qtyNitro: venda.qtyNitro, 
-             totalValue: venda.valorTotal, tipoValor: venda.tipoValor, hasQuantities: true
-        } : calculate(); 
+    /** Constrói a mensagem de Discord para a venda atual */
+    const buildDiscordMessage = () => {
+        const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
 
-        if (!hasQuantities && !isHistory) {
+        if (!hasQuantities) {
             showToast("Calcule uma venda antes de tentar gerar a mensagem.", "error", 3000);
-            return "";
+            return;
         }
-
-        const nomeCliente = isHistory ? venda.cliente.trim() : els.nomeCliente.value.trim();
-        const organizacao = isHistory ? venda.organizacao.trim() : els.organizacao.value.trim();
-        const organizacaoTipo = isHistory ? venda.organizacaoTipo : els.organizacaoTipo.value;
-        const telefone = isHistory ? venda.telefone.trim() : els.telefone.value.trim();
-        const negociadoras = isHistory ? venda.negociadoras.trim() : els.negociadoras.value.trim();
-        const observacao = isHistory ? venda.vendaValorObs.trim() : els.vendaValorObs.value.trim();
-        
-        const dataVenda = isHistory ? venda.dataHora.split(', ')[0] : els.dataVenda.value;
         
         const valorTipoTexto = valorDescricao[tipoValor] || 'N/A';
         const valorTotalTexto = formatCurrency(totalValue);
-        
+        const nomeCliente = els.nomeCliente.value.trim() || 'N/A';
+        const organizacao = els.organizacao.value.trim() || 'N/A';
+        const telefone = els.telefone.value.trim() || 'N/A';
+        const negociadoras = els.negociadoras.value.trim() || 'N/A';
+        const observacao = els.vendaValorObs.value.trim() || 'N/A';
+
         let produtos = [];
-        if (qtyTickets > 0) produtos.push(`Tickets (${qtyTickets})`);
-        if (qtyTablets > 0) produtos.push(`Tablets (${qtyTablets})`);
-        if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
+        if (qtyTickets > 0) produtos.push(`${qtyTickets} Tickets`);
+        if (qtyTablets > 0) produtos.push(`${qtyTablets} Tablets`);
+        if (qtyNitro > 0) produtos.push(`${qtyNitro} Nitro`);
         const listaProdutos = produtos.join(', ');
 
         const message = `
+**[VENDA - HELLS ANGELS]**
 \`\`\`
-Nome: ${nomeCliente || 'N/A'}
-Data: ${dataVenda}
-Organização: ${organizacaoTipo} - ${organizacao || 'N/A'}
-Telefone: ${telefone || 'N/A'}
-Produto (Unidade): ${listaProdutos || 'N/A'}
-Venda Valor: ${valorTotalTexto.replace('R$', 'R$ ') } (${valorTipoTexto})
-Negociadoras: ${negociadoras || 'N/A'}
-OBS: ${observacao || 'N/A'}
+CLIENTE: ${nomeCliente}
+ORGANIZAÇÃO: ${organizacao}
+TELEFONE: ${telefone}
+
+PRODUTOS: ${listaProdutos}
+VALOR FINAL: ${valorTotalTexto} (${valorTipoTexto})
+NEGOCIADORAS: ${negociadoras}
+OBS: ${observacao}
 \`\`\`
         `.trim();
         
@@ -1484,6 +1550,7 @@ OBS: ${observacao || 'N/A'}
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'block';
             els.historyImg.src = historyBackgroundSrc;
+            // Limpa o filtro ao abrir a lista completa
             els.filtroHistorico.value = ''; 
             displaySalesHistory(vendas); 
         } else {
@@ -1492,7 +1559,7 @@ OBS: ${observacao || 'N/A'}
         }
     };
 
-    /** Renderiza o histórico de vendas na tabela, respeitando as permissões */
+    /** Renderiza o histórico de vendas na tabela */
     const displaySalesHistory = (history) => {
         els.salesHistory.innerHTML = '';
         if (history.length === 0) {
@@ -1505,75 +1572,63 @@ OBS: ${observacao || 'N/A'}
             return;
         }
 
-        history.sort((a, b) => b.timestamp - a.timestamp); 
+        history.sort((a, b) => b.timestamp - a.timestamp); // Mais recente primeiro
 
         history.forEach(venda => {
             const row = els.salesHistory.insertRow();
             row.setAttribute('data-id', venda.id);
 
-            // Células de dados (capitalizadas ao exibir)
+            // Célula 1: Data/Hora
             const dateCell = row.insertCell();
             const [data, hora] = venda.dataHora.split(', ');
             dateCell.innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
 
+            // Célula 2: Cliente
             row.insertCell().textContent = capitalizeText(venda.cliente);
+
+            // Célula 3: Organização/Tipo
             row.insertCell().textContent = `${capitalizeText(venda.organizacao)} (${venda.organizacaoTipo})`;
+            
+            // Célula 4: Telefone
             row.insertCell().textContent = venda.telefone;
 
+            // Célula 5: Produtos (Unidade)
             let produtos = [];
             if (venda.qtyTickets > 0) produtos.push(`${venda.qtyTickets} Tickets`);
             if (venda.qtyTablets > 0) produtos.push(`${venda.qtyTablets} Tablets`);
             if (venda.qtyNitro > 0) produtos.push(`${venda.qtyNitro} Nitro`);
             row.insertCell().textContent = capitalizeText(produtos.join(', '));
             
+            // Célula 6: Valor Total
             const valorCell = row.insertCell();
             valorCell.className = 'valor-total-cell';
             const valorTotalTexto = formatCurrency(venda.valorTotal || 0);
+            const obsTexto = capitalizeText(venda.vendaValorObs) || 'S/ Obs';
             const tipoTexto = valorDescricao[venda.tipoValor] || 'N/A';
             valorCell.innerHTML = `<span>${valorTotalTexto}</span><span class="valor-obs-text">(${tipoTexto})</span>`;
 
+            // Célula 7: Negociadoras
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
+            
+            // Célula 8: Registrado Por
             row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
             
             // Célula 9: Ações
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
             
-            // Permissões
-            const isOwner = venda.registradoPorUid === currentUser.uid;
-            const isAdmin = currentUser.role === 'admin';
-            const isHells = currentUser.role === 'hells';
+            const editBtn = document.createElement('button');
+            editBtn.textContent = 'Editar';
+            editBtn.className = 'action-btn muted';
+            editBtn.onclick = () => editVenda(venda.id);
             
-            // Botão Discord
-            const discordBtn = document.createElement('button');
-            discordBtn.textContent = 'Discord';
-            discordBtn.className = 'action-btn primary';
-            discordBtn.onclick = () => {
-                const message = buildDiscordMessage(venda); 
-                if (message) copyToClipboard(message);
-            };
-            actionsCell.appendChild(discordBtn);
-
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Deletar';
+            deleteBtn.className = 'action-btn danger';
+            deleteBtn.onclick = () => removeVenda(venda.id);
             
-            // Botão Editar (Permitido para Owner, Hells ou Admin)
-            if (isOwner || isAdmin || isHells) {
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Editar';
-                editBtn.className = 'action-btn muted';
-                editBtn.onclick = () => editVenda(venda.id);
-                actionsCell.appendChild(editBtn);
-            }
-            
-            // Botão Deletar (Permitido para Owner, Hells ou Admin)
-            const canDelete = isAdmin || isOwner || (isHells && venda.registradoPorUid !== currentUser.uid);
-
-            if (canDelete) { 
-                 const deleteBtn = document.createElement('button');
-                 deleteBtn.textContent = 'Apagar';
-                 deleteBtn.className = 'action-btn danger';
-                 deleteBtn.onclick = () => removeVenda(venda.id);
-                 actionsCell.appendChild(deleteBtn);
-            }
+            actionsCell.appendChild(editBtn);
+            actionsCell.appendChild(deleteBtn);
         });
     };
 
@@ -1608,12 +1663,14 @@ OBS: ${observacao || 'N/A'}
             return;
         }
         
+        // Define o cabeçalho do CSV
         const headers = [
             "Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", 
             "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", 
             "Valor Total", "Tipo Valor", "Registrado Por"
         ];
         
+        // Mapeia os dados da venda para linhas CSV
         const csvRows = vendas.map(v => [
             `"${v.dataHora}"`,
             `"${v.cliente}"`,
@@ -1630,11 +1687,13 @@ OBS: ${observacao || 'N/A'}
             `"${v.registradoPor}"`
         ].join(','));
 
+        // Combina cabeçalho e linhas
         const csvContent = [
             headers.join(','),
             ...csvRows
         ].join('\n');
 
+        // Cria e baixa o arquivo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1649,15 +1708,12 @@ OBS: ${observacao || 'N/A'}
 
     /** Limpa todo o histórico de vendas do Firebase */
     const clearHistory = () => {
-        if (currentUser.role !== 'admin') {
-            showToast("Acesso negado. Apenas o ADMIN pode limpar todo o histórico.", "error", 4000);
-            return;
-        }
-
         if (confirm("ATENÇÃO: Você tem certeza que deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
+            // Remove o nó principal das vendas
             remove(ref(db, 'vendas'))
                 .then(() => {
                     showToast("Histórico de vendas limpado com sucesso.", "success", 4000);
+                    // O onValue irá atualizar a tela automaticamente.
                 })
                 .catch((error) => {
                     console.error("Erro ao limpar histórico:", error);
@@ -1723,14 +1779,14 @@ OBS: ${observacao || 'N/A'}
             element: 'registerBtn', 
             title: '4/5: Registrar Venda', 
             content: 'Após o cálculo, preencha os dados da venda (Cliente, Telefone, Obs) e clique aqui para registrar no banco de dados (Firebase).', 
-            beforeAction: () => els.results.style.display = 'block'
+            beforeAction: () => els.results.style.display = 'block' // Garante que os resultados estejam visíveis para a etapa 4
         },
         { 
             id: 'passo5', 
             element: 'toggleHistoryBtn', 
             title: '5/5: Histórico', 
             content: 'Acesse o histórico de todas as vendas registradas. Você pode pesquisar, editar ou deletar vendas aqui.', 
-            afterAction: () => els.results.style.display = 'none' 
+            afterAction: () => els.results.style.display = 'none' // Limpa resultados após a etapa 4
         }
     ];
 
@@ -1741,6 +1797,7 @@ OBS: ${observacao || 'N/A'}
     const clearTour = () => {
         if (currentTooltip) {
             currentTooltip.classList.remove('active');
+            // Dá tempo para a transição (opacidade) antes de remover o elemento
             setTimeout(() => {
                 if (currentTooltip && currentTooltip.parentNode) {
                     currentTooltip.parentNode.removeChild(currentTooltip);
@@ -1757,6 +1814,7 @@ OBS: ${observacao || 'N/A'}
     
     /** Mostra o próximo passo do tutorial */
     const showNextTourStep = () => {
+        // Limpa o passo anterior
         if (currentStepIndex >= 0) {
             clearTour(); 
         }
@@ -1773,22 +1831,27 @@ OBS: ${observacao || 'N/A'}
         
         if (!targetElement) {
             console.error(`Elemento alvo não encontrado para o passo ${step.id}`);
-            showNextTourStep(); 
+            showNextTourStep(); // Pula para o próximo passo
             return;
         }
 
+        // 1. Executa a ação prévia, se houver
         if (step.beforeAction) {
             step.beforeAction();
         }
 
+        // Garante que o usuário está na tela certa (Calculadora)
         if (step.element !== 'toggleHistoryBtn' && els.historyCard.style.display !== 'none') {
             toggleView(false); 
         } else if (step.element === 'toggleHistoryBtn') {
+            // Se for o passo do histórico, precisa estar na calculadora para o botão ser visível
             toggleView(false); 
         }
         
+        // 2. Adiciona destaque
         targetElement.classList.add('tour-highlight');
         
+        // 3. Cria a dica (tooltip)
         currentTooltip = document.createElement('div');
         currentTooltip.className = 'tour-tooltip';
         currentTooltip.innerHTML = `
@@ -1801,15 +1864,19 @@ OBS: ${observacao || 'N/A'}
         `;
         document.body.appendChild(currentTooltip);
         
+        // 4. Posiciona a dica
         const rect = targetElement.getBoundingClientRect();
         
+        // Tenta posicionar acima ou abaixo (cuidado com bordas)
         let top = rect.top + window.scrollY - currentTooltip.offsetHeight - 10;
         let left = rect.left + window.scrollX;
 
+        // Se não houver espaço acima, posiciona abaixo
         if (rect.top < currentTooltip.offsetHeight + 20) {
             top = rect.bottom + window.scrollY + 10;
         }
         
+        // Garante que não saia da tela horizontalmente
         if (left + currentTooltip.offsetWidth > window.innerWidth - 20) {
             left = window.innerWidth - currentTooltip.offsetWidth - 20;
         }
@@ -1820,10 +1887,12 @@ OBS: ${observacao || 'N/A'}
         currentTooltip.style.top = `${top}px`;
         currentTooltip.style.left = `${left}px`;
 
+        // 5. Ativa a transição
         setTimeout(() => {
             currentTooltip.classList.add('active');
         }, 10);
         
+        // 6. Configura botões da dica
         document.getElementById('tourNextBtn').onclick = () => {
             if (step.afterAction) {
                 step.afterAction();
@@ -1832,39 +1901,17 @@ OBS: ${observacao || 'N/A'}
         };
         document.getElementById('tourSkipBtn').onclick = clearTour;
 
+        // 7. Scrolla para o elemento
         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     // ------------------------------------
     // 8. LÓGICA DE AUTENTICAÇÃO E EVENTOS
     // ------------------------------------
-    
-    // Função para exibir o nome e a tag do usuário
-    const displayUserInfo = (user) => {
-        if (user && user.displayName) {
-            const role = user.role || 'membro'; 
-            const roleText = role === 'admin' ? 'ADMIN' : (role === 'hells' ? 'HELLS' : 'MEMBRO');
-            els.userInfoDisplay.textContent = `Olá, ${capitalizeText(user.displayName)} (${roleText})`;
-            
-            // Controle de visibilidade do Admin Panel e do botão Limpar Histórico
-            if (role === 'admin') {
-                els.adminPanel.style.display = 'block';
-                els.clearHistoryBtn.style.display = 'inline-block';
-            } else {
-                els.adminPanel.style.display = 'none';
-                els.clearHistoryBtn.style.display = 'none';
-            }
-
-        } else {
-            els.userInfoDisplay.textContent = '';
-            els.adminPanel.style.display = 'none';
-            els.clearHistoryBtn.style.display = 'none';
-        }
-    };
 
     /** Lida com o registro de novos usuários */
     const handleRegister = () => {
-        const email = els.username.value.trim() + "@ha.com"; 
+        const email = els.username.value.trim() + "@ha.com"; // Email dummy
         const password = els.password.value;
         const displayName = els.username.value.trim();
 
@@ -1880,8 +1927,10 @@ OBS: ${observacao || 'N/A'}
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
+                // Define o nome de exibição do usuário
                 updateProfile(user, { displayName: displayName })
                     .then(() => {
+                        // Sucesso. O onAuthStateChanged fará o resto.
                         els.authMessage.textContent = `Usuário ${displayName} registrado com sucesso. Logando...`;
                     })
                     .catch((error) => {
@@ -1898,13 +1947,14 @@ OBS: ${observacao || 'N/A'}
 
     /** Lida com o login de usuários existentes */
     const handleLogin = () => {
-        const email = els.username.value.trim() + "@ha.com"; 
+        const email = els.username.value.trim() + "@ha.com"; // Email dummy
         const password = els.password.value;
 
         els.authMessage.textContent = "Entrando...";
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
+                // Sucesso. O onAuthStateChanged fará o resto.
                 els.authMessage.textContent = "Login bem-sucedido!";
             })
             .catch((error) => {
@@ -1919,156 +1969,64 @@ OBS: ${observacao || 'N/A'}
     const handleLogout = () => {
         auth.signOut().then(() => {
             showToast("Desconectado com sucesso.", "success", 2000);
+            // onAuthStateChanged irá gerenciar a transição para a tela de login
         }).catch((error) => {
             console.error("Erro ao fazer logout:", error);
             showToast(`Erro ao fazer logout: ${error.message}`, "error", 3000);
         });
     };
 
-    /** Função para verificar e setar a role (ADMIN, HELLS, MEMBRO) */
-    const checkAndSetUserRole = (user, displayName) => {
-        return new Promise((resolve) => {
-            const adminUsers = ['admin', 'crystaladmin']; 
-            
-            if (adminUsers.includes(displayName.toLowerCase())) {
-                user.role = 'admin'; // ADMIN Total
-                resolve(user);
-                return;
-            }
-
-            // Checa a role no Realtime Database (para HELLS e MEMBRO)
-            const roleRef = ref(db, `user_roles/${displayName.toLowerCase()}`);
-            onValue(roleRef, (snapshot) => {
-                if (snapshot.exists() && snapshot.val().role) {
-                    user.role = snapshot.val().role; // 'hells'
-                } else {
-                    user.role = 'membro'; // Padrão
-                }
-                resolve(user);
-            }, { onlyOnce: true });
-        });
-    };
-
-    /** Função para atribuir a tag HELLS (somente para ADMIN) */
-    const assignHellsRole = () => {
-        if (currentUser.role !== 'admin') {
-            showToast("Acesso negado. Apenas o ADMIN pode gerenciar tags.", "error", 4000);
-            return;
-        }
-
-        const targetUsername = els.adminTargetUsername.value.trim().toLowerCase();
-        
-        if (!targetUsername) {
-            els.adminMessage.textContent = "Digite um nome de usuário válido.";
-            return;
-        }
-        
-        if (targetUsername === 'admin' || targetUsername === 'crystaladmin') {
-             els.adminMessage.textContent = "Não é necessário atribuir role de HELLS ao ADMIN.";
-             return;
-        }
-
-        els.adminMessage.textContent = `Atribuindo tag 'HELLS' para ${capitalizeText(targetUsername)}...`;
-
-        set(ref(db, `user_roles/${targetUsername}`), { role: 'hells' })
-            .then(() => {
-                els.adminMessage.textContent = "";
-                showToast(`Tag 'HELLS' atribuída a ${capitalizeText(targetUsername)} com sucesso!`, "success", 4000);
-                els.adminTargetUsername.value = '';
-            })
-            .catch((error) => {
-                els.adminMessage.textContent = `Erro: ${error.message}`;
-                showToast("Erro ao atribuir tag.", "error", 4000);
-                console.error(error);
-            });
-    };
-
-
     /** Escuta as mudanças no estado de autenticação (login/logout) */
-    onAuthStateChanged(auth, async (user) => {
-        // CORREÇÃO: A lógica de transição para a tela de login/calculadora só deve ocorrer
-        // se a welcome screen JÁ tiver sido passada (readyToTransition).
-        
-        // Se a welcome screen estiver visível, o onAuthStateChanged é executado, mas 
-        // a tela de boas-vindas está por cima (display: flex z-index: 10000), então
-        // não precisa de flag extra.
-        
+    onAuthStateChanged(auth, (user) => {
         if (user) {
             // Usuário logado
-            let displayName = user.displayName;
-            if (!displayName) {
-                displayName = user.email.split('@')[0];
-                await updateProfile(user, { displayName: displayName });
+            currentUser = user;
+            
+            // Verifica se o displayName está definido
+            if (!user.displayName) {
+                // Se não estiver, usa a parte do email antes do @ para o displayName
+                const defaultName = user.email.split('@')[0];
+                updateProfile(user, { displayName: defaultName })
+                    .then(() => {
+                        currentUser = {...user, displayName: defaultName}; // Atualiza a variável
+                        els.authScreen.style.display = 'none';
+                        els.mainCard.style.display = 'block';
+                    });
+            } else {
+                els.authScreen.style.display = 'none';
+                els.mainCard.style.display = 'block';
             }
             
-            // Define a role do usuário (ADMIN, HELLS ou MEMBRO)
-            currentUser = await checkAndSetUserRole(user, displayName);
-            currentUser.displayName = displayName; 
-            currentUser.uid = user.uid; 
-            
-            // 1. Exibe a Calculadora
-            els.authScreen.style.display = 'none';
-            els.mainCard.style.display = 'block';
-            els.historyCard.style.display = 'none';
-            
-            // 2. Exibe o nome e a tag, e configura o Admin Panel
-            displayUserInfo(currentUser);
-            
-            // 3. Inicia o listener de vendas (com filtro de permissão)
-            const salesRef = ref(db, 'vendas');
-            
-            onValue(salesRef, (snapshot) => {
-                let allVendas = [];
+            // Inicia o listener de vendas (somente quando logado)
+            onValue(ref(db, 'vendas'), (snapshot) => {
+                vendas = [];
                 snapshot.forEach((childSnapshot) => {
-                    allVendas.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    vendas.push({ id: childSnapshot.key, ...childSnapshot.val() });
                 });
-                
-                if (currentUser.role === 'admin' || currentUser.role === 'hells') {
-                    // ADMIN e HELLS veem todas as vendas
-                    vendas = allVendas; 
-                } else {
-                    // MEMBROS só veem as próprias vendas
-                    vendas = allVendas.filter(venda => 
-                        venda.registradoPorUid === currentUser.uid
-                    );
-                }
-
+                // Garante que o histórico seja atualizado se a lista estiver aberta
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas);
                 }
-            }, { onlyOnce: false });
+            }, {
+                onlyOnce: false // Continua escutando
+            });
 
         } else {
             // Usuário deslogado
             currentUser = null;
-            
-            // CORREÇÃO: A tela de login só é mostrada se a welcomeScreen não estiver por cima.
-            if (els.welcomeScreen.style.display === 'none') {
-                els.authScreen.style.display = 'block'; // <<< Mostra o login
-            } else {
-                els.authScreen.style.display = 'none';
-            }
-
+            els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
             els.username.value = '';
             els.password.value = '';
             els.authMessage.textContent = "";
             els.loginBtn.textContent = 'Entrar';
-            
-            // Limpa o display de info do usuário
-            displayUserInfo(null);
         }
     });
 
     // ------------------------------------
     // 9. LISTENERS DE EVENTOS
     // ------------------------------------
-    
-    // Listener para o novo botão de atribuir tag
-    if (els.assignRoleBtn) {
-        els.assignRoleBtn.onclick = assignHellsRole;
-    }
     
     els.calcBtn.onclick = calculate;
     els.resetBtn.onclick = clearAllFields;
@@ -2088,9 +2046,10 @@ OBS: ${observacao || 'N/A'}
     els.discordBtnCalc.onclick = () => {
         if (!els.nomeCliente.value.trim() && !els.organizacao.value.trim()) {
             showToast("Preencha ao menos o Cliente ou Organização antes de copiar.", "error", 3000);
+            // Não retorna, permite copiar mesmo assim, mas alerta
         }
         const message = buildDiscordMessage();
-        if (message) copyToClipboard(message);
+        copyToClipboard(message);
     };
     
     // Listener do filtro
@@ -2127,16 +2086,30 @@ OBS: ${observacao || 'N/A'}
 
     // Lógica para a tela de boas-vindas
     els.enterBtn.onclick = () => {
+        // Marca que o usuário visitou e esconde a tela
         localStorage.setItem('hasVisited', 'true');
         els.welcomeScreen.classList.add('hidden');
         
+        // Dispara o estado de autenticação após a transição
         setTimeout(() => {
             els.welcomeScreen.style.display = 'none';
-            // Chama a lógica de autenticação DE NOVO após a transição da Welcome Screen
-            auth.onAuthStateChanged(auth, () => {});
-        }, 500); 
+        }, 500); // 500ms é o tempo da transição CSS
 
-        clearTour(); 
+        // Força a atualização do estado para mostrar login/mainCard
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Se já estiver logado, garante que a tela principal apareça
+                els.authScreen.style.display = 'none';
+                els.mainCard.style.display = 'block';
+            } else {
+                 // Se não logado, apenas mostra a tela de login
+                els.authScreen.style.display = 'block';
+                els.mainCard.style.display = 'none';
+                els.historyCard.style.display = 'none';
+            }
+
+            clearTour(); 
+        });
     };
     
     // Permite login/cadastro por Enter nos campos de senha
@@ -2150,15 +2123,18 @@ OBS: ${observacao || 'N/A'}
         }
     });
     
-    // Lógica inicial de display (APENAS WELCOME SCREEN)
+    // --- Chamadas Iniciais e Lógica de Estado do Firebase ---
+    
+    // A lógica de estado inicial é toda controlada pelo onAuthStateChanged acima.
+    
+    // Lógica para esconder a tela de boas-vindas na primeira visita
     if (localStorage.getItem('hasVisited')) {
         els.welcomeScreen.classList.add('hidden');
         els.welcomeScreen.style.display = 'none';
-        // Se o usuário já visitou, a tela de login/calculadora aparecerá via onAuthStateChanged
     } else {
         els.welcomeScreen.classList.remove('hidden');
         els.welcomeScreen.classList.add('show');
-        els.authScreen.style.display = 'none'; 
+        els.authScreen.style.display = 'none'; // Garante que a tela de login não apareça por cima
         els.mainCard.style.display = 'none';
     }
   </script>
