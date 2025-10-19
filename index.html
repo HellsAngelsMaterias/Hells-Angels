@@ -611,7 +611,6 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    /* CORREÇÃO: Nova largura mínima para melhor visualização (1500px) */
     min-width: 1500px; 
     background: transparent; 
 }
@@ -926,7 +925,21 @@ body.dark #historyBackground {
         <p class="result-note" style="font-size: 12px; margin-top: 8px;">Os valores variam conforme o tipo selecionado (limpo, sujo, aliança).</p>
       </div>
     </div>
-  </div>
+    
+    <div id="adminPanel" class="card" style="display:none; margin-top: 30px; border: 2px solid var(--cor-principal);">
+        <h2>🔑 Gerenciamento de Tags (ADMIN)</h2>
+        <p style="font-size: 14px;">Atribua a tag 'hells' a outros usuários. Apenas o ADMIN pode ver este painel e limpar o histórico.</p>
+        <hr style="margin: 10px 0; border: 0; border-top: 1px solid var(--cor-borda);">
+
+        <label for="adminTargetUsername">Nome de Usuário Alvo:</label>
+        <input id="adminTargetUsername" type="text" placeholder="Nome do usuário (ex: Clara)">
+        
+        <div class="actions" style="margin-top: 10px;">
+            <button id="assignRoleBtn" class="primary">Atribuir Tag 'HELLS'</button>
+        </div>
+        <p id="adminMessage" style="color: var(--cor-erro); margin-top: 10px;"></p>
+    </div>
+    </div>
 
   <div class="card" id="historyCard" style="display:none">
       <div id="historyBackground" class="card">
@@ -936,7 +949,7 @@ body.dark #historyBackground {
         <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico (Nome, Data, Item, etc.)" style="margin-bottom: 10px; width: 100%;">
         
         <div class="actions">
-          <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
+          <button id="clearHistoryBtn" class="danger" style="display:none;">Limpar TODO Histórico</button> 
           <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
         </div>
         <div class="history-table-wrapper"><table id="historicoVendas">
@@ -966,7 +979,7 @@ body.dark #historyBackground {
     // URLs de importação do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     
     // Configuração do Firebase
     const firebaseConfig = {
@@ -1051,8 +1064,12 @@ body.dark #historyBackground {
       loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'),
       authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'),
       
-      // NOVO: Exibição de Info do Usuário
-      userInfoDisplay: document.getElementById('userInfoDisplay')
+      // Exibição de Info do Usuário e Admin Panel
+      userInfoDisplay: document.getElementById('userInfoDisplay'),
+      adminPanel: document.getElementById('adminPanel'),
+      adminTargetUsername: document.getElementById('adminTargetUsername'), 
+      assignRoleBtn: document.getElementById('assignRoleBtn'),
+      adminMessage: document.getElementById('adminMessage')
     };
     
     // ------------------------------------
@@ -1202,7 +1219,7 @@ body.dark #historyBackground {
         updateResults(totalQuantities, productValues, totalValue);
       } else {
         els.results.style.display = 'none';
-        showToast("Nenhuma quantidade inserida. Insira a quantidade para calcular.", "error", 2000);
+        // Removido o toast aqui, pois calculate() é chamado antes de registerVenda() e pode ser uma ação normal
       }
       
       return { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities };
@@ -1300,11 +1317,11 @@ body.dark #historyBackground {
       const newVenda = {
         timestamp: Date.now(),
         dataHora: now.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        cliente: els.nomeCliente.value.trim() || 'N/A',
-        organizacao: els.organizacao.value.trim() || 'N/A',
+        cliente: els.nomeCliente.value.trim() || 'N/A', 
+        organizacao: els.organizacao.value.trim() || 'N/A', 
         organizacaoTipo: els.organizacaoTipo.value,
         telefone: els.telefone.value.trim() || 'N/A',
-        negociadoras: els.negociadoras.value.trim() || 'N/A',
+        negociadoras: els.negociadoras.value.trim() || 'N/A', 
         vendaValorObs: els.vendaValorObs.value.trim() || 'N/A',
         
         // Dados do Cálculo
@@ -1316,6 +1333,7 @@ body.dark #historyBackground {
         
         // Dados do Usuário
         registradoPor: currentUser.displayName,
+        registradoPorUid: currentUser.uid, // Adiciona o UID para controle de permissão
       };
 
       const dbRef = ref(db, 'vendas');
@@ -1351,6 +1369,15 @@ body.dark #historyBackground {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
         
+        // Verifica permissão de edição
+        const isOwner = venda.registradoPorUid === currentUser.uid;
+        const isAdminOrHells = currentUser.role === 'admin' || currentUser.role === 'hells';
+        
+        if (!isOwner && !isAdminOrHells) {
+            showToast("Você só pode editar suas próprias vendas.", "error", 3000);
+            return;
+        }
+
         els.qtyTickets.value = venda.qtyTickets || 0;
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
@@ -1373,6 +1400,20 @@ body.dark #historyBackground {
     };
 
     const removeVenda = (id) => {
+        const venda = vendas.find(v => v.id === id);
+        if (!venda) return;
+        
+        // Verifica permissão de exclusão
+        const isOwner = venda.registradoPorUid === currentUser.uid;
+        const isAdmin = currentUser.role === 'admin';
+        const isHells = currentUser.role === 'hells';
+
+        // Lógica: ADMIN pode apagar tudo. HELLS pode apagar a própria e a de MEMBRO. MEMBRO só a própria.
+        if (!isAdmin && !isHells && !isOwner) {
+             showToast("Você não tem permissão para apagar esta venda.", "error", 3000);
+             return;
+        }
+
         if (confirm("Tem certeza que deseja remover esta venda do histórico?")) {
             remove(ref(db, `vendas/${id}`))
                 .then(() => {
@@ -1385,39 +1426,45 @@ body.dark #historyBackground {
         }
     };
 
-    const buildDiscordMessage = () => {
-        const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
+    const buildDiscordMessage = (venda = null) => {
+        const isHistory = !!venda;
+        
+        // Uso de venda ou estado atual
+        const qtyTickets = isHistory ? venda.qtyTickets : getQty(els.qtyTickets);
+        const qtyTablets = isHistory ? venda.qtyTablets : getQty(els.qtyTablets);
+        const qtyNitro = isHistory ? venda.qtyNitro : getQty(els.qtyNitro);
+        const tipoValor = isHistory ? venda.tipoValor : els.tipoValor.value;
+        const totalValue = isHistory ? venda.valorTotal : calculate().totalValue; 
 
-        if (!hasQuantities) {
-            showToast("Calcule uma venda antes de tentar gerar a mensagem.", "error", 3000);
-            return;
-        }
+        const nomeCliente = isHistory ? venda.cliente.trim() : els.nomeCliente.value.trim();
+        const organizacao = isHistory ? venda.organizacao.trim() : els.organizacao.value.trim();
+        const organizacaoTipo = isHistory ? venda.organizacaoTipo : els.organizacaoTipo.value;
+        const telefone = isHistory ? venda.telefone.trim() : els.telefone.value.trim();
+        const negociadoras = isHistory ? venda.negociadoras.trim() : els.negociadoras.value.trim();
+        const observacao = isHistory ? venda.vendaValorObs.trim() : els.vendaValorObs.value.trim();
+        
+        const dataVenda = isHistory ? venda.dataHora.split(', ')[0] : els.dataVenda.value;
         
         const valorTipoTexto = valorDescricao[tipoValor] || 'N/A';
-        const valorTotalTexto = formatCurrency(totalValue);
-        const nomeCliente = els.nomeCliente.value.trim() || 'N/A';
-        const organizacao = els.organizacao.value.trim() || 'N/A';
-        const telefone = els.telefone.value.trim() || 'N/A';
-        const negociadoras = els.negociadoras.value.trim() || 'N/A';
-        const observacao = els.vendaValorObs.value.trim() || 'N/A';
-
+        const valorTotalTexto = formatCurrency(totalValue).replace('R$', 'R$'); // Formato simples
+        
         let produtos = [];
-        if (qtyTickets > 0) produtos.push(`${qtyTickets} Tickets`);
-        if (qtyTablets > 0) produtos.push(`${qtyTablets} Tablets`);
-        if (qtyNitro > 0) produtos.push(`${qtyNitro} Nitro`);
+        if (qtyTickets > 0) produtos.push(`Tickets (${qtyTickets})`);
+        if (qtyTablets > 0) produtos.push(`Tablets (${qtyTablets})`);
+        if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
         const listaProdutos = produtos.join(', ');
 
+        // NOVO FORMATO SOLICITADO
         const message = `
-**[VENDA - HELLS ANGELS]**
 \`\`\`
-CLIENTE: ${nomeCliente}
-ORGANIZAÇÃO: ${organizacao}
-TELEFONE: ${telefone}
-
-PRODUTOS: ${listaProdutos}
-VALOR FINAL: ${valorTotalTexto} (${valorTipoTexto})
-NEGOCIADORAS: ${negociadoras}
-OBS: ${observacao}
+Nome: ${nomeCliente || 'N/A'}
+Data: ${dataVenda}
+Organização: ${organizacaoTipo} - ${organizacao || 'N/A'}
+Telefone: ${telefone || 'N/A'}
+Produto (Unidade): ${listaProdutos || 'N/A'}
+Venda Valor: ${valorTotalTexto.replace('R$', 'R$ ') } (${valorTipoTexto})
+Negociadoras: ${negociadoras || 'N/A'}
+OBS: ${observacao || 'N/A'}
 \`\`\`
         `.trim();
         
@@ -1472,15 +1519,15 @@ OBS: ${observacao}
             const [data, hora] = venda.dataHora.split(', ');
             dateCell.innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
 
-            row.insertCell().textContent = capitalizeText(venda.cliente);
-            row.insertCell().textContent = `${capitalizeText(venda.organizacao)} (${venda.organizacaoTipo})`;
+            row.insertCell().textContent = venda.cliente;
+            row.insertCell().textContent = `${venda.organizacao} (${venda.organizacaoTipo})`;
             row.insertCell().textContent = venda.telefone;
 
             let produtos = [];
             if (venda.qtyTickets > 0) produtos.push(`${venda.qtyTickets} Tickets`);
             if (venda.qtyTablets > 0) produtos.push(`${venda.qtyTablets} Tablets`);
             if (venda.qtyNitro > 0) produtos.push(`${venda.qtyNitro} Nitro`);
-            row.insertCell().textContent = capitalizeText(produtos.join(', '));
+            row.insertCell().textContent = produtos.join(', ');
             
             const valorCell = row.insertCell();
             valorCell.className = 'valor-total-cell';
@@ -1488,24 +1535,46 @@ OBS: ${observacao}
             const tipoTexto = valorDescricao[venda.tipoValor] || 'N/A';
             valorCell.innerHTML = `<span>${valorTotalTexto}</span><span class="valor-obs-text">(${tipoTexto})</span>`;
 
-            row.insertCell().textContent = capitalizeText(venda.negociadoras);
+            row.insertCell().textContent = venda.negociadoras;
             row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
             
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
             
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Editar';
-            editBtn.className = 'action-btn muted';
-            editBtn.onclick = () => editVenda(venda.id);
+            // Permissões
+            const isOwner = venda.registradoPorUid === currentUser.uid;
+            const isAdmin = currentUser.role === 'admin';
+            const isHells = currentUser.role === 'hells';
             
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Deletar';
-            deleteBtn.className = 'action-btn danger';
-            deleteBtn.onclick = () => removeVenda(venda.id);
+            // Botão Discord
+            const discordBtn = document.createElement('button');
+            discordBtn.textContent = 'Discord';
+            discordBtn.className = 'action-btn primary';
+            discordBtn.onclick = () => {
+                const message = buildDiscordMessage(venda); 
+                if (message) copyToClipboard(message);
+            };
             
-            actionsCell.appendChild(editBtn);
-            actionsCell.appendChild(deleteBtn);
+            // Botão Editar (Apenas Owner, Hells ou Admin)
+            if (isOwner || isAdmin || isHells) {
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Editar';
+                editBtn.className = 'action-btn muted';
+                editBtn.onclick = () => editVenda(venda.id);
+                actionsCell.appendChild(editBtn);
+            }
+            
+            // Botão Deletar (Apenas Admin, Hells ou Owner)
+            // ADMIN apaga tudo. HELLS apaga a própria e a de MEMBRO. MEMBRO só a própria.
+            if (isAdmin || (isHells && venda.registradoPorUid !== 'admin') || isOwner) { 
+                 const deleteBtn = document.createElement('button');
+                 deleteBtn.textContent = 'Apagar';
+                 deleteBtn.className = 'action-btn danger';
+                 deleteBtn.onclick = () => removeVenda(venda.id);
+                 actionsCell.appendChild(deleteBtn);
+            }
+            
+            actionsCell.prepend(discordBtn); // Adiciona o botão Discord
         });
     };
 
@@ -1578,6 +1647,11 @@ OBS: ${observacao}
     };
 
     const clearHistory = () => {
+        if (currentUser.role !== 'admin') {
+            showToast("Acesso negado. Apenas o ADMIN pode limpar todo o histórico.", "error", 4000);
+            return;
+        }
+        
         if (confirm("ATENÇÃO: Você tem certeza que deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
             remove(ref(db, 'vendas'))
                 .then(() => {
@@ -1760,11 +1834,22 @@ OBS: ${observacao}
     // Função para exibir o nome e a tag do usuário
     const displayUserInfo = (user) => {
         if (user && user.displayName) {
-            const roleText = user.role === 'hells' ? 'HELLS' : 'MEMBRO';
+            const roleText = user.role === 'admin' ? 'ADMIN' : (user.role === 'hells' ? 'HELLS' : 'MEMBRO');
             els.userInfoDisplay.textContent = `Olá, ${capitalizeText(user.displayName)} (${roleText})`;
-            // Remove o display flex do container do main card para centralizar o h1
+            
+            // Controle de visibilidade do Admin Panel
+            if (user.role === 'admin') {
+                els.adminPanel.style.display = 'block';
+                els.clearHistoryBtn.style.display = 'inline-block';
+            } else {
+                els.adminPanel.style.display = 'none';
+                els.clearHistoryBtn.style.display = 'none';
+            }
+
         } else {
             els.userInfoDisplay.textContent = '';
+            els.adminPanel.style.display = 'none';
+            els.clearHistoryBtn.style.display = 'none';
         }
     };
 
@@ -1831,18 +1916,59 @@ OBS: ${observacao}
     // NOVO: Função para verificar e setar a role
     const checkAndSetUserRole = (user, displayName) => {
         return new Promise((resolve) => {
-            const adminUsers = ['admin', 'crystaladmin']; // Adicionado CrystalAdmin para acesso HELLS
+            const adminUsers = ['admin', 'crystaladmin']; 
             
             if (adminUsers.includes(displayName.toLowerCase())) {
-                user.role = 'hells';
+                user.role = 'admin'; // Nova tag ADMIN
                 resolve(user);
                 return;
             }
 
-            // A lógica de busca no Realtime Database viria aqui se houvesse outras roles
-            user.role = 'membro'; // Padrão para membros que não são admins
-            resolve(user);
+            // Checa a role no Realtime Database (para HELLS e MEMBRO)
+            const roleRef = ref(db, `user_roles/${displayName.toLowerCase()}`);
+            onValue(roleRef, (snapshot) => {
+                if (snapshot.exists() && snapshot.val().role) {
+                    user.role = snapshot.val().role;
+                } else {
+                    user.role = 'membro'; // Padrão
+                }
+                resolve(user);
+            }, { onlyOnce: true });
         });
+    };
+    
+    // NOVO: Função para atribuir a tag HELLS
+    const assignHellsRole = () => {
+        if (currentUser.role !== 'admin') {
+            showToast("Acesso negado. Apenas o ADMIN pode gerenciar tags.", "error", 4000);
+            return;
+        }
+
+        const targetUsername = els.adminTargetUsername.value.trim().toLowerCase();
+        
+        if (!targetUsername) {
+            els.adminMessage.textContent = "Digite um nome de usuário válido.";
+            return;
+        }
+        
+        if (targetUsername === 'admin' || targetUsername === 'crystaladmin') {
+             els.adminMessage.textContent = "Não é necessário atribuir role de HELLS ao ADMIN.";
+             return;
+        }
+
+        els.adminMessage.textContent = `Atribuindo tag 'HELLS' para ${capitalizeText(targetUsername)}...`;
+
+        set(ref(db, `user_roles/${targetUsername}`), { role: 'hells' })
+            .then(() => {
+                els.adminMessage.textContent = "";
+                showToast(`Tag 'HELLS' atribuída a ${capitalizeText(targetUsername)} com sucesso!`, "success", 4000);
+                els.adminTargetUsername.value = '';
+            })
+            .catch((error) => {
+                els.adminMessage.textContent = `Erro: ${error.message}`;
+                showToast("Erro ao atribuir tag.", "error", 4000);
+                console.error(error);
+            });
     };
 
     // FUNÇÃO PRINCIPAL: Garante que a tela correta seja exibida e carrega os dados
@@ -1860,24 +1986,37 @@ OBS: ${observacao}
                 await updateProfile(user, { displayName: displayName });
             }
             
-            // Define a role do usuário (HELLS ou MEMBRO)
+            // Define a role do usuário (ADMIN, HELLS ou MEMBRO)
             currentUser = await checkAndSetUserRole(user, displayName);
             currentUser.displayName = displayName; 
+            currentUser.uid = user.uid; // Garante que o UID está presente
             
             // 1. Exibe a Calculadora
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
             els.historyCard.style.display = 'none';
             
-            // 2. Exibe o nome e a tag
+            // 2. Exibe o nome e a tag, e configura o Admin Panel
             displayUserInfo(currentUser);
             
-            // 3. Inicia o listener de vendas
-            onValue(ref(db, 'vendas'), (snapshot) => {
-                vendas = [];
+            // 3. Inicia o listener de vendas (Filtrando se não for ADMIN/HELLS)
+            const salesRef = ref(db, 'vendas');
+            
+            onValue(salesRef, (snapshot) => {
+                let allVendas = [];
                 snapshot.forEach((childSnapshot) => {
-                    vendas.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                    allVendas.push({ id: childSnapshot.key, ...childSnapshot.val() });
                 });
+                
+                if (currentUser.role === 'admin' || currentUser.role === 'hells') {
+                    vendas = allVendas; 
+                } else {
+                    // MEMBROS só veem as próprias vendas
+                    vendas = allVendas.filter(venda => 
+                        venda.registradoPorUid === currentUser.uid
+                    );
+                }
+
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas);
                 }
@@ -1896,7 +2035,7 @@ OBS: ${observacao}
             els.loginBtn.textContent = 'Entrar';
             
             // Limpa o display de info do usuário
-            if(els.userInfoDisplay) els.userInfoDisplay.textContent = '';
+            displayUserInfo(null);
         }
     });
 
@@ -1904,12 +2043,17 @@ OBS: ${observacao}
     // 9. LISTENERS DE EVENTOS
     // ------------------------------------
     
+    // Listener para o novo botão de atribuir tag
+    if (els.assignRoleBtn) {
+        els.assignRoleBtn.onclick = assignHellsRole;
+    }
+    
     els.calcBtn.onclick = calculate;
     els.resetBtn.onclick = clearAllFields;
     els.registerBtn.onclick = registerVenda;
     els.toggleHistoryBtn.onclick = () => toggleView(true);
     els.toggleCalcBtn.onclick = () => toggleView(false);
-    els.clearHistoryBtn.onclick = clearHistory;
+    els.clearHistoryBtn.onclick = clearHistory; // Protegido por lógica de permissão
     els.csvBtn.onclick = exportToCsv;
     els.themeBtn.onclick = toggleTheme;
     els.tutorialBtn.onclick = () => {
