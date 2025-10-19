@@ -1523,6 +1523,39 @@ OBS: ${observacao}
             showToast("Erro ao copiar. Tente novamente ou copie manualmente.", "error", 3000);
         });
     };
+    
+    // --- NOVA FUNÇÃO: Gera mensagem para Discord a partir do Histórico ---
+    const buildDiscordMessageFromHistory = (venda) => {
+        // Formata a data para pegar apenas a parte "dd/mm/aaaa"
+        const dataFormatada = venda.dataHora.split(', ')[0];
+
+        // Formata a lista de produtos
+        let produtos = [];
+        if (venda.qtyTickets > 0) produtos.push(`Tickets (${venda.qtyTickets})`);
+        if (venda.qtyTablets > 0) produtos.push(`Tablet (${venda.qtyTablets})`);
+        if (venda.qtyNitro > 0) produtos.push(`Nitros (${venda.qtyNitro})`);
+        const listaProdutos = produtos.join(', ');
+
+        // Formata o valor total e o tipo de pagamento
+        const valorTotalTexto = formatCurrency(venda.valorTotal || 0);
+        // Usa a observação do campo de valor, se não houver, usa o tipo (limpo/sujo)
+        const tipoValorTexto = venda.vendaValorObs || valorDescricao[venda.tipoValor] || 'Valor não especificado';
+
+        const message = `
+\`\`\`
+Nome: ${venda.cliente}
+Data: ${dataFormatada}
+Organização: ${venda.organizacaoTipo} - ${venda.organizacao}
+Telefone: ${venda.telefone}
+Produto (Unidade): ${listaProdutos}
+Venda Valor: ${valorTotalTexto} (${tipoValorTexto})
+Negociadoras: ${venda.negociadoras}
+\`\`\`
+        `.trim();
+        
+        return message;
+    };
+    // --- FIM DA NOVA FUNÇÃO ---
 
     // ------------------------------------
     // 6. LÓGICA DE EXIBIÇÃO E HISTÓRICO
@@ -1610,9 +1643,20 @@ OBS: ${observacao}
             deleteBtn.textContent = 'Deletar';
             deleteBtn.className = 'action-btn danger';
             deleteBtn.onclick = () => removeVenda(venda.id);
+
+            // --- INÍCIO DO CÓDIGO NOVO (PONTO 2) ---
+            const discordBtn = document.createElement('button');
+            discordBtn.textContent = 'Discord';
+            discordBtn.className = 'action-btn muted'; 
+            discordBtn.onclick = () => {
+                const mensagem = buildDiscordMessageFromHistory(venda);
+                copyToClipboard(mensagem);
+            };
+            // --- FIM DO CÓDIGO NOVO ---
             
             actionsCell.appendChild(editBtn);
             actionsCell.appendChild(deleteBtn);
+            actionsCell.appendChild(discordBtn); // Adiciona o novo botão na célula
         });
     };
 
