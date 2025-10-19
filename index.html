@@ -1474,40 +1474,46 @@ body.dark #historyBackground {
         }
     };
 
-    /** Constrói a mensagem de Discord para a venda atual */
+    /** Constrói a mensagem de Discord para a venda atual (na Calculadora) */
     const buildDiscordMessage = () => {
         const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
 
         if (!hasQuantities) {
             showToast("Calcule uma venda antes de tentar gerar a mensagem.", "error", 3000);
-            return;
+            return; // Retorna undefined para indicar erro
         }
-        
-        const valorTipoTexto = valorDescricao[tipoValor] || 'N/A';
-        const valorTotalTexto = formatCurrency(totalValue);
-        const nomeCliente = els.nomeCliente.value.trim() || 'N/A';
-        const organizacao = els.organizacao.value.trim() || 'N/A';
-        const telefone = els.telefone.value.trim() || 'N/A';
-        const negociadoras = els.negociadoras.value.trim() || 'N/A';
-        const observacao = els.vendaValorObs.value.trim() || 'N/A';
 
+        const dataFormatada = els.dataVenda.value;
         let produtos = [];
-        if (qtyTickets > 0) produtos.push(`${qtyTickets} Tickets`);
-        if (qtyTablets > 0) produtos.push(`${qtyTablets} Tablets`);
-        if (qtyNitro > 0) produtos.push(`${qtyNitro} Nitro`);
+        if (qtyTickets > 0) produtos.push(`Tickets (${qtyTickets})`);
+        if (qtyTablets > 0) produtos.push(`Tablet (${qtyTablets})`);
+        if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
         const listaProdutos = produtos.join(', ');
 
-        const message = `
-**[VENDA - HELLS ANGELS]**
-\`\`\`
-CLIENTE: ${nomeCliente}
-ORGANIZAÇÃO: ${organizacao}
-TELEFONE: ${telefone}
+        const valorTotalTexto = formatCurrency(totalValue);
+        const tipoValorTexto = els.vendaValorObs.value.trim() || valorDescricao[tipoValor] || 'Valor não especificado';
 
-PRODUTOS: ${listaProdutos}
-VALOR FINAL: ${valorTotalTexto} (${valorTipoTexto})
-NEGOCIADORAS: ${negociadoras}
-OBS: ${observacao}
+        const cliente = els.nomeCliente.value.trim();
+        const organizacaoTipo = els.organizacaoTipo.value;
+        const organizacao = els.organizacao.value.trim();
+        const telefone = els.telefone.value.trim();
+        const negociadoras = els.negociadoras.value.trim();
+        
+        // Validação dos campos de texto
+        if (!cliente || !organizacao || !telefone || !negociadoras) {
+            showToast("Preencha todos os dados da venda (Nome, Org, Telefone, Negociadoras) antes de copiar.", "error", 4000);
+            return; // Retorna undefined
+        }
+
+        const message = `
+\`\`\`
+Nome: ${cliente}
+Data: ${dataFormatada}
+Organização: ${organizacaoTipo} - ${organizacao}
+Telefone: ${telefone}
+Produto (Unidade): ${listaProdutos}
+Venda Valor: ${valorTotalTexto} (${tipoValorTexto})
+Negociadoras: ${negociadoras}
 \`\`\`
         `.trim();
         
@@ -1524,21 +1530,17 @@ OBS: ${observacao}
         });
     };
     
-    // --- NOVA FUNÇÃO: Gera mensagem para Discord a partir do Histórico ---
+    /** Gera mensagem para Discord a partir do Histórico */
     const buildDiscordMessageFromHistory = (venda) => {
-        // Formata a data para pegar apenas a parte "dd/mm/aaaa"
         const dataFormatada = venda.dataHora.split(', ')[0];
 
-        // Formata a lista de produtos
         let produtos = [];
         if (venda.qtyTickets > 0) produtos.push(`Tickets (${venda.qtyTickets})`);
         if (venda.qtyTablets > 0) produtos.push(`Tablet (${venda.qtyTablets})`);
         if (venda.qtyNitro > 0) produtos.push(`Nitros (${venda.qtyNitro})`);
         const listaProdutos = produtos.join(', ');
 
-        // Formata o valor total e o tipo de pagamento
         const valorTotalTexto = formatCurrency(venda.valorTotal || 0);
-        // Usa a observação do campo de valor, se não houver, usa o tipo (limpo/sujo)
         const tipoValorTexto = venda.vendaValorObs || valorDescricao[venda.tipoValor] || 'Valor não especificado';
 
         const message = `
@@ -1555,7 +1557,6 @@ Negociadoras: ${venda.negociadoras}
         
         return message;
     };
-    // --- FIM DA NOVA FUNÇÃO ---
 
     // ------------------------------------
     // 6. LÓGICA DE EXIBIÇÃO E HISTÓRICO
@@ -1567,7 +1568,6 @@ Negociadoras: ${venda.negociadoras}
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'block';
             els.historyImg.src = historyBackgroundSrc;
-            // Limpa o filtro ao abrir a lista completa
             els.filtroHistorico.value = ''; 
             displaySalesHistory(vendas); 
         } else {
@@ -1589,34 +1589,26 @@ Negociadoras: ${venda.negociadoras}
             return;
         }
 
-        history.sort((a, b) => b.timestamp - a.timestamp); // Mais recente primeiro
+        history.sort((a, b) => b.timestamp - a.timestamp);
 
         history.forEach(venda => {
             const row = els.salesHistory.insertRow();
             row.setAttribute('data-id', venda.id);
 
-            // Célula 1: Data/Hora
             const dateCell = row.insertCell();
             const [data, hora] = venda.dataHora.split(', ');
             dateCell.innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
 
-            // Célula 2: Cliente
             row.insertCell().textContent = capitalizeText(venda.cliente);
-
-            // Célula 3: Organização/Tipo
             row.insertCell().textContent = `${capitalizeText(venda.organizacao)} (${venda.organizacaoTipo})`;
-            
-            // Célula 4: Telefone
             row.insertCell().textContent = venda.telefone;
 
-            // Célula 5: Produtos (Unidade)
             let produtos = [];
             if (venda.qtyTickets > 0) produtos.push(`${venda.qtyTickets} Tickets`);
             if (venda.qtyTablets > 0) produtos.push(`${venda.qtyTablets} Tablets`);
             if (venda.qtyNitro > 0) produtos.push(`${venda.qtyNitro} Nitro`);
             row.insertCell().textContent = capitalizeText(produtos.join(', '));
             
-            // Célula 6: Valor Total
             const valorCell = row.insertCell();
             valorCell.className = 'valor-total-cell';
             const valorTotalTexto = formatCurrency(venda.valorTotal || 0);
@@ -1624,13 +1616,9 @@ Negociadoras: ${venda.negociadoras}
             const tipoTexto = valorDescricao[venda.tipoValor] || 'N/A';
             valorCell.innerHTML = `<span>${valorTotalTexto}</span><span class="valor-obs-text">(${tipoTexto})</span>`;
 
-            // Célula 7: Negociadoras
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
-            
-            // Célula 8: Registrado Por
             row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
             
-            // Célula 9: Ações
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
             
@@ -1644,7 +1632,6 @@ Negociadoras: ${venda.negociadoras}
             deleteBtn.className = 'action-btn danger';
             deleteBtn.onclick = () => removeVenda(venda.id);
 
-            // --- INÍCIO DO CÓDIGO NOVO (PONTO 2) ---
             const discordBtn = document.createElement('button');
             discordBtn.textContent = 'Discord';
             discordBtn.className = 'action-btn muted'; 
@@ -1652,11 +1639,10 @@ Negociadoras: ${venda.negociadoras}
                 const mensagem = buildDiscordMessageFromHistory(venda);
                 copyToClipboard(mensagem);
             };
-            // --- FIM DO CÓDIGO NOVO ---
             
             actionsCell.appendChild(editBtn);
             actionsCell.appendChild(deleteBtn);
-            actionsCell.appendChild(discordBtn); // Adiciona o novo botão na célula
+            actionsCell.appendChild(discordBtn);
         });
     };
 
@@ -1691,14 +1677,12 @@ Negociadoras: ${venda.negociadoras}
             return;
         }
         
-        // Define o cabeçalho do CSV
         const headers = [
             "Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", 
             "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", 
             "Valor Total", "Tipo Valor", "Registrado Por"
         ];
         
-        // Mapeia os dados da venda para linhas CSV
         const csvRows = vendas.map(v => [
             `"${v.dataHora}"`,
             `"${v.cliente}"`,
@@ -1715,13 +1699,11 @@ Negociadoras: ${venda.negociadoras}
             `"${v.registradoPor}"`
         ].join(','));
 
-        // Combina cabeçalho e linhas
         const csvContent = [
             headers.join(','),
             ...csvRows
         ].join('\n');
 
-        // Cria e baixa o arquivo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1737,11 +1719,9 @@ Negociadoras: ${venda.negociadoras}
     /** Limpa todo o histórico de vendas do Firebase */
     const clearHistory = () => {
         if (confirm("ATENÇÃO: Você tem certeza que deseja APAGAR TODO o histórico de vendas? Esta ação é irreversível.")) {
-            // Remove o nó principal das vendas
             remove(ref(db, 'vendas'))
                 .then(() => {
                     showToast("Histórico de vendas limpado com sucesso.", "success", 4000);
-                    // O onValue irá atualizar a tela automaticamente.
                 })
                 .catch((error) => {
                     console.error("Erro ao limpar histórico:", error);
@@ -1807,14 +1787,14 @@ Negociadoras: ${venda.negociadoras}
             element: 'registerBtn', 
             title: '4/5: Registrar Venda', 
             content: 'Após o cálculo, preencha os dados da venda (Cliente, Telefone, Obs) e clique aqui para registrar no banco de dados (Firebase).', 
-            beforeAction: () => els.results.style.display = 'block' // Garante que os resultados estejam visíveis para a etapa 4
+            beforeAction: () => els.results.style.display = 'block'
         },
         { 
             id: 'passo5', 
             element: 'toggleHistoryBtn', 
             title: '5/5: Histórico', 
             content: 'Acesse o histórico de todas as vendas registradas. Você pode pesquisar, editar ou deletar vendas aqui.', 
-            afterAction: () => els.results.style.display = 'none' // Limpa resultados após a etapa 4
+            afterAction: () => els.results.style.display = 'none'
         }
     ];
 
@@ -1825,7 +1805,6 @@ Negociadoras: ${venda.negociadoras}
     const clearTour = () => {
         if (currentTooltip) {
             currentTooltip.classList.remove('active');
-            // Dá tempo para a transição (opacidade) antes de remover o elemento
             setTimeout(() => {
                 if (currentTooltip && currentTooltip.parentNode) {
                     currentTooltip.parentNode.removeChild(currentTooltip);
@@ -1842,7 +1821,6 @@ Negociadoras: ${venda.negociadoras}
     
     /** Mostra o próximo passo do tutorial */
     const showNextTourStep = () => {
-        // Limpa o passo anterior
         if (currentStepIndex >= 0) {
             clearTour(); 
         }
@@ -1859,27 +1837,22 @@ Negociadoras: ${venda.negociadoras}
         
         if (!targetElement) {
             console.error(`Elemento alvo não encontrado para o passo ${step.id}`);
-            showNextTourStep(); // Pula para o próximo passo
+            showNextTourStep();
             return;
         }
 
-        // 1. Executa a ação prévia, se houver
         if (step.beforeAction) {
             step.beforeAction();
         }
 
-        // Garante que o usuário está na tela certa (Calculadora)
         if (step.element !== 'toggleHistoryBtn' && els.historyCard.style.display !== 'none') {
             toggleView(false); 
         } else if (step.element === 'toggleHistoryBtn') {
-            // Se for o passo do histórico, precisa estar na calculadora para o botão ser visível
             toggleView(false); 
         }
         
-        // 2. Adiciona destaque
         targetElement.classList.add('tour-highlight');
         
-        // 3. Cria a dica (tooltip)
         currentTooltip = document.createElement('div');
         currentTooltip.className = 'tour-tooltip';
         currentTooltip.innerHTML = `
@@ -1892,19 +1865,15 @@ Negociadoras: ${venda.negociadoras}
         `;
         document.body.appendChild(currentTooltip);
         
-        // 4. Posiciona a dica
         const rect = targetElement.getBoundingClientRect();
         
-        // Tenta posicionar acima ou abaixo (cuidado com bordas)
         let top = rect.top + window.scrollY - currentTooltip.offsetHeight - 10;
         let left = rect.left + window.scrollX;
 
-        // Se não houver espaço acima, posiciona abaixo
         if (rect.top < currentTooltip.offsetHeight + 20) {
             top = rect.bottom + window.scrollY + 10;
         }
         
-        // Garante que não saia da tela horizontalmente
         if (left + currentTooltip.offsetWidth > window.innerWidth - 20) {
             left = window.innerWidth - currentTooltip.offsetWidth - 20;
         }
@@ -1915,12 +1884,10 @@ Negociadoras: ${venda.negociadoras}
         currentTooltip.style.top = `${top}px`;
         currentTooltip.style.left = `${left}px`;
 
-        // 5. Ativa a transição
         setTimeout(() => {
             currentTooltip.classList.add('active');
         }, 10);
         
-        // 6. Configura botões da dica
         document.getElementById('tourNextBtn').onclick = () => {
             if (step.afterAction) {
                 step.afterAction();
@@ -1929,7 +1896,6 @@ Negociadoras: ${venda.negociadoras}
         };
         document.getElementById('tourSkipBtn').onclick = clearTour;
 
-        // 7. Scrolla para o elemento
         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
@@ -1939,7 +1905,7 @@ Negociadoras: ${venda.negociadoras}
 
     /** Lida com o registro de novos usuários */
     const handleRegister = () => {
-        const email = els.username.value.trim() + "@ha.com"; // Email dummy
+        const email = els.username.value.trim() + "@ha.com";
         const password = els.password.value;
         const displayName = els.username.value.trim();
 
@@ -1955,10 +1921,8 @@ Negociadoras: ${venda.negociadoras}
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
-                // Define o nome de exibição do usuário
                 updateProfile(user, { displayName: displayName })
                     .then(() => {
-                        // Sucesso. O onAuthStateChanged fará o resto.
                         els.authMessage.textContent = `Usuário ${displayName} registrado com sucesso. Logando...`;
                     })
                     .catch((error) => {
@@ -1975,14 +1939,13 @@ Negociadoras: ${venda.negociadoras}
 
     /** Lida com o login de usuários existentes */
     const handleLogin = () => {
-        const email = els.username.value.trim() + "@ha.com"; // Email dummy
+        const email = els.username.value.trim() + "@ha.com";
         const password = els.password.value;
 
         els.authMessage.textContent = "Entrando...";
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
-                // Sucesso. O onAuthStateChanged fará o resto.
                 els.authMessage.textContent = "Login bem-sucedido!";
             })
             .catch((error) => {
@@ -1997,7 +1960,6 @@ Negociadoras: ${venda.negociadoras}
     const handleLogout = () => {
         auth.signOut().then(() => {
             showToast("Desconectado com sucesso.", "success", 2000);
-            // onAuthStateChanged irá gerenciar a transição para a tela de login
         }).catch((error) => {
             console.error("Erro ao fazer logout:", error);
             showToast(`Erro ao fazer logout: ${error.message}`, "error", 3000);
@@ -2007,16 +1969,13 @@ Negociadoras: ${venda.negociadoras}
     /** Escuta as mudanças no estado de autenticação (login/logout) */
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Usuário logado
             currentUser = user;
             
-            // Verifica se o displayName está definido
             if (!user.displayName) {
-                // Se não estiver, usa a parte do email antes do @ para o displayName
                 const defaultName = user.email.split('@')[0];
                 updateProfile(user, { displayName: defaultName })
                     .then(() => {
-                        currentUser = {...user, displayName: defaultName}; // Atualiza a variável
+                        currentUser = {...user, displayName: defaultName};
                         els.authScreen.style.display = 'none';
                         els.mainCard.style.display = 'block';
                     });
@@ -2025,22 +1984,19 @@ Negociadoras: ${venda.negociadoras}
                 els.mainCard.style.display = 'block';
             }
             
-            // Inicia o listener de vendas (somente quando logado)
             onValue(ref(db, 'vendas'), (snapshot) => {
                 vendas = [];
                 snapshot.forEach((childSnapshot) => {
                     vendas.push({ id: childSnapshot.key, ...childSnapshot.val() });
                 });
-                // Garante que o histórico seja atualizado se a lista estiver aberta
                 if (els.historyCard.style.display !== 'none') {
                     displaySalesHistory(vendas);
                 }
             }, {
-                onlyOnce: false // Continua escutando
+                onlyOnce: false
             });
 
         } else {
-            // Usuário deslogado
             currentUser = null;
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
@@ -2071,19 +2027,17 @@ Negociadoras: ${venda.negociadoras}
         }
         showNextTourStep();
     };
+    
     els.discordBtnCalc.onclick = () => {
-        if (!els.nomeCliente.value.trim() && !els.organizacao.value.trim()) {
-            showToast("Preencha ao menos o Cliente ou Organização antes de copiar.", "error", 3000);
-            // Não retorna, permite copiar mesmo assim, mas alerta
-        }
         const message = buildDiscordMessage();
-        copyToClipboard(message);
+        // Só copia se a mensagem for gerada com sucesso (ou seja, não for undefined)
+        if (message) {
+            copyToClipboard(message);
+        }
     };
     
-    // Listener do filtro
     els.filtroHistorico.addEventListener('input', filterHistory);
     
-    // Autenticação
     els.loginBtn.onclick = handleLogin;
     els.logoutBtn.onclick = handleLogout;
     
@@ -2103,7 +2057,6 @@ Negociadoras: ${venda.negociadoras}
         }
     };
     
-    // Adiciona o listener para o botão de login (que muda de texto)
     els.loginBtn.addEventListener('click', () => {
         if (els.loginBtn.textContent.includes('Entrar')) {
             handleLogin();
@@ -2112,35 +2065,27 @@ Negociadoras: ${venda.negociadoras}
         }
     });
 
-    // Lógica para a tela de boas-vindas
     els.enterBtn.onclick = () => {
-        // Marca que o usuário visitou e esconde a tela
         localStorage.setItem('hasVisited', 'true');
         els.welcomeScreen.classList.add('hidden');
         
-        // Dispara o estado de autenticação após a transição
         setTimeout(() => {
             els.welcomeScreen.style.display = 'none';
-        }, 500); // 500ms é o tempo da transição CSS
+        }, 500);
 
-        // Força a atualização do estado para mostrar login/mainCard
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Se já estiver logado, garante que a tela principal apareça
                 els.authScreen.style.display = 'none';
                 els.mainCard.style.display = 'block';
             } else {
-                 // Se não logado, apenas mostra a tela de login
                 els.authScreen.style.display = 'block';
                 els.mainCard.style.display = 'none';
                 els.historyCard.style.display = 'none';
             }
-
             clearTour(); 
         });
     };
     
-    // Permite login/cadastro por Enter nos campos de senha
     els.password.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             if (els.loginBtn.textContent.includes('Entrar')) {
@@ -2151,18 +2096,13 @@ Negociadoras: ${venda.negociadoras}
         }
     });
     
-    // --- Chamadas Iniciais e Lógica de Estado do Firebase ---
-    
-    // A lógica de estado inicial é toda controlada pelo onAuthStateChanged acima.
-    
-    // Lógica para esconder a tela de boas-vindas na primeira visita
     if (localStorage.getItem('hasVisited')) {
         els.welcomeScreen.classList.add('hidden');
         els.welcomeScreen.style.display = 'none';
     } else {
         els.welcomeScreen.classList.remove('hidden');
         els.welcomeScreen.classList.add('show');
-        els.authScreen.style.display = 'none'; // Garante que a tela de login não apareça por cima
+        els.authScreen.style.display = 'none';
         els.mainCard.style.display = 'none';
     }
   </script>
