@@ -81,7 +81,7 @@
     body.history-view-active { max-width: 1200px; }
 
     #mainCard { display: block; }
-    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; }
+    h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
     h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--cor-principal); }
     h3 { color: var(--cor-principal); font-weight:600; margin-top: 16px; }
 
@@ -91,16 +91,12 @@
       margin-bottom: 20px;
     }
     
-    /* --- NOVO (ETAPA 1): Estilo do Contador de Usuários --- */
     #user-counter {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--cor-principal);
-        margin: 0 10px;
-        padding: 5px 10px;
-        background-color: var(--cor-btn-secundario);
-        border-radius: 8px;
+        font-size: 16px; font-weight: 600; color: var(--cor-principal);
+        padding: 5px 10px; background-color: var(--cor-btn-secundario);
+        border-radius: 8px; min-width: 60px; text-align: center;
     }
+    .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; }
 
     label { display: block; margin: 10px 0 6px; font-weight: 600; color: var(--cor-principal); }
     input[type=number], input[type=text], select {
@@ -265,7 +261,7 @@
   </div>
 
   <div class="card" id="mainCard" style="display:none">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
+    <div class="header-container">
         <div id="user-counter">👤 0</div>
         <h1>Calculadora e Registro de Vendas</h1>
         <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
@@ -403,7 +399,6 @@
   <div id="toast-container"></div>
   
   <script type="module">
-    // --- NOVO (ETAPA 1): onDisconnect importado ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, set, push, onValue, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -471,7 +466,7 @@
       username: document.getElementById('username'), password: document.getElementById('password'),
       loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'),
       authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'),
-      userCounter: document.getElementById('user-counter') // NOVO (ETAPA 1)
+      userCounter: document.getElementById('user-counter')
     };
     
     const formatCurrency = (value) => {
@@ -879,7 +874,8 @@ Negociadoras: ${negociadoras}
         action.catch((error) => {
             const code = error.code;
             const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." :
-                        code === 'auth/email-already-in-use' ? "Nome de usuário já existe." : `Erro: ${code}`;
+                        code === 'auth/email-already-in-use' ? "Nome de usuário já existe." :
+                        `Erro: ${code}`;
             showToast(msg, "error");
         });
     };
@@ -887,7 +883,6 @@ Negociadoras: ${negociadoras}
     els.loginBtn.onclick = () => handleAuthAction(true);
     els.registerUserBtn.onclick = () => handleAuthAction(false);
     els.logoutBtn.onclick = () => {
-        // --- NOVO (ETAPA 1): Remove o status online antes de deslogar ---
         if(currentUser) {
             const userStatusRef = ref(db, `/status/${currentUser.uid}`);
             remove(userStatusRef);
@@ -902,29 +897,23 @@ Negociadoras: ${negociadoras}
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
 
-            // --- NOVO (ETAPA 1): Lógica de Presença ---
             const userStatusRef = ref(db, `/status/${currentUser.uid}`);
             const isOnline = { online: true };
-            const isOffline = { online: false };
             
-            // Escuta por mudanças na conexão
             onValue(ref(db, '.info/connected'), (snapshot) => {
                 if (snapshot.val() === false) { return; }
                 
-                // Se o usuário se desconectar, remove seu status
                 onDisconnect(userStatusRef).remove().then(() => {
-                    // Estando conectado, define seu status como online
+                    // *** ESTA É A LINHA CORRIGIDA ***
                     set(userStatusRef, isOnline);
                 });
             });
 
-            // Escuta a lista de status para contar usuários
             const statusRef = ref(db, '/status');
             onValue(statusRef, (snapshot) => {
                 const count = snapshot.numChildren();
                 els.userCounter.innerHTML = `👤 <strong>${count}</strong>`;
             });
-            // --- FIM DA LÓGICA DE PRESENÇA ---
 
             onValue(ref(db, 'vendas'), (snapshot) => {
                 vendas = [];
