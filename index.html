@@ -91,11 +91,6 @@
       margin-bottom: 20px;
     }
     
-    #user-counter {
-        font-size: 16px; font-weight: 600; color: var(--cor-principal);
-        padding: 5px 10px; background-color: var(--cor-btn-secundario);
-        border-radius: 8px; min-width: 60px; text-align: center;
-    }
     .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; }
 
     label { display: block; margin: 10px 0 6px; font-weight: 600; color: var(--cor-principal); }
@@ -262,7 +257,6 @@
 
   <div class="card" id="mainCard" style="display:none">
     <div class="header-container">
-        <div id="user-counter">👤 0</div>
         <h1>Calculadora e Registro de Vendas</h1>
         <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
     </div>
@@ -488,8 +482,7 @@
       loginBtn: document.getElementById('loginBtn'),
       registerUserBtn: document.getElementById('registerUserBtn'),
       authMessage: document.getElementById('authMessage'),
-      logoutBtn: document.getElementById('logoutBtn'),
-      userCounter: document.getElementById('user-counter')
+      logoutBtn: document.getElementById('logoutBtn')
     };
     
     const formatCurrency = (value) => {
@@ -1015,26 +1008,6 @@ Negociadoras: ${negociadoras}
             currentUser = user;
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
-
-            // --- LÓGICA DE PRESENÇA CORRIGIDA ---
-            // Caminho ajustado para /status/ID_DO_USUARIO (sem /users/)
-            const userStatusRef = ref(db, `/status/${currentUser.uid}`);
-            const connectedRef = ref(db, '.info/connected');
-            
-            onValue(connectedRef, (snap) => {
-                if (snap.val() === true) {
-                    set(userStatusRef, true); // Salva o status no caminho correto
-                    onDisconnect(userStatusRef).remove();
-                }
-            });
-
-            // O caminho para contar os usuários agora corresponde ao caminho de escrita
-            const statusRef = ref(db, '/status');
-            onValue(statusRef, (snapshot) => {
-                const count = snapshot.exists() ? snapshot.numChildren() : 0;
-                els.userCounter.innerHTML = `👤 <strong>${count}</strong>`;
-            });
-            // --- FIM DA LÓGICA DE PRESENÇA ---
 
             onValue(ref(db, 'vendas'), (snapshot) => {
                 vendas = [];
