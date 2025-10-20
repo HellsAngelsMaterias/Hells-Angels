@@ -1017,16 +1017,18 @@ Negociadoras: ${negociadoras}
             els.mainCard.style.display = 'block';
 
             // --- LÓGICA DE PRESENÇA CORRIGIDA ---
+            // Caminho ajustado para /status/ID_DO_USUARIO (sem /users/)
             const userStatusRef = ref(db, `/status/${currentUser.uid}`);
             const connectedRef = ref(db, '.info/connected');
             
             onValue(connectedRef, (snap) => {
                 if (snap.val() === true) {
-                    set(userStatusRef, true);
+                    set(userStatusRef, true); // Salva o status no caminho correto
                     onDisconnect(userStatusRef).remove();
                 }
             });
 
+            // O caminho para contar os usuários agora corresponde ao caminho de escrita
             const statusRef = ref(db, '/status');
             onValue(statusRef, (snapshot) => {
                 const count = snapshot.exists() ? snapshot.numChildren() : 0;
