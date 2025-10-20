@@ -891,35 +891,43 @@ Negociadoras: ${negociadoras}
     };
     els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') handleAuthAction(true); });
 
+    // --- LÓGICA DE ESTADO E PRESENÇA (CORRIGIDA) ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
 
+            // Referências do banco de dados para presença
             const userStatusRef = ref(db, `/status/${currentUser.uid}`);
-            const isOnline = { online: true };
+            const connectedRef = ref(db, '.info/connected');
             
-            onValue(ref(db, '.info/connected'), (snapshot) => {
-                if (snapshot.val() === false) { return; }
-                
-                onDisconnect(userStatusRef).remove().then(() => {
-                    // *** ESTA É A LINHA CORRIGIDA ***
-                    set(userStatusRef, isOnline);
-                });
+            // Monitora a conexão
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    // Se conectar, define o status como online
+                    set(userStatusRef, true);
+                    // E configura para remover ao desconectar
+                    onDisconnect(userStatusRef).remove();
+                }
             });
 
+            // Monitora o nó 'status' para atualizar o contador
             const statusRef = ref(db, '/status');
             onValue(statusRef, (snapshot) => {
-                const count = snapshot.numChildren();
+                const count = snapshot.exists() ? snapshot.numChildren() : 0;
                 els.userCounter.innerHTML = `👤 <strong>${count}</strong>`;
             });
 
+            // Monitora as vendas
             onValue(ref(db, 'vendas'), (snapshot) => {
                 vendas = [];
                 snapshot.forEach((child) => { vendas.push({ id: child.key, ...child.val() }); });
-                if (els.historyCard.style.display !== 'none') { displaySalesHistory(vendas); }
+                if (els.historyCard.style.display !== 'none') {
+                    displaySalesHistory(vendas);
+                }
             });
+
         } else {
             currentUser = null;
             els.authScreen.style.display = 'block';
