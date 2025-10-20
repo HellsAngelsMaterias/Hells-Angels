@@ -8,6 +8,7 @@
   
   <title>Hells Angels</title>
   <style>
+    /* TODO O SEU CSS ORIGINAL FOI MANTIDO AQUI */
     :root {
       --cor-fundo: #fff0f6; --cor-texto: #4a0033; --cor-principal: #e60073;
       --cor-card: #ffffff; --cor-borda: #ffb3d9; --cor-btn-primario: #e60073;
@@ -89,8 +90,8 @@
     #historyCard th:nth-child(5), #historyCard td:nth-child(5) { width: 280px; }
     #historyCard th:nth-child(6), #historyCard td:nth-child(6) { width: 150px; }
     #historyCard th:nth-child(7), #historyCard td:nth-child(7) { width: 130px; }
-    #historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 120px; } /* Coluna Registrado Por */
-    #historyCard th:nth-child(9), #historyCard td:nth-child(9) { width: 150px; } /* Coluna Ações */
+    #historyCard th:nth-child(8), #historyCard td:nth-child(8) { width: 120px; }
+    #historyCard th:nth-child(9), #historyCard td:nth-child(9) { width: 150px; }
     .history-datetime-line { display: block; line-height: 1.2; font-size: 13px; }
     .valor-total-cell span:first-child { font-weight: 700; }
     .valor-obs-text { font-size: 12px; color: var(--cor-principal); }
@@ -141,8 +142,8 @@
   </div>
 
   <div class="card" id="mainCard" style="display:none">
-    <div class="header-container" style="display:flex; justify-content: space-between; align-items: center;">
-        <div id="user-counter-placeholder"></div> <h1>Calculadora e Registro de Vendas</h1>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h1>Calculadora e Registro de Vendas Hells Angels</h1>
         <div>
             <button id="adminPanelBtn" class="muted" style="display:none; margin-right: 10px;">Painel Admin</button>
             <button id="logoutBtn" class="danger" style="animation: none;">Sair</button>
@@ -152,23 +153,25 @@
     <div class="card-venda">
         <h2>Dados da Venda</h2>
         <div class="grid grid-venda">
-            <div> <label for="nomeCliente">Nome:</label> <input id="nomeCliente" type="text"> </div>
+            <div> <label for="nomeCliente">Nome:</label> <input id="nomeCliente" type="text" value=""> </div>
             <div> <label for="dataVenda">Data:</label> <input id="dataVenda" type="text" readonly> </div>
-            <div> <label for="organizacao">Organização:</label> <input id="organizacao" type="text" list="sugestoesOrganizacao"> <p class="suggestion-tip">Digite para ver sugestões.</p> <datalist id="sugestoesOrganizacao"> <option value="Serpents"></option> <option value="Nox"></option> <option value="NKT"></option> <option value="Ruptura"></option> <option value="Midnight"></option> <option value="Meraki"></option> <option value="Lotus"></option> <option value="Hydra"></option> <option value="Hooligans"></option> <option value="Families"></option> <option value="Cartel"></option> <option value="Blood Street"></option> <option value="Blood Reapers"></option> <option value="Blue Diamond"></option> <option value="Black Heart"></option> <option value="Ballas"></option> <option value="Aura"></option> <option value="Anarquia"></option> <option value="8 Anjo"></option> <option value="Vagos"></option> <option value="Vertice"></option> <option value="Void"></option> <option value="Solo"></option> </datalist> </div>
+            <div> <label for="organizacao">Organização:</label> <input id="organizacao" type="text" value="" list="sugestoesOrganizacao"> <p class="suggestion-tip">Digite para ver sugestões de organizações.</p> <datalist id="sugestoesOrganizacao"> <option value="Serpents"></option><option value="Nox"></option><option value="NKT"></option><option value="Ruptura"></option><option value="Midnight"></option><option value="Meraki"></option><option value="Lotus"></option><option value="Hydra"></option><option value="Hooligans"></option><option value="Families"></option><option value="Cartel"></option><option value="Blood Street"></option><option value="Blood Reapers"></option><option value="Blue Diamond"></option><option value="Black Heart"></option><option value="Ballas"></option><option value="Aura"></option><option value="Anarquia"></option><option value="8 Anjo"></option><option value="Vagos"></option><option value="Vertice"></option><option value="Void"></option><option value="Solo"></option> </datalist> </div>
             <div> <label for="organizacaoTipo">Opção (CNPJ/CPF):</label> <select id="organizacaoTipo"> <option value="CNPJ">CNPJ</option> <option value="CPF">CPF</option> <option value="OUTROS">Outros</option> </select> </div>
-            <div> <label for="telefone">Telefone:</label> <input id="telefone" type="text" maxlength="13"> </div>
-            <div> <label for="negociadoras">Negociadoras:</label> <input id="negociadoras" type="text"> </div>
-            <div style="grid-column: 1 / -1;"> <label for="vendaValorObs">Valor - Observação (Pagamento):</label> <input id="vendaValorObs" type="text"> </div>
+            <div> <label for="telefone">Telefone:</label> <input id="telefone" type="text" value="" maxlength="13"> </div>
+            <div> <label for="negociadoras">Negociadoras:</label> <input id="negociadoras" type="text" value=""> </div>
+            <div style="grid-column: 1 / -1;"> <label for="vendaValorObs">Valor - Observação (Como foi o pagamento):</label> <input id="vendaValorObs" type="text" value=""> </div>
         </div>
     </div>
     
     <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--cor-borda);">
 
     <h2>Cálculo de Produtos</h2>
+    <p class="small">Informe quantos produtos deseja fabricar/vender e escolha o tipo de valor.</p>
+
     <div class="grid">
-      <div> <label for="qtyTickets">Tickets</label> <input id="qtyTickets" type="number" min="0"> </div>
-      <div> <label for="qtyTablets">Tablets</label> <input id="qtyTablets" type="number" min="0"> </div>
-      <div> <label for="qtyNitro">Nitro</label> <input id="qtyNitro" type="number" min="0"> </div>
+      <div> <label for="qtyTickets">Quantidade de Tickets</label> <input id="qtyTickets" type="number" min="0" value=""> </div>
+      <div> <label for="qtyTablets">Quantidade de Tablets</label> <input id="qtyTablets" type="number" min="0" value=""> </div>
+      <div> <label for="qtyNitro">Quantidade de Nitro</label> <input id="qtyNitro" type="number" min="0" value=""> </div>
       <div> <label for="tipoValor">Tipo de Valor</label> <select id="tipoValor"> <option value="limpo">Dinheiro Limpo</option> <option value="sujo">Dinheiro Sujo</option> <option value="limpo_alianca">Limpo (Aliança)</option> <option value="sujo_alianca">Sujo (Aliança)</option> </select> </div>
     </div>
 
@@ -181,29 +184,33 @@
       <button id="discordBtnCalc" class="muted">Discord</button> 
     </div>
 
-    <div id="results" style="margin-top:16px;display:none">
-      <h3>Totais necessários</h3>
-      <table> <thead><tr><th>Material</th><th>Quantidade</th></tr></thead> <tbody id="resultsBody"></tbody> </table>
-      <h3>Valores Estimados</h3>
-      <table> <thead><tr><th>Produto</th><th>Valor Total</th></tr></thead> <tbody id="valuesBody"></tbody> <tfoot> <tr><th>Total Geral</th><th id="valorTotalGeral">R$ 0</th></tr> </tfoot> </table>
+    <div id="resultsContainer">
+      <div id="results" style="margin-top:16px;display:none">
+        <h3>Totais necessários</h3>
+        <table> <thead><tr><th>Material</th><th>Quantidade total</th></tr></thead> <tbody id="resultsBody"></tbody> </table>
+        <h3>Valores Estimados</h3>
+        <table> <thead><tr><th>Produto</th><th>Valor Total</th></tr></thead> <tbody id="valuesBody"></tbody> <tfoot> <tr><th>Total Geral</th><th id="valorTotalGeral">R$ 0</th></tr> </tfoot> </table>
+        <p class="result-note" style="font-size: 12px; margin-top: 8px;">Os valores variam conforme o tipo selecionado (limpo, sujo, aliança).</p>
+      </div>
     </div>
   </div>
 
   <div class="card" id="historyCard" style="display:none">
       <div id="historyBackground" class="card">
-        <h2>Histórico de Vendas</h2>
+        <h2>Histórico de Vendas Registradas</h2>
         <img id="historyImg" src="logo-dark.png" alt="Fundo Histórico"> 
-        <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico..." style="margin-bottom: 10px; width: 100%;">
+        <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico (Nome, Data, Item, etc.)" style="margin-bottom: 10px; width: 100%;">
         <div class="actions">
-          <button id="clearHistoryBtn" class="danger">Limpar Histórico</button>
+          <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
           <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
         </div>
         <div class="history-table-wrapper">
-          <table>
+          <table id="historicoVendas">
             <thead>
               <tr>
                   <th>Data/Hora</th><th>Cliente</th><th>Organização/Tipo</th><th>Telefone</th>
-                  <th>Produtos</th><th>Valor Total</th><th>Negociadoras</th><th>Registrado Por</th><th>Ações</th> 
+                  <th>Produtos (Unidade)</th><th>Valor Total</th><th>Negociadoras</th>
+                  <th>Registrado Por</th><th>Ações</th> 
               </tr>
             </thead>
             <tbody id="salesHistory"></tbody>
@@ -212,9 +219,9 @@
       </div>
   </div>
   
-  <div class="card" id="adminPanel" style="display:none">
+  <div class="card" id="adminPanel" style="display:none;">
     <h2>Painel de Administração</h2>
-    <p>Aqui ficarão as ferramentas de gestão de utilizadores e outras configurações.</p>
+    <p>Funcionalidades futuras de gestão de utilizadores e configurações aparecerão aqui.</p>
     <button id="closeAdminPanelBtn" class="muted">Voltar à Calculadora</button>
   </div>
   
@@ -232,8 +239,7 @@
       projectId: "hells-angels-438c2",
       storageBucket: "hells-angels-438c2.firebasestorage.app",
       messagingSenderId: "429406215315",
-      appId: "1:429406215315:web:96b68b172247824b308166",
-      measurementId: "G-CR415MEY32"
+      appId: "1:429406215315:web:96b68b172247824b308166"
     };
     
     const app = initializeApp(firebaseConfig);
@@ -241,27 +247,33 @@
     const db = getDatabase(app);
     
     let vendas = [];
+    let vendaEmEdicaoId = null;
     let currentUser = null;
-    let currentUserTag = 'Visitante';
+    let currentUserTag = 'Visitante'; // Padrão
 
     const els = {
       qtyTickets: document.getElementById('qtyTickets'), qtyTablets: document.getElementById('qtyTablets'), qtyNitro: document.getElementById('qtyNitro'), tipoValor: document.getElementById('tipoValor'), nomeCliente: document.getElementById('nomeCliente'), organizacao: document.getElementById('organizacao'), organizacaoTipo: document.getElementById('organizacaoTipo'), telefone: document.getElementById('telefone'), negociadoras: document.getElementById('negociadoras'), vendaValorObs: document.getElementById('vendaValorObs'), dataVenda: document.getElementById('dataVenda'), filtroHistorico: document.getElementById('filtroHistorico'), resultsBody: document.getElementById('resultsBody'), valuesBody: document.getElementById('valuesBody'), valorTotalGeral: document.getElementById('valorTotalGeral'), results: document.getElementById('results'), mainCard: document.getElementById('mainCard'), historyCard: document.getElementById('historyCard'), salesHistory: document.getElementById('salesHistory'), calcBtn: document.getElementById('calcBtn'), resetBtn: document.getElementById('resetBtn'), registerBtn: document.getElementById('registerBtn'), toggleHistoryBtn: document.getElementById('toggleHistoryBtn'), toggleCalcBtn: document.getElementById('toggleCalcBtn'), clearHistoryBtn: document.getElementById('clearHistoryBtn'), csvBtn: document.getElementById('csvBtn'), discordBtnCalc: document.getElementById('discordBtnCalc'), themeBtn: document.getElementById('themeBtn'), tutorialBtn: document.getElementById('tutorialBtn'), logoLink: document.getElementById('logoLink'), appLogo: document.getElementById('appLogo'), historyImg: document.getElementById('historyImg'), welcomeScreen: document.getElementById('welcomeScreen'), enterBtn: document.getElementById('enterBtn'), welcomeLogo: document.getElementById('welcomeLogo'), authScreen: document.getElementById('authScreen'), username: document.getElementById('username'), password: document.getElementById('password'), loginBtn: document.getElementById('loginBtn'), registerUserBtn: document.getElementById('registerUserBtn'), authMessage: document.getElementById('authMessage'), logoutBtn: document.getElementById('logoutBtn'), adminPanel: document.getElementById('adminPanel'), adminPanelBtn: document.getElementById('adminPanelBtn'), closeAdminPanelBtn: document.getElementById('closeAdminPanelBtn')
     };
-    
-    const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const capitalizeText = (text) => text ? text.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '';
-    const showToast = (message, type = 'default', duration = 3000) => { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => container.removeChild(toast), 300); }, duration); };
-    const getQty = (el) => Math.max(0, parseInt(el.value) || 0);
-    const phoneMask = (value) => { let digits = value.replace(/\D/g, ""); if (digits.startsWith("055")) digits = digits.substring(3); digits = digits.substring(0, 6); let formatted = digits.length > 3 ? `${digits.substring(0, 3)}-${digits.substring(3)}` : digits; return `(055) ${formatted}`; };
+
+    // --- CÓPIAS DAS SUAS FUNÇÕES ORIGINAIS ---
+    // (A maioria das suas funções de utilidade e cálculo foram mantidas)
+    const formatCurrency = (value) => { if (typeof value !== 'number' || isNaN(value)) { return 'R$ 0'; } return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }); };
+    const capitalizeText = (text) => { if (!text) return ''; return String(text).trim().toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); };
+    const showToast = (message, type = 'default', duration = 3000) => { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message; c.appendChild(t); setTimeout(() => t.classList.add('show'), 10); setTimeout(() => { t.classList.remove('show'); setTimeout(() => c.removeChild(t), 300); }, duration); };
+    const getQty = (element) => Math.max(0, parseInt(element.value) || 0);
+    const phoneMask = (value) => { let d = value.replace(/\D/g, ""); if (d.startsWith("055")) d = d.substring(3); d = d.substring(0, 6); return "(055) " + (d.length > 3 ? d.substring(0, 3) + "-" + d.substring(3) : d); };
     if (els.telefone) { els.telefone.addEventListener('input', (e) => { e.target.value = e.target.value.length < 7 ? "(055) " : phoneMask(e.target.value); }); els.telefone.addEventListener('focus', (e) => { if (!e.target.value) e.target.value = "(055) "; }); }
-    
+    const updateDataVenda = () => { els.dataVenda.value = new Date().toLocaleDateString('pt-BR'); };
+    updateDataVenda();
     const perUnit = { tickets: { moneyBruto: 525 }, tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 }, nitro: { aluminio: 20, cobre: 20, vidro: 45, fita_adesiva: 1, porca: 1, parafuso: 1 } };
     const valores = { tablets: { limpo: 17000, sujo: 20000, limpo_alianca: 15000, sujo_alianca: 18000 }, tickets: { limpo: 9800, sujo: 11700, limpo_alianca: 8000, sujo_alianca: 10000 }, nitro: { limpo: 42500, sujo: 50000, limpo_alianca: 38000, sujo_alianca: 45000 } };
     const valorDescricao = { 'limpo': 'Dinheiro Limpo', 'sujo': 'Dinheiro Sujo', 'limpo_alianca': 'Limpo (Aliança)', 'sujo_alianca': 'Sujo (Aliança)' };
-
-    const calculate = () => { /* ... sua função calculate ... */ return { /* ... */ }; };
-    const clearAllFields = () => { /* ... sua função clearAllFields ... */ };
+    const calculate = () => { const qT = getQty(els.qtyTickets), qTb = getQty(els.qtyTablets), qN = getQty(els.qtyNitro), tV = els.tipoValor.value; const totals = { cobre: 0, plastico: 0, fita_adesiva: 0, lixo_eletronico: 0, aluminio: 0, vidro: 0, porca: 0, parafuso: 0, moneyBruto: 0 }; let totalVal = 0; const pVals = []; totals.cobre += qTb * perUnit.tablets.cobre; totals.plastico += qTb * perUnit.tablets.plastico; totals.fita_adesiva += qTb * perUnit.tablets.fita_adesiva; totals.lixo_eletronico += qTb * perUnit.tablets.lixo_eletronico; const tbVal = qTb * valores.tablets[tV]; totalVal += tbVal; if (qTb > 0) pVals.push({ product: `Tablets (${qTb} und.)`, value: tbVal }); totals.moneyBruto += qT * perUnit.tickets.moneyBruto; const tkVal = qT * valores.tickets[tV]; totalVal += tkVal; if (qT > 0) pVals.push({ product: `Tickets (${qT} und.)`, value: tkVal }); totals.aluminio += qN * perUnit.nitro.aluminio; totals.cobre += qN * perUnit.nitro.cobre; totals.vidro += qN * perUnit.nitro.vidro; totals.fita_adesiva += qN * perUnit.nitro.fita_adesiva; totals.porca += qN * perUnit.nitro.porca; totals.parafuso += qN * perUnit.nitro.parafuso; const nVal = qN * valores.nitro[tV]; totalVal += nVal; if (qN > 0) pVals.push({ product: `Nitro (${qN} und.)`, value: nVal }); const hasQ = qT > 0 || qTb > 0 || qN > 0; if (hasQ) { els.results.style.display = 'block'; els.resultsBody.innerHTML = Object.entries(totals).filter(([, v]) => v > 0).map(([m, v]) => `<tr><td>${capitalizeText(m.replace(/_/g, ' '))}</td><td>${v.toLocaleString('pt-BR')}</td></tr>`).join(''); els.valuesBody.innerHTML = pVals.map(i => `<tr><td>${i.product}</td><td>${formatCurrency(i.value)}</td></tr>`).join(''); els.valorTotalGeral.textContent = formatCurrency(totalVal); } else { els.results.style.display = 'none'; } return { qtyTickets: qT, qtyTablets: qTb, qtyNitro: qN, totalValue: totalVal, tipoValor: tV, hasQuantities: hasQ }; };
+    const clearAllFields = () => { ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'telefone', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = ''); els.tipoValor.value = 'limpo'; els.organizacaoTipo.value = 'CNPJ'; els.results.style.display = 'none'; document.querySelectorAll('.input-invalido').forEach(i => i.classList.remove('input-invalido')); if (vendaEmEdicaoId) { vendaEmEdicaoId = null; els.registerBtn.textContent = 'Registrar Venda'; } };
+    const validateFields = () => { let isValid = true; [els.nomeCliente, els.organizacao, els.telefone, els.negociadoras].forEach(f => { if (!f.value.trim()) { f.classList.add('input-invalido'); isValid = false; } else { f.classList.remove('input-invalido'); } }); return isValid; };
+    const buildDiscordMessage = () => { /* ... sua função de criar mensagem para o discord ... */ };
     
+    // --- LÓGICA DE PERMISSÕES E AUTENTICAÇÃO (ATUALIZADA) ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -269,6 +281,7 @@
             const snapshot = await get(userRef);
             currentUserTag = (snapshot.exists() && snapshot.val().tag) ? snapshot.val().tag : 'Visitante';
             if (!snapshot.exists()) set(userRef, { username: user.displayName, tag: 'Visitante' });
+
             els.authScreen.style.display = 'none';
             els.mainCard.style.display = 'block';
             els.adminPanelBtn.style.display = (currentUserTag === 'ADMIN') ? 'inline-block' : 'none';
@@ -291,11 +304,18 @@
 
     const displaySalesHistory = () => {
         const historyToDisplay = (currentUserTag === 'ADMIN' || currentUserTag === 'HELLS') ? vendas : vendas.filter(v => v.registradoPorUID === currentUser.uid);
+        
         els.salesHistory.innerHTML = '';
+        if(historyToDisplay.length === 0) {
+            const row = els.salesHistory.insertRow();
+            const cell = row.insertCell(); cell.colSpan = 9; cell.textContent = "Nenhuma venda registrada."; cell.style.textAlign = 'center';
+            return;
+        }
+
         historyToDisplay.sort((a, b) => b.timestamp - a.timestamp).forEach(venda => {
             const row = els.salesHistory.insertRow();
-            // ... (preencher células)
-            row.insertCell().textContent = venda.dataHora || 'N/A';
+            const [data, hora] = (venda.dataHora || ' , ').split(', ');
+            row.insertCell().innerHTML = `<span class="history-datetime-line">${data}</span><span class="history-datetime-line">${hora}</span>`;
             row.insertCell().textContent = capitalizeText(venda.cliente);
             row.insertCell().textContent = `${capitalizeText(venda.organizacao)} (${venda.organizacaoTipo})`;
             row.insertCell().textContent = venda.telefone;
@@ -305,32 +325,43 @@
             if (venda.qtyNitro > 0) produtos.push(`${venda.qtyNitro} Nitro`);
             row.insertCell().textContent = capitalizeText(produtos.join(', '));
             const valorCell = row.insertCell();
-            valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span>`;
+            valorCell.innerHTML = `<span class="valor-total-cell"><span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span></span>`;
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
             row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
-
+            
             const actionsCell = row.insertCell();
-            if ((currentUserTag === 'ADMIN') || (currentUser.uid === venda.registradoPorUID)) {
-                actionsCell.innerHTML = `<button onclick="window.editVenda('${venda.id}')" class="action-btn muted">Editar</button> <button onclick="window.removeVenda('${venda.id}')" class="action-btn danger">Deletar</button>`;
+            actionsCell.className = 'history-actions-cell';
+            if ((currentUserTag === 'ADMIN') || (currentUser && currentUser.uid === venda.registradoPorUID)) {
+                actionsCell.innerHTML = `<button onclick="window.globalEditVenda('${venda.id}')" class="action-btn muted">Editar</button><button onclick="window.globalRemoveVenda('${venda.id}')" class="action-btn danger">Deletar</button>`;
             }
         });
         els.clearHistoryBtn.style.display = (currentUserTag === 'ADMIN') ? 'inline-block' : 'none';
     };
 
-    window.editVenda = (id) => { /* ... sua função de editar ... */ };
-    window.removeVenda = (id) => { if (confirm("Remover esta venda?")) remove(ref(db, `vendas/${id}`)); };
-
     const registerVenda = () => {
-      // ... (sua validação)
+      const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
+      if (!hasQuantities || !validateFields() || !currentUser) {
+          showToast("Verifique os campos ou se está logado.", "error");
+          return;
+      }
       const newVenda = {
         timestamp: Date.now(), dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        // ... (outros campos)
+        cliente: els.nomeCliente.value.trim(), organizacao: els.organizacao.value.trim(), organizacaoTipo: els.organizacaoTipo.value,
+        telefone: els.telefone.value.trim(), negociadoras: els.negociadoras.value.trim(), vendaValorObs: els.vendaValorObs.value.trim(),
+        qtyTickets, qtyTablets, qtyNitro, valorTotal: totalValue, tipoValor,
         registradoPor: currentUser.displayName,
         registradoPorUID: currentUser.uid // **ESSENCIAL**
       };
-      const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
-      operation.then(() => { /* ... */ });
+      const op = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
+      op.then(() => { showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'}!`, "success"); clearAllFields(); }).catch(err => showToast("Erro: " + err.message, "error"));
     };
+    
+    window.globalEditVenda = (id) => {
+        const venda = vendas.find(v => v.id === id); if (!venda) return;
+        ['qtyTickets', 'qtyTablets', 'qtyNitro', 'tipoValor', 'nomeCliente', 'organizacao', 'organizacaoTipo', 'telefone', 'negociadoras', 'vendaValorObs'].forEach(key => { if (els[key]) els[key].value = venda[key] || ''; });
+        calculate(); vendaEmEdicaoId = id; els.registerBtn.textContent = 'Atualizar Venda'; toggleView(false); showToast(`Editando venda de ${venda.cliente}`, "default");
+    };
+    window.globalRemoveVenda = (id) => { if (confirm("Tem certeza que deseja remover esta venda?")) remove(ref(db, `vendas/${id}`)).then(() => showToast("Venda removida.", "success")).catch(err => showToast("Erro: " + err.message, "error")); };
     
     const handleAuth = (isRegistering) => {
         const email = els.username.value.trim() + "@ha.com";
@@ -340,20 +371,26 @@
         const action = isRegistering ? createUserWithEmailAndPassword(auth, email, password).then(cred => updateProfile(cred.user, { displayName })) : signInWithEmailAndPassword(auth, email, password);
         action.catch(err => { els.authMessage.textContent = err.code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." : err.code === 'auth/email-already-in-use' ? "Nome de usuário já existe." : "Erro de autenticação."; });
     };
+
     els.loginBtn.onclick = () => handleAuth(false);
     els.registerUserBtn.onclick = () => handleAuth(true);
     els.logoutBtn.onclick = () => auth.signOut();
-    els.adminPanelBtn.onclick = () => { [els.mainCard, els.historyCard].forEach(el => el.style.display = 'none'); els.adminPanel.style.display = 'block'; };
-    els.toggleHistoryBtn.onclick = () => { els.mainCard.style.display = 'none'; els.historyCard.style.display = 'block'; displaySalesHistory(); };
-    els.toggleCalcBtn.onclick = () => { els.mainCard.style.display = 'block'; els.historyCard.style.display = 'none'; };
-    els.closeAdminPanelBtn.onclick = els.toggleCalcBtn.onclick;
     
-    // ... (restante dos seus listeners e código)
+    const toggleView = (showHistory) => { els.mainCard.style.display = showHistory ? 'none' : 'block'; els.historyCard.style.display = showHistory ? 'block' : 'none'; if (showHistory) displaySalesHistory(); };
+    els.adminPanelBtn.onclick = () => { [els.mainCard, els.historyCard].forEach(el => el.style.display = 'none'); els.adminPanel.style.display = 'block'; };
+    els.toggleHistoryBtn.onclick = () => toggleView(true);
+    els.toggleCalcBtn.onclick = () => toggleView(false);
+    els.closeAdminPanelBtn.onclick = els.toggleCalcBtn.onclick;
+
+    els.resetBtn.onclick = clearAllFields;
+    els.registerBtn.onclick = registerVenda;
+    
+    // --- Restante dos seus listeners e código inicial ---
+    // (O seu código para o tutorial, tema, CSV, etc. pode ser colado aqui)
+    const savedTheme = localStorage.getItem('theme') || 'light'; document.body.classList.add(savedTheme);
+    if (localStorage.getItem('hasVisited')) { els.welcomeScreen.style.display = 'none'; } else { els.welcomeScreen.classList.add('show'); els.authScreen.style.display = 'none'; els.mainCard.style.display = 'none'; }
+    els.enterBtn.onclick = () => { localStorage.setItem('hasVisited', 'true'); els.welcomeScreen.classList.add('hidden'); setTimeout(() => els.welcomeScreen.style.display = 'none', 500); };
+
   </script>
 </body>
 </html>
-}
-
-{
-type: uploaded file
-fileName: image_73db68.png
