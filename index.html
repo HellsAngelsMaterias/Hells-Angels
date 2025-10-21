@@ -14,7 +14,6 @@
       --cor-btn-texto: #fff; --cor-btn-secundario: #ffd6eb;
       --cor-btn-secundario-texto: #4a0033; --cor-erro: #cc0000;
       --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
-      /* NOVAS CORES DAS TAGS */
       --cor-tag-admin: #0056b3; /* Azul Escuro */
       --cor-tag-hells: #e60073; /* Rosa Pink (cor principal) */
       --cor-tag-visitante: #008000; /* Verde Escuro */
@@ -24,7 +23,6 @@
       --cor-card: #2c001a; --cor-borda: #e60073; --cor-btn-primario: #ff0080; 
       --cor-btn-texto: #fff; --cor-btn-secundario: #4d002a; 
       --cor-btn-secundario-texto: #ffccf0; --cor-glow-pulsante: rgba(255, 0, 128, 0.6);
-      /* NOVAS CORES DAS TAGS (Modo Escuro) */
       --cor-tag-admin: #007bff; /* Azul mais claro */
       --cor-tag-hells: #ff0080; /* Rosa mais claro (cor principal dark) */
       --cor-tag-visitante: #28a745; /* Verde mais claro */
@@ -101,7 +99,6 @@
     
     .header-container { display:flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; }
 
-    /* NOVO: Estilo para o status do usuário */
     .user-status-display {
       font-size: 14px;
       font-weight: 700;
@@ -304,7 +301,7 @@
                 <input id="nomeCliente" type="text" value="">
             </div>
             <div>
-                <label for="dataVenda">Horário Atual:</label>
+                <label for="dataVenda">Data e Horário:</label>
                 <input id="dataVenda" type="text" readonly> 
             </div>
             <div>
@@ -494,7 +491,6 @@
     let currentUser = null;
     let currentUserData = null; // Para guardar os dados do DB (incluindo a tag)
     
-    // **** MUDANÇA: 'moneyBruto' renomeado para 'dinheiro_sujo' ****
     const perUnit = {
       tickets: { dinheiro_sujo: 525 },
       tablets: { cobre: 20, plastico: 40, fita_adesiva: 2, lixo_eletronico: 2 },
@@ -571,8 +567,6 @@
       layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
       layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
       bottomPanel: document.getElementById('bottomPanel'),
-      
-      // NOVO: Elemento de status do usuário
       userStatus: document.getElementById('userStatus')
     };
     
@@ -605,7 +599,6 @@
 
     const capitalizeText = (text) => {
         if (!text) return '';
-        // Trata o caso "dinheiro sujo" para "Dinheiro Sujo"
         if (text === 'dinheiro sujo') return 'Dinheiro Sujo';
         return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     };
@@ -643,12 +636,15 @@
         });
     }
 
-    // **** MUDANÇA: Função de relógio (removida a antiga 'updateDataVenda') ****
+    // **** MUDANÇA: Relógio agora mostra Data e Hora ****
     const atualizarRelogio = () => {
         const agora = new Date();
+        const dia = String(agora.getDate()).padStart(2, '0');
+        const mes = String(agora.getMonth() + 1).padStart(2, '0'); // Mês é base 0
+        const ano = agora.getFullYear();
         const horas = String(agora.getHours()).padStart(2, '0');
         const minutos = String(agora.getMinutes()).padStart(2, '0');
-        els.dataVenda.value = `${horas}:${minutos}`;
+        els.dataVenda.value = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
     };
     atualizarRelogio(); // Chama uma vez ao carregar
     setInterval(atualizarRelogio, 30000); // Atualiza a cada 30 segundos
@@ -671,7 +667,6 @@
         qtyNitro: getQty(els.qtyNitro),
         tipoValor: els.tipoValor.value
       };
-      // **** MUDANÇA: 'moneyBruto' renomeado para 'dinheiro_sujo' ****
       const totalQuantities = { cobre: 0, plastico: 0, fita_adesiva: 0, lixo_eletronico: 0, aluminio: 0, vidro: 0, porca: 0, parafuso: 0, dinheiro_sujo: 0 };
       let totalValue = 0;
       const productValues = [];
@@ -686,7 +681,6 @@
         productValues.push({ product: `Tablets (${qtyTablets} und.)`, value });
       }
       if (qtyTickets > 0) {
-        // **** MUDANÇA: 'moneyBruto' renomeado para 'dinheiro_sujo' ****
         totalQuantities.dinheiro_sujo += qtyTickets * perUnit.tickets.dinheiro_sujo;
         const value = qtyTickets * valores.tickets[tipoValor];
         totalValue += value;
@@ -737,10 +731,8 @@
       }
     };
     
-    // **** MUDANÇA: Validação agora checa o tipo de organização ****
     const validateFields = () => {
         let isValid = true;
-        // 1. Campos que são *sempre* obrigatórios
         const camposObrigatorios = [ els.nomeCliente, els.telefone, els.negociadoras ];
         
         camposObrigatorios.forEach(field => {
@@ -752,7 +744,6 @@
             }
         });
         
-        // 2. Validação condicional para 'Organização'
         const tipoOrg = els.organizacaoTipo.value;
         if (tipoOrg === 'CNPJ') { // Só é obrigatório se for CNPJ
             if (!els.organizacao.value.trim()) {
@@ -785,7 +776,6 @@
       
       const newVenda = {
         timestamp: Date.now(),
-        // O dataHora da venda continua salvando a data e hora completas
         dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
         cliente: els.nomeCliente.value.trim(),
         organizacao: els.organizacao.value.trim(),
@@ -811,23 +801,28 @@
           });
     };
 
+    // **** MUDANÇA: Função 'editVenda' corrigida para preencher todos os campos ****
     const editVenda = (id) => {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
         
-        Object.keys(venda).forEach(key => {
-            if(els[key] && typeof venda[key] !== 'undefined') {
-                els[key].value = venda[key];
-            }
-        });
+        // Mapeamento manual para corrigir o bug
+        els.nomeCliente.value = venda.cliente || '';
+        els.organizacao.value = venda.organizacao || '';
+        els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
+        els.telefone.value = venda.telefone || '';
+        els.negociadoras.value = venda.negociadoras || '';
+        els.vendaValorObs.value = venda.vendaValorObs || '';
+        els.tipoValor.value = venda.tipoValor || 'limpo';
+        
         els.qtyTickets.value = venda.qtyTickets || 0;
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
         
-        calculate();
+        calculate(); // Calcula para mostrar os resultados
         vendaEmEdicaoId = id;
         els.registerBtn.textContent = 'Atualizar Venda';
-        toggleView(false);
+        toggleView(false); // Volta para a calculadora
         showToast(`Editando venda de ${venda.cliente}`, "default");
     };
 
@@ -898,7 +893,6 @@ Negociadoras: ${negociadoras}
             if (qtyTablets > 0) produtos.push(`Tablet (${qtyTablets})`);
             if (qtyNitro > 0) produtos.push(`Nitros (${qtyNitro})`);
             
-            // Pega a data atual para a mensagem do Discord
             const dataAtual = new Date().toLocaleDateString('pt-BR');
 
             messageData = {
@@ -1254,12 +1248,10 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // **** MUDANÇA: Atualiza o display de status do usuário ****
+
     const configurarInterfacePorTag = (tag) => {
       console.log("Usuário logado com a tag:", tag);
-      // els.mainTitle.textContent = `Calculadora (${tag})`; // Removido para dar lugar ao status
       
-      // Exibe o status do usuário
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
           userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
