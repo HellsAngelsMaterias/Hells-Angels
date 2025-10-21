@@ -216,7 +216,6 @@
     #authScreen .actions button { width: 100%; padding: 12px; font-size: 16px; }
     #authMessage { text-align: center; font-weight: 600; }
     
-    /* --- NOVO: PAINEL INFERIOR --- */
     #bottomPanel {
         position: fixed; bottom: 0; left: 0; width: 100%;
         background: var(--cor-card); border-top: 2px solid var(--cor-principal);
@@ -539,7 +538,6 @@
       mainTitle: document.getElementById('mainTitle'),
       forgotPasswordLink: document.getElementById('forgotPasswordLink'),
       
-      // --- NOVO: Elementos do Painel Admin ---
       adminPanelBtn: document.getElementById('adminPanelBtn'),
       adminPanel: document.getElementById('adminPanel'),
       adminUserListBody: document.getElementById('adminUserListBody'),
@@ -548,8 +546,6 @@
       bottomPanel: document.getElementById('bottomPanel')
     };
     
-    // --- NOVO: LÓGICA DE LAYOUT GLOBAL ---
-    // Esta função "ouve" as configurações do Admin em tempo real e aplica a TODOS
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
@@ -558,7 +554,6 @@
         }
         const settings = snapshot.val();
         
-        // Controla o botão de Modo Noturno
         if (els.themeBtn) {
             els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
             if (!settings.enableNightMode) {
@@ -567,7 +562,6 @@
             }
         }
         
-        // Controla o Painel Inferior
         if (els.bottomPanel) {
             els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
         }
@@ -683,7 +677,8 @@
       els.results.style.display = 'block';
       els.resultsBody.innerHTML = Object.entries(totals)
         .filter(([, value]) => value > 0)
-        .map(([material, value])]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
+        /* --- ESTA É A LINHA CORRIGIDA --- */
+        .map(([material, value]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
         .join('');
       els.valuesBody.innerHTML = productValues.map(item => `<tr><td>${item.product}</td><td>${formatCurrency(item.value)}</td></tr>`).join('');
       els.valorTotalGeral.textContent = formatCurrency(totalValue);
@@ -767,7 +762,7 @@
             }
         });
         els.qtyTickets.value = venda.qtyTickets || 0;
-        els.qtyTablets.value = venda.qtyTablets || 0;
+        els.qtyTablets.value = venda.qtyTableTensors || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
         
         calculate();
@@ -878,7 +873,6 @@ Negociadoras: ${negociadoras}
         }
 
         let vendasFiltradas = history;
-        // O DB já filtra para Visitante, mas esta é uma boa segunda garantia.
         if (currentUserData.tag === 'Visitante') {
             vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
         }
@@ -1011,11 +1005,9 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
-    // --- NOVO: Lógica do Painel Admin ---
     const loadAdminPanel = async () => {
         els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
         
-        // 1. Carregar lista de usuários
         try {
             const usersSnapshot = await get(ref(db, 'usuarios'));
             if (!usersSnapshot.exists()) {
@@ -1061,7 +1053,6 @@ Negociadoras: ${negociadoras}
             els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Erro ao carregar.</td></tr>';
         }
         
-        // 2. Carregar configurações de layout
         try {
             const layoutSnapshot = await get(ref(db, 'configuracoesGlobais/layout'));
             if (layoutSnapshot.exists()) {
@@ -1093,7 +1084,6 @@ Negociadoras: ${negociadoras}
             });
     };
     
-    // Adiciona os eventos de clique/mudança para os controles do Admin
     els.adminPanelBtn.onclick = () => {
         const isHidden = els.adminPanel.style.display === 'none';
         els.adminPanel.style.display = isHidden ? 'block' : 'none';
@@ -1103,9 +1093,6 @@ Negociadoras: ${negociadoras}
     };
     els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
     els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
-    
-    
-    // --- FIM DA LÓGICA DO PAINEL ADMIN ---
     
     
     const handleAuthAction = (isLogin, creds) => {
@@ -1169,7 +1156,6 @@ Negociadoras: ${negociadoras}
       console.log("Usuário logado com a tag:", tag);
       els.mainTitle.textContent = `Calculadora (${tag})`; 
 
-      // Controla visibilidade de botões com base na tag
       if (tag === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
@@ -1178,13 +1164,12 @@ Negociadoras: ${negociadoras}
         els.adminPanelBtn.style.display = 'none';
       }
       
-      // Garante que o painel admin esteja fechado se o usuário for rebaixado
       if (tag !== 'ADMIN') {
           els.adminPanel.style.display = 'none';
       }
     };
 
-    let vendasListener = null; // para poder remover o listener ao deslogar
+    let vendasListener = null; 
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -1241,11 +1226,10 @@ Negociadoras: ${negociadoras}
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
-            els.adminPanel.style.display = 'none'; // Esconde painel admin ao deslogar
+            els.adminPanel.style.display = 'none'; 
         }
     });
 
-    // Esta lógica de tema local só funciona se o Admin permitir (botão visível)
     const savedTheme = localStorage.getItem('theme') || 'light';
     if(savedTheme === 'dark') {
         document.body.classList.add('dark');
