@@ -487,14 +487,11 @@
     const db = getDatabase(app);
     
     let vendas = [];
-    
-    // **** MUDANÇA: Variáveis para guardar dados originais da edição ****
     let vendaEmEdicaoId = null;
     let vendaOriginalRegistradoPor = null;
     let vendaOriginalRegistradoPorId = null;
     let vendaOriginalTimestamp = null;
     let vendaOriginalDataHora = null;
-    // **** FIM DA MUDANÇA ****
     
     let currentUser = null;
     let currentUserData = null; // Para guardar os dados do DB (incluindo a tag)
@@ -581,7 +578,11 @@
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
-            console.error("Nó /configuracoesGlobais/layout não encontrado no Firebase.");
+            console.warn("Nó /configuracoesGlobais/layout não encontrado. Criando...");
+            // Se você é admin, pode tentar criar
+            if(currentUserData && currentUserData.tag === 'ADMIN') {
+                 set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false });
+            }
             return;
         }
         const settings = snapshot.val();
@@ -596,6 +597,11 @@
         
         if (els.bottomPanel) {
             els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
+        }
+    }, (error) => {
+        // Erro de permissão é esperado para não-admins
+        if(error.code !== "PERMISSION_DENIED") {
+            showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
         }
     });
     
@@ -725,7 +731,6 @@
       els.valorTotalGeral.textContent = formatCurrency(totalValue);
     };
     
-    // **** MUDANÇA: 'clearAllFields' agora limpa os dados originais da edição ****
     const clearAllFields = () => {
       ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = '');
       els.tipoValor.value = 'limpo';
@@ -772,7 +777,6 @@
         return isValid;
     };
     
-    // **** MUDANÇA: 'registerVenda' agora preserva os dados originais ao editar ****
     const registerVenda = () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
       if (!hasQuantities) {
@@ -789,11 +793,8 @@
       }
       
       const newVenda = {
-        // Se for edição, usa o timestamp/data original. Se for novo, cria um novo.
         timestamp: vendaEmEdicaoId ? vendaOriginalTimestamp : Date.now(), 
         dataHora: vendaEmEdicaoId ? vendaOriginalDataHora : new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-        
-        // Campos atualizáveis
         cliente: els.nomeCliente.value.trim(),
         organizacao: els.organizacao.value.trim(),
         organizacaoTipo: els.organizacaoTipo.value,
@@ -803,8 +804,6 @@
         qtyTickets, qtyTablets, qtyNitro,
         valorTotal: totalValue,
         tipoValor,
-        
-        // Se for edição, usa o registrador original. Se for novo, usa o atual.
         registradoPor: vendaEmEdicaoId ? vendaOriginalRegistradoPor : currentUser.displayName,
         registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
       };
@@ -820,12 +819,10 @@
           });
     };
 
-    // **** MUDANÇA: 'editVenda' agora guarda os dados originais ****
     const editVenda = (id) => {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
         
-        // Preenche os campos da calculadora
         els.nomeCliente.value = venda.cliente || '';
         els.organizacao.value = venda.organizacao || '';
         els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
@@ -838,9 +835,8 @@
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
         
-        calculate(); // Calcula para mostrar os resultados
+        calculate(); 
         
-        // Guarda os dados originais que não devem ser alterados
         vendaEmEdicaoId = id;
         vendaOriginalRegistradoPor = venda.registradoPor;
         vendaOriginalRegistradoPorId = venda.registradoPorId;
@@ -848,7 +844,7 @@
         vendaOriginalDataHora = venda.dataHora;
         
         els.registerBtn.textContent = 'Atualizar Venda';
-        toggleView(false); // Volta para a calculadora
+        toggleView(false); 
         showToast(`Editando venda de ${venda.cliente}`, "default");
     };
 
@@ -1030,7 +1026,7 @@ Negociadoras: ${negociadoras}
             return;
         }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
-        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[venda.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
@@ -1118,6 +1114,7 @@ Negociadoras: ${negociadoras}
                 const userData = userSnap.val();
                 
                 const row = els.adminUserListBody.insertRow();
+                // **** AQUI ESTÁ A LINHA QUE MOSTRA (Sem nome) ****
                 row.insertCell().textContent = userData.displayName || '(Sem nome)';
                 
                 const tagCell = row.insertCell();
@@ -1184,7 +1181,10 @@ Negociadoras: ${negociadoras}
                 els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
             }
         } catch (error) {
-            showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
+             // Não mostra toast de permissão negada, pois é esperado para não-admins
+            if(error.code !== "PERMISSION_DENIED") {
+                showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
+            }
         }
     };
     
@@ -1218,6 +1218,7 @@ Negociadoras: ${negociadoras}
     els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
     
     
+    // **** MUDANÇA: 'handleAuthAction' corrigido para evitar (Sem nome) ****
     const handleAuthAction = (isLogin, creds) => {
         const email = creds.username.trim() + "@ha.com";
         const password = creds.password;
@@ -1227,16 +1228,39 @@ Negociadoras: ${negociadoras}
             showToast("Verifique os campos. A senha precisa ter no mínimo 6 caracteres.", "error");
             return;
         }
-        
-        const action = isLogin 
-            ? signInWithEmailAndPassword(auth, email, password) 
-            : createUserWithEmailAndPassword(auth, email, password).then(cred => updateProfile(cred.user, { displayName }));
 
-        action.catch((error) => {
-            const code = error.code;
-            const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." : code === 'auth/email-already-in-use' ? "Nome de usuário já existe." : `Erro: ${code}`;
-            showToast(msg, "error");
-        });
+        if (isLogin) {
+            // --- LOGIN ---
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    const code = error.code;
+                    const msg = code === 'auth/invalid-credential' ? "Usuário ou senha incorretos." : `Erro: ${code}`;
+                    showToast(msg, "error");
+                });
+        } else {
+            // --- REGISTRO (COM CORREÇÃO DE RACE CONDITION) ---
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(userCredential => {
+                    const user = userCredential.user;
+                    // 1. Atualiza o perfil do Auth (para o user.displayName funcionar)
+                    return updateProfile(user, { displayName: displayName })
+                        .then(() => {
+                            // 2. AGORA que o perfil está atualizado, cria o registro no Database
+                            const userRef = ref(db, `usuarios/${user.uid}`);
+                            const newUserProfile = {
+                                displayName: displayName, // Usa a variável local
+                                email: user.email,
+                                tag: 'Visitante'
+                            };
+                            return set(userRef, newUserProfile); // Retorna a promessa
+                        });
+                })
+                .catch((error) => {
+                    const code = error.code;
+                    const msg = code === 'auth/email-already-in-use' ? "Nome de usuário já existe." : `Erro: ${code}`;
+                    showToast(msg, "error");
+                });
+        }
     };
     
     const authAction = (isLogin) => handleAuthAction(isLogin, {username: els.username.value, password: els.password.value});
@@ -1316,8 +1340,10 @@ Negociadoras: ${negociadoras}
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val();
                 } else {
+                    // Fallback para caso o usuário exista no Auth mas não no DB
+                    // (graças ao novo handleAuthAction, isso é menos provável de dar 'null')
                     const newUserProfile = {
-                        displayName: user.displayName,
+                        displayName: user.displayName, // user.displayName deve estar correto agora
                         email: user.email,
                         tag: 'Visitante' 
                     };
@@ -1346,7 +1372,10 @@ Negociadoras: ${negociadoras}
                     }
                 }, (error) => {
                     console.error("Erro ao carregar vendas: ", error);
-                    showToast("Erro de permissão ao carregar histórico.", "error");
+                    // Não mostra o toast de permissão, pois é esperado para Visitantes
+                    if(error.code !== "PERMISSION_DENIED") {
+                        showToast("Erro de permissão ao carregar histórico.", "error");
+                    }
                 });
             });
 
