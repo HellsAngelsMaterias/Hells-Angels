@@ -397,7 +397,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, set, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, remove, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
@@ -599,7 +599,7 @@
       els.results.style.display = 'block';
       els.resultsBody.innerHTML = Object.entries(totals)
         .filter(([, value]) => value > 0)
-        .map(([material, value]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
+        .map(([material, value])]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
         .join('');
       els.valuesBody.innerHTML = productValues.map(item => `<tr><td>${item.product}</td><td>${formatCurrency(item.value)}</td></tr>`).join('');
       els.valorTotalGeral.textContent = formatCurrency(totalValue);
@@ -788,17 +788,16 @@ Negociadoras: ${negociadoras}
 
     const displaySalesHistory = (history) => {
         els.salesHistory.innerHTML = '';
-        if (!currentUserData) { // Proteção caso os dados do usuário ainda não tenham carregado
-             showToast("Carregando dados de usuário...", "default");
+        if (!currentUserData) { 
              return;
         }
 
-        // **NOVO: FILTRO DE VISUALIZAÇÃO BASEADO NA TAG**
+        // Esta filtragem não é mais necessária para 'Visitante', pois o DB já filtrou.
+        // Mas podemos mantê-la como uma segunda garantia.
         let vendasFiltradas = history;
         if (currentUserData.tag === 'Visitante') {
             vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
         }
-        // Admin e Hells veem tudo, as permissões de edição/deleção serão tratadas abaixo.
 
         if (vendasFiltradas.length === 0) {
             const row = els.salesHistory.insertRow();
@@ -836,7 +835,7 @@ Negociadoras: ${negociadoras}
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
 
-            // **NOVA LÓGICA DE PERMISSÃO PARA BOTÕES**
+            // **LÓGICA DE PERMISSÃO PARA BOTÕES**
             const podeModificar = 
                 (currentUserData.tag === 'ADMIN') ||
                 (currentUserData.tag === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
@@ -857,6 +856,8 @@ Negociadoras: ${negociadoras}
 
     const filterHistory = () => {
         const query = els.filtroHistorico.value.toLowerCase().trim();
+        
+        // A filtragem agora acontece sobre a lista 'vendas' que já foi pré-filtrada pelo DB
         const filteredVendas = vendas.filter(v => 
             Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
             (v.qtyTickets > 0 && `tickets`.includes(query)) ||
@@ -957,12 +958,10 @@ Negociadoras: ${negociadoras}
     els.logoutBtn.onclick = () => signOut(auth);
     els.password.addEventListener('keydown', (e) => { if(e.key === 'Enter') authAction(true); });
 
-    // **NOVO: Lógica "Esqueci a Senha"**
     els.forgotPasswordLink.onclick = async () => {
         const username = prompt("Digite seu nome de usuário para solicitar a redefinição de senha:");
         if (!username) return;
 
-        // Precisamos encontrar o email do usuário a partir do nome de usuário
         const usersRef = ref(db, 'usuarios');
         const snapshot = await get(usersRef);
         let userEmail = null;
@@ -976,9 +975,6 @@ Negociadoras: ${negociadoras}
         }
 
         if (userEmail) {
-            // A implementação do fluxo de aprovação do Admin é complexa.
-            // Por enquanto, vamos usar a função padrão do Firebase.
-            // O ideal seria criar uma solicitação em um nó /solicitacoesSenha no DB.
             sendPasswordResetEmail(auth, userEmail)
                 .then(() => {
                     alert("Um e-mail de redefinição de senha foi enviado para o endereço associado a este usuário.");
@@ -992,53 +988,63 @@ Negociadoras: ${negociadoras}
 
 
     const configurarInterfacePorTag = (tag) => {
-      // Esta função irá crescer à medida que adicionamos mais funcionalidades
       console.log("Usuário logado com a tag:", tag);
-      els.mainTitle.textContent = `Calculadora (${tag})`; // Exemplo de personalização
+      els.mainTitle.textContent = `Calculadora (${tag})`; 
 
-      // Lógica para mostrar/esconder o botão de Limpar Histórico
       if (tag === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
       } else {
         els.clearHistoryBtn.style.display = 'none';
       }
-
-      // ... Aqui virá a lógica para mostrar o painel do Admin, etc.
     };
+
+    let vendasListener = null; // para poder remover o listener ao deslogar
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
             const userRef = ref(db, `usuarios/${user.uid}`);
             
-            // Escuta por mudanças nos dados do usuário (como a tag sendo alterada por um admin)
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val();
-                    configurarInterfacePorTag(currentUserData.tag);
                 } else {
-                    // Se o usuário existe na Auth mas não no DB, cria um perfil para ele
                     const newUserProfile = {
                         displayName: user.displayName,
                         email: user.email,
-                        tag: 'Visitante' // Tag padrão para novos usuários
+                        tag: 'Visitante' 
                     };
                     set(userRef, newUserProfile);
-                    currentUserData = newUserProfile; // Define os dados para a sessão atual
-                    configurarInterfacePorTag(currentUserData.tag);
+                    currentUserData = newUserProfile; 
                 }
-                 // Carrega as vendas APÓS ter os dados do usuário
-                if(vendasListener) vendasListener(); // Cancela o listener anterior, se houver
-                const vendasRef = ref(db, 'vendas');
-                onValue(vendasRef, (snapshot) => {
+                
+                configurarInterfacePorTag(currentUserData.tag);
+                 
+                // *** ESTA É A MUDANÇA IMPORTANTE ***
+                if(vendasListener) vendasListener(); // Cancela o listener anterior
+                
+                let vendasRef;
+                if (currentUserData.tag === 'ADMIN' || currentUserData.tag === 'HELLS') {
+                    // Admin e Hells podem ver tudo
+                    vendasRef = ref(db, 'vendas');
+                } else {
+                    // Visitante SÓ PODE consultar (query) suas próprias vendas
+                    vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
+                }
+
+                vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                     vendas = [];
-                    snapshot.forEach((child) => {
+                    vendasSnapshot.forEach((child) => {
                         vendas.push({ id: child.key, ...child.val() });
                     });
                     if (els.historyCard.style.display !== 'none') {
                         displaySalesHistory(vendas);
                     }
+                }, (error) => {
+                    console.error("Erro ao carregar vendas: ", error);
+                    showToast("Erro de permissão ao carregar histórico.", "error");
                 });
+                // *** FIM DA MUDANÇA ***
             });
 
             els.authScreen.style.display = 'none';
@@ -1047,13 +1053,14 @@ Negociadoras: ${negociadoras}
         } else {
             currentUser = null;
             currentUserData = null;
+            if (vendasListener) vendasListener(); // Remove o listener ao deslogar
+            vendas = []; // Limpa os dados locais
+            
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
         }
     });
-
-    let vendasListener = null; // para poder remover o listener ao deslogar
 
     const savedTheme = localStorage.getItem('theme') || 'light';
     if(savedTheme === 'dark') document.body.classList.add('dark');
