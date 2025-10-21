@@ -487,7 +487,15 @@
     const db = getDatabase(app);
     
     let vendas = [];
+    
+    // **** MUDANÇA: Variáveis para guardar dados originais da edição ****
     let vendaEmEdicaoId = null;
+    let vendaOriginalRegistradoPor = null;
+    let vendaOriginalRegistradoPorId = null;
+    let vendaOriginalTimestamp = null;
+    let vendaOriginalDataHora = null;
+    // **** FIM DA MUDANÇA ****
+    
     let currentUser = null;
     let currentUserData = null; // Para guardar os dados do DB (incluindo a tag)
     
@@ -636,7 +644,6 @@
         });
     }
 
-    // **** MUDANÇA: Relógio agora mostra Data e Hora ****
     const atualizarRelogio = () => {
         const agora = new Date();
         const dia = String(agora.getDate()).padStart(2, '0');
@@ -718,6 +725,7 @@
       els.valorTotalGeral.textContent = formatCurrency(totalValue);
     };
     
+    // **** MUDANÇA: 'clearAllFields' agora limpa os dados originais da edição ****
     const clearAllFields = () => {
       ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = '');
       els.tipoValor.value = 'limpo';
@@ -725,8 +733,13 @@
       els.telefone.value = '';
       els.results.style.display = 'none';
       document.querySelectorAll('.input-invalido').forEach(input => input.classList.remove('input-invalido'));
+      
       if (vendaEmEdicaoId) {
         vendaEmEdicaoId = null;
+        vendaOriginalRegistradoPor = null;
+        vendaOriginalRegistradoPorId = null;
+        vendaOriginalTimestamp = null;
+        vendaOriginalDataHora = null;
         els.registerBtn.textContent = 'Registrar Venda';
       }
     };
@@ -759,6 +772,7 @@
         return isValid;
     };
     
+    // **** MUDANÇA: 'registerVenda' agora preserva os dados originais ao editar ****
     const registerVenda = () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
       if (!hasQuantities) {
@@ -775,8 +789,11 @@
       }
       
       const newVenda = {
-        timestamp: Date.now(),
-        dataHora: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        // Se for edição, usa o timestamp/data original. Se for novo, cria um novo.
+        timestamp: vendaEmEdicaoId ? vendaOriginalTimestamp : Date.now(), 
+        dataHora: vendaEmEdicaoId ? vendaOriginalDataHora : new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+        
+        // Campos atualizáveis
         cliente: els.nomeCliente.value.trim(),
         organizacao: els.organizacao.value.trim(),
         organizacaoTipo: els.organizacaoTipo.value,
@@ -786,8 +803,10 @@
         qtyTickets, qtyTablets, qtyNitro,
         valorTotal: totalValue,
         tipoValor,
-        registradoPor: currentUser.displayName,
-        registradoPorId: currentUser.uid 
+        
+        // Se for edição, usa o registrador original. Se for novo, usa o atual.
+        registradoPor: vendaEmEdicaoId ? vendaOriginalRegistradoPor : currentUser.displayName,
+        registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
       };
 
       const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
@@ -801,12 +820,12 @@
           });
     };
 
-    // **** MUDANÇA: Função 'editVenda' corrigida para preencher todos os campos ****
+    // **** MUDANÇA: 'editVenda' agora guarda os dados originais ****
     const editVenda = (id) => {
         const venda = vendas.find(v => v.id === id);
         if (!venda) return;
         
-        // Mapeamento manual para corrigir o bug
+        // Preenche os campos da calculadora
         els.nomeCliente.value = venda.cliente || '';
         els.organizacao.value = venda.organizacao || '';
         els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
@@ -820,7 +839,14 @@
         els.qtyNitro.value = venda.qtyNitro || 0;
         
         calculate(); // Calcula para mostrar os resultados
+        
+        // Guarda os dados originais que não devem ser alterados
         vendaEmEdicaoId = id;
+        vendaOriginalRegistradoPor = venda.registradoPor;
+        vendaOriginalRegistradoPorId = venda.registradoPorId;
+        vendaOriginalTimestamp = venda.timestamp;
+        vendaOriginalDataHora = venda.dataHora;
+        
         els.registerBtn.textContent = 'Atualizar Venda';
         toggleView(false); // Volta para a calculadora
         showToast(`Editando venda de ${venda.cliente}`, "default");
@@ -1004,7 +1030,7 @@ Negociadoras: ${negociadoras}
             return;
         }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
-        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[venda.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
