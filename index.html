@@ -384,12 +384,13 @@
           <table id="adminUserTable">
               <thead>
                   <tr>
-                      <th style="width: 50%;">Usuário (Nome)</th>
-                      <th style="width: 50%;">Permissão (Tag)</th>
+                      <th style="width: 45%;">Usuário (Nome)</th>
+                      <th style="width: 40%;">Permissão (Tag)</th>
+                      <th style="width: 15%;">Ações</th>
                   </tr>
               </thead>
               <tbody id="adminUserListBody">
-                  <tr><td colspan="2" style="text-align: center;">Carregando usuários...</td></tr>
+                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr>
               </tbody>
           </table>
           </div>
@@ -985,7 +986,7 @@ Negociadoras: ${negociadoras}
         { element: 'qtyTickets', title: '1/5: Quantidades', content: 'Comece inserindo a quantidade de produtos que deseja calcular ou vender.' },
         { element: 'tipoValor', title: '2/5: Tipo de Valor', content: 'Selecione o tipo de pagamento. Isso afeta o preço final de cada item.' },
         { element: 'calcBtn', title: '3/5: Calcular', content: 'Clique aqui para ver os materiais necessários e o valor total da venda.' },
-        { element: 'registerBtn', title: '4/5: Registrar Venda', content: 'Após calcular, preencha os dados do cliente e clique para salvar no histórico.' },
+        { element: 'registerBtn', title: '4.5: Registrar Venda', content: 'Após calcular, preencha os dados do cliente e clique para salvar no histórico.' },
         { element: 'toggleHistoryBtn', title: '5/5: Ver Histórico', content: 'Acesse o histórico para ver, editar, apagar ou copiar vendas antigas.' }
     ];
     let currentStepIndex = -1; let currentTooltip = null; let tourOverlay = null;
@@ -1004,14 +1005,32 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
-    // **** MUDANÇA NO JAVASCRIPT ****
+    // **** NOVO JAVASCRIPT ****
+    
+    // Nova função para apagar o usuário do REALTIME DATABASE
+    // (Não apaga o login do Firebase Authentication)
+    const deleteUser = (uid, displayName) => {
+        if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
+            
+            const userRef = ref(db, `usuarios/${uid}`);
+            remove(userRef)
+                .then(() => {
+                    showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
+                    loadAdminPanel(); // Recarrega a lista
+                })
+                .catch((error) => {
+                    showToast(`Erro ao apagar usuário: ${error.message}`, 'error');
+                });
+        }
+    };
+
     const loadAdminPanel = async () => {
-        els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Carregando...</td></tr>';
+        els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
         
         try {
             const usersSnapshot = await get(ref(db, 'usuarios'));
             if (!usersSnapshot.exists()) {
-                els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+                els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
             
@@ -1023,17 +1042,15 @@ Negociadoras: ${negociadoras}
                 const row = els.adminUserListBody.insertRow();
                 row.insertCell().textContent = userData.displayName || '(Sem nome)';
                 
-                // Coluna "Email" foi removida
-                
                 const tagCell = row.insertCell();
                 
-                // Admin não pode alterar a si mesmo, mas pode alterar outros Admins
+                // Admin não pode alterar a si mesmo
                 if (uid === currentUser.uid) {
                     tagCell.textContent = `👑 ${userData.tag} (Você)`;
                 } else {
                     const select = document.createElement('select');
                     select.style.width = '100%';
-                    select.dataset.uid = uid; // Guarda o UID no próprio select
+                    select.dataset.uid = uid; 
                     
                     const optVisitante = document.createElement('option');
                     optVisitante.value = 'Visitante';
@@ -1045,21 +1062,43 @@ Negociadoras: ${negociadoras}
                     optHells.textContent = 'Hells';
                     select.appendChild(optHells);
                     
-                    // Nova opção para promover a Admin
                     const optAdmin = document.createElement('option');
                     optAdmin.value = 'ADMIN';
                     optAdmin.textContent = '👑 Administrador';
                     select.appendChild(optAdmin);
                     
-                    select.value = userData.tag; // Define o valor atual
+                    select.value = userData.tag; 
                     select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
                     tagCell.appendChild(select);
+                }
+                
+                // Nova célula de Ações (Apagar)
+                const actionsCell = row.insertCell();
+                actionsCell.style.textAlign = 'center';
+                actionsCell.style.verticalAlign = 'middle';
+
+                if (uid === currentUser.uid) {
+                    actionsCell.textContent = '---';
+                } else {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '❌';
+                    deleteBtn.className = 'danger action-btn'; // Reutiliza o estilo dos botões
+                    deleteBtn.style.padding = '5px 8px';
+                    deleteBtn.style.fontSize = '14px';
+                    deleteBtn.style.lineHeight = '1';
+                    
+                    // Adiciona o evento de clique
+                    deleteBtn.addEventListener('click', () => {
+                        deleteUser(uid, userData.displayName);
+                    });
+                    
+                    actionsCell.appendChild(deleteBtn);
                 }
             });
             
         } catch (error) {
             showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-            els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Erro ao carregar.</td></tr>';
+            els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Erro ao carregar.</td></tr>';
         }
         
         try {
@@ -1073,7 +1112,8 @@ Negociadoras: ${negociadoras}
             showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
         }
     };
-    // **** FIM DA MUDANÇA NO JAVASCRIPT ****
+    
+    // **** FIM DO NOVO JAVASCRIPT ****
     
     const updateUserTag = (uid, newTag) => {
         const tagRef = ref(db, `usuarios/${uid}/tag`);
