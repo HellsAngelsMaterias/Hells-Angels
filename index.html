@@ -215,6 +215,16 @@
     #authScreen .actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
     #authScreen .actions button { width: 100%; padding: 12px; font-size: 16px; }
     #authMessage { text-align: center; font-weight: 600; }
+    
+    /* --- NOVO: PAINEL INFERIOR --- */
+    #bottomPanel {
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background: var(--cor-card); border-top: 2px solid var(--cor-principal);
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+        padding: 10px 20px; z-index: 9997;
+        display: none; /* Controlado pelo Admin */
+        justify-content: center; align-items: center; gap: 20px;
+    }
 
     @media (max-width: 500px) {
         body { padding: 10px; margin: 10px auto; }
@@ -340,7 +350,8 @@
       <button id="registerBtn" class="success">Registrar Venda</button>
       <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
       <button id="csvBtn" class="muted">Exportar CSV</button>
-      <button id="discordBtnCalc" class="muted">Discord</button> 
+      <button id="discordBtnCalc" class="muted">Discord</button>
+      <button id="adminPanelBtn" class="muted" style="display:none; background-color: #ffb3d9;">Painel Admin</button>
     </div>
 
     <div id="resultsContainer">
@@ -363,6 +374,41 @@
       </div>
     </div>
   </div>
+  
+  <div class="card" id="adminPanel" style="display:none;">
+      <h2>Painel do Administrador</h2>
+      
+      <h3>Gerenciamento de Usuários</h3>
+      <p style="font-size: 13px;">Altere a permissão de usuários (Visitante ou HELLS). Administradores não podem ser alterados.</p>
+      <div class="history-table-wrapper">
+          <table id="adminUserTable">
+              <thead>
+                  <tr>
+                      <th style="width: 40%;">Usuário (Nome)</th>
+                      <th style="width: 30%;">Email</th>
+                      <th style="width: 30%;">Permissão (Tag)</th>
+                  </tr>
+              </thead>
+              <tbody id="adminUserListBody">
+                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr>
+              </tbody>
+          </table>
+      </div>
+
+      <h3 style="margin-top: 20px;">Controles de Layout Global</h3>
+      <p style="font-size: 13px;">Habilite ou desabilite recursos para todos os usuários do site em tempo real.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <input type="checkbox" id="layoutToggleNightMode" style="width: auto;">
+              Habilitar o botão "Modo Noturno" para todos
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <input type="checkbox" id="layoutToggleBottomPanel" style="width: auto;">
+              Ligar "Painel Inferior" para todos
+          </label>
+      </div>
+  </div>
+
 
   <div class="card" id="historyCard" style="display:none">
       <div id="historyBackground" class="card">
@@ -393,6 +439,10 @@
   </div>
   
   <div id="toast-container"></div>
+  
+  <div id="bottomPanel">
+      <span>Este é o painel inferior. O conteúdo pode ser personalizado.</span>
+  </div>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -487,8 +537,42 @@
       authMessage: document.getElementById('authMessage'),
       logoutBtn: document.getElementById('logoutBtn'),
       mainTitle: document.getElementById('mainTitle'),
-      forgotPasswordLink: document.getElementById('forgotPasswordLink')
+      forgotPasswordLink: document.getElementById('forgotPasswordLink'),
+      
+      // --- NOVO: Elementos do Painel Admin ---
+      adminPanelBtn: document.getElementById('adminPanelBtn'),
+      adminPanel: document.getElementById('adminPanel'),
+      adminUserListBody: document.getElementById('adminUserListBody'),
+      layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
+      layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
+      bottomPanel: document.getElementById('bottomPanel')
     };
+    
+    // --- NOVO: LÓGICA DE LAYOUT GLOBAL ---
+    // Esta função "ouve" as configurações do Admin em tempo real e aplica a TODOS
+    const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
+    onValue(globalLayoutRef, (snapshot) => {
+        if (!snapshot.exists()) {
+            console.error("Nó /configuracoesGlobais/layout não encontrado no Firebase.");
+            return;
+        }
+        const settings = snapshot.val();
+        
+        // Controla o botão de Modo Noturno
+        if (els.themeBtn) {
+            els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
+            if (!settings.enableNightMode) {
+                document.body.classList.remove('dark'); // Força modo claro se desabilitado
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Controla o Painel Inferior
+        if (els.bottomPanel) {
+            els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
+        }
+    });
+    
     
     const formatCurrency = (value) => {
       if (typeof value !== 'number' || isNaN(value)) { return 'R$ 0'; }
@@ -779,6 +863,7 @@ Negociadoras: ${negociadoras}
         document.body.classList.toggle('history-view-active', showHistory);
         els.mainCard.style.display = showHistory ? 'none' : 'block';
         els.historyCard.style.display = showHistory ? 'block' : 'none';
+        els.adminPanel.style.display = 'none'; // Esconde painel admin ao trocar de tela
         if (showHistory) {
             els.historyImg.src = historyBackgroundSrc;
             els.filtroHistorico.value = ''; 
@@ -792,9 +877,8 @@ Negociadoras: ${negociadoras}
              return;
         }
 
-        // Esta filtragem não é mais necessária para 'Visitante', pois o DB já filtrou.
-        // Mas podemos mantê-la como uma segunda garantia.
         let vendasFiltradas = history;
+        // O DB já filtra para Visitante, mas esta é uma boa segunda garantia.
         if (currentUserData.tag === 'Visitante') {
             vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
         }
@@ -835,7 +919,6 @@ Negociadoras: ${negociadoras}
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
 
-            // **LÓGICA DE PERMISSÃO PARA BOTÕES**
             const podeModificar = 
                 (currentUserData.tag === 'ADMIN') ||
                 (currentUserData.tag === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
@@ -856,8 +939,6 @@ Negociadoras: ${negociadoras}
 
     const filterHistory = () => {
         const query = els.filtroHistorico.value.toLowerCase().trim();
-        
-        // A filtragem agora acontece sobre a lista 'vendas' que já foi pré-filtrada pelo DB
         const filteredVendas = vendas.filter(v => 
             Object.values(v).some(val => String(val).toLowerCase().includes(query)) ||
             (v.qtyTickets > 0 && `tickets`.includes(query)) ||
@@ -930,6 +1011,103 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
+    // --- NOVO: Lógica do Painel Admin ---
+    const loadAdminPanel = async () => {
+        els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
+        
+        // 1. Carregar lista de usuários
+        try {
+            const usersSnapshot = await get(ref(db, 'usuarios'));
+            if (!usersSnapshot.exists()) {
+                els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+                return;
+            }
+            
+            els.adminUserListBody.innerHTML = ''; // Limpa o "Carregando"
+            usersSnapshot.forEach(userSnap => {
+                const uid = userSnap.key;
+                const userData = userSnap.val();
+                
+                const row = els.adminUserListBody.insertRow();
+                row.insertCell().textContent = userData.displayName || '(Sem nome)';
+                row.insertCell().textContent = userData.email || '(Sem email)';
+                
+                const tagCell = row.insertCell();
+                if (userData.tag === 'ADMIN') {
+                    tagCell.textContent = '👑 Administrador';
+                } else {
+                    const select = document.createElement('select');
+                    select.style.width = '100%';
+                    select.dataset.uid = uid; // Guarda o UID no próprio select
+                    
+                    const optVisitante = document.createElement('option');
+                    optVisitante.value = 'Visitante';
+                    optVisitante.textContent = 'Visitante';
+                    select.appendChild(optVisitante);
+                    
+                    const optHells = document.createElement('option');
+                    optHells.value = 'HELLS';
+                    optHells.textContent = 'Hells';
+                    select.appendChild(optHells);
+                    
+                    select.value = userData.tag; // Define o valor atual
+                    select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
+                    tagCell.appendChild(select);
+                }
+            });
+            
+        } catch (error) {
+            showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
+            els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Erro ao carregar.</td></tr>';
+        }
+        
+        // 2. Carregar configurações de layout
+        try {
+            const layoutSnapshot = await get(ref(db, 'configuracoesGlobais/layout'));
+            if (layoutSnapshot.exists()) {
+                const settings = layoutSnapshot.val();
+                els.layoutToggleNightMode.checked = settings.enableNightMode;
+                els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
+            }
+        } catch (error) {
+            showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
+        }
+    };
+    
+    const updateUserTag = (uid, newTag) => {
+        const tagRef = ref(db, `usuarios/${uid}/tag`);
+        set(tagRef, newTag)
+            .then(() => {
+                showToast("Permissão do usuário atualizada!", 'success');
+            })
+            .catch((error) => {
+                showToast(`Erro ao atualizar tag: ${error.message}`, 'error');
+            });
+    };
+    
+    const updateGlobalLayout = (key, value) => {
+        const layoutRef = ref(db, `configuracoesGlobais/layout/${key}`);
+        set(layoutRef, value)
+            .catch((error) => {
+                showToast(`Erro ao salvar configuração: ${error.message}`, 'error');
+            });
+    };
+    
+    // Adiciona os eventos de clique/mudança para os controles do Admin
+    els.adminPanelBtn.onclick = () => {
+        const isHidden = els.adminPanel.style.display === 'none';
+        els.adminPanel.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            loadAdminPanel(); // Carrega os dados frescos sempre que o painel é aberto
+        }
+    };
+    els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
+    els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
+    
+    
+    // --- FIM DA LÓGICA DO PAINEL ADMIN ---
+    
+    
     const handleAuthAction = (isLogin, creds) => {
         const email = creds.username.trim() + "@ha.com";
         const password = creds.password;
@@ -991,10 +1169,18 @@ Negociadoras: ${negociadoras}
       console.log("Usuário logado com a tag:", tag);
       els.mainTitle.textContent = `Calculadora (${tag})`; 
 
+      // Controla visibilidade de botões com base na tag
       if (tag === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
+        els.adminPanelBtn.style.display = 'inline-block';
       } else {
         els.clearHistoryBtn.style.display = 'none';
+        els.adminPanelBtn.style.display = 'none';
+      }
+      
+      // Garante que o painel admin esteja fechado se o usuário for rebaixado
+      if (tag !== 'ADMIN') {
+          els.adminPanel.style.display = 'none';
       }
     };
 
@@ -1020,15 +1206,12 @@ Negociadoras: ${negociadoras}
                 
                 configurarInterfacePorTag(currentUserData.tag);
                  
-                // *** ESTA É A MUDANÇA IMPORTANTE ***
-                if(vendasListener) vendasListener(); // Cancela o listener anterior
+                if(vendasListener) vendasListener(); 
                 
                 let vendasRef;
                 if (currentUserData.tag === 'ADMIN' || currentUserData.tag === 'HELLS') {
-                    // Admin e Hells podem ver tudo
                     vendasRef = ref(db, 'vendas');
                 } else {
-                    // Visitante SÓ PODE consultar (query) suas próprias vendas
                     vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
                 }
 
@@ -1044,7 +1227,6 @@ Negociadoras: ${negociadoras}
                     console.error("Erro ao carregar vendas: ", error);
                     showToast("Erro de permissão ao carregar histórico.", "error");
                 });
-                // *** FIM DA MUDANÇA ***
             });
 
             els.authScreen.style.display = 'none';
@@ -1053,17 +1235,21 @@ Negociadoras: ${negociadoras}
         } else {
             currentUser = null;
             currentUserData = null;
-            if (vendasListener) vendasListener(); // Remove o listener ao deslogar
-            vendas = []; // Limpa os dados locais
+            if (vendasListener) vendasListener(); 
+            vendas = []; 
             
             els.authScreen.style.display = 'block';
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
+            els.adminPanel.style.display = 'none'; // Esconde painel admin ao deslogar
         }
     });
 
+    // Esta lógica de tema local só funciona se o Admin permitir (botão visível)
     const savedTheme = localStorage.getItem('theme') || 'light';
-    if(savedTheme === 'dark') document.body.classList.add('dark');
+    if(savedTheme === 'dark') {
+        document.body.classList.add('dark');
+    }
     updateLogoAndThemeButton(savedTheme === 'dark');
 
     if (localStorage.getItem('hasVisited')) {
