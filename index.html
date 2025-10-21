@@ -378,21 +378,21 @@
       <h2>Painel do Administrador</h2>
       
       <h3>Gerenciamento de Usuários</h3>
-      <p style="font-size: 13px;">Altere a permissão de usuários (Visitante ou HELLS). Administradores não podem ser alterados.</p>
+      <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
       <div class="history-table-wrapper">
+          
           <table id="adminUserTable">
               <thead>
                   <tr>
-                      <th style="width: 40%;">Usuário (Nome)</th>
-                      <th style="width: 30%;">Email</th>
-                      <th style="width: 30%;">Permissão (Tag)</th>
+                      <th style="width: 50%;">Usuário (Nome)</th>
+                      <th style="width: 50%;">Permissão (Tag)</th>
                   </tr>
               </thead>
               <tbody id="adminUserListBody">
-                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr>
+                  <tr><td colspan="2" style="text-align: center;">Carregando usuários...</td></tr>
               </tbody>
           </table>
-      </div>
+          </div>
 
       <h3 style="margin-top: 20px;">Controles de Layout Global</h3>
       <p style="font-size: 13px;">Habilite ou desabilite recursos para todos os usuários do site em tempo real.</p>
@@ -677,7 +677,6 @@
       els.results.style.display = 'block';
       els.resultsBody.innerHTML = Object.entries(totals)
         .filter(([, value]) => value > 0)
-        /* --- ESTA É A LINHA CORRIGIDA --- */
         .map(([material, value]) => `<tr><td>${capitalizeText(material.replace(/_/g, ' '))}</td><td>${value.toLocaleString('pt-BR')}</td></tr>`)
         .join('');
       els.valuesBody.innerHTML = productValues.map(item => `<tr><td>${item.product}</td><td>${formatCurrency(item.value)}</td></tr>`).join('');
@@ -762,7 +761,7 @@
             }
         });
         els.qtyTickets.value = venda.qtyTickets || 0;
-        els.qtyTablets.value = venda.qtyTableTensors || 0;
+        els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
         
         calculate();
@@ -1005,13 +1004,14 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
+    // **** MUDANÇA NO JAVASCRIPT ****
     const loadAdminPanel = async () => {
-        els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
+        els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Carregando...</td></tr>';
         
         try {
             const usersSnapshot = await get(ref(db, 'usuarios'));
             if (!usersSnapshot.exists()) {
-                els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+                els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
             
@@ -1022,11 +1022,14 @@ Negociadoras: ${negociadoras}
                 
                 const row = els.adminUserListBody.insertRow();
                 row.insertCell().textContent = userData.displayName || '(Sem nome)';
-                row.insertCell().textContent = userData.email || '(Sem email)';
+                
+                // Coluna "Email" foi removida
                 
                 const tagCell = row.insertCell();
-                if (userData.tag === 'ADMIN') {
-                    tagCell.textContent = '👑 Administrador';
+                
+                // Admin não pode alterar a si mesmo, mas pode alterar outros Admins
+                if (uid === currentUser.uid) {
+                    tagCell.textContent = `👑 ${userData.tag} (Você)`;
                 } else {
                     const select = document.createElement('select');
                     select.style.width = '100%';
@@ -1042,6 +1045,12 @@ Negociadoras: ${negociadoras}
                     optHells.textContent = 'Hells';
                     select.appendChild(optHells);
                     
+                    // Nova opção para promover a Admin
+                    const optAdmin = document.createElement('option');
+                    optAdmin.value = 'ADMIN';
+                    optAdmin.textContent = '👑 Administrador';
+                    select.appendChild(optAdmin);
+                    
                     select.value = userData.tag; // Define o valor atual
                     select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
                     tagCell.appendChild(select);
@@ -1050,7 +1059,7 @@ Negociadoras: ${negociadoras}
             
         } catch (error) {
             showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-            els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Erro ao carregar.</td></tr>';
+            els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Erro ao carregar.</td></tr>';
         }
         
         try {
@@ -1064,6 +1073,7 @@ Negociadoras: ${negociadoras}
             showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
         }
     };
+    // **** FIM DA MUDANÇA NO JAVASCRIPT ****
     
     const updateUserTag = (uid, newTag) => {
         const tagRef = ref(db, `usuarios/${uid}/tag`);
