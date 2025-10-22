@@ -133,8 +133,15 @@
 
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
     
-    /* --- MUDANÇA DE LAYOUT (3 COLUNAS) --- */
-    .grid-venda { grid-template-columns: 1fr 1fr 1fr; }
+    /* --- MUDANÇA DE LAYOUT (LINHAS 2-2-2-3) --- */
+    .grid-venda { grid-template-columns: 1fr 1fr; }
+    
+    .grid-venda-3col { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr 1fr; 
+        gap: 14px; 
+        grid-column: 1 / -1; /* Span full width */
+    }
     /* --- FIM DA MUDANÇA --- */
 
     table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
@@ -522,18 +529,21 @@
                 <input id="negociadoras" type="text" value="">
             </div>
             
-            <div>
-                <label for="carroVeiculo">Carro (Opcional):</label>
-                <input id="carroVeiculo" type="text" value="">
-            </div>
-            <div>
-                <label for="placaVeiculo">Placa(s) (Opcional):</label>
-                <input id="placaVeiculo" type="text" value="">
-                <p class="suggestion-tip">Separe por vírgula.</p>
-            </div>
-            <div>
-                <label for="vendaValorObs">Cargo:</label>
-                <input id="vendaValorObs" type="text" value="">
+            <div class="grid-venda-3col">
+                <div>
+                    <label for="carroVeiculo">Carro(s) (Opcional):</label>
+                    <input id="carroVeiculo" type="text" value="">
+                    <p class="suggestion-tip">Separe múltiplos com vírgula.</p>
+                </div>
+                <div>
+                    <label for="placaVeiculo">Placa(s) (Opcional):</label>
+                    <input id="placaVeiculo" type="text" value="">
+                    <p class="suggestion-tip">Separe múltiplos com vírgula.</p>
+                </div>
+                <div>
+                    <label for="vendaValorObs">Cargo:</label>
+                    <input id="vendaValorObs" type="text" value="">
+                </div>
             </div>
         </div>
     </div>
@@ -723,11 +733,11 @@
       <label for="editDossierCargo">Cargo:</label>
       <input type="text" id="editDossierCargo">
       
-      <label for="editDossierCarro">Carro:</label>
-      <input type="text" id="editDossierCarro">
+      <label for="editDossierCarro">Carro(s):</label>
+      <input type="text" id="editDossierCarro" placeholder="Separe múltiplos com vírgula">
       
       <label for="editDossierPlacas">Placa(s):</label>
-      <input type="text" id="editDossierPlacas" style="text-transform: uppercase;">
+      <input type="text" id="editDossierPlacas" style="text-transform: uppercase;" placeholder="Separe múltiplas com vírgula">
       
       <label for="editDossierFotoUrl">Foto URL:</label>
       <input type="text" id="editDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
@@ -754,11 +764,11 @@
       <label for="addDossierCargo">Cargo:</label>
       <input type="text" id="addDossierCargo">
       
-      <label for="addDossierCarro">Carro:</label>
-      <input type="text" id="addDossierCarro">
+      <label for="addDossierCarro">Carro(s):</label>
+      <input type="text" id="addDossierCarro" placeholder="Separe múltiplos com vírgula">
       
       <label for="addDossierPlacas">Placa(s):</label>
-      <input type="text" id="addDossierPlacas" style="text-transform: uppercase;">
+      <input type="text" id="addDossierPlacas" style="text-transform: uppercase;" placeholder="Separe múltiplas com vírgula">
       
       <label for="addDossierFotoUrl">Foto URL:</label>
       <input type="text" id="addDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
@@ -1183,10 +1193,10 @@
     
     
     // =================================================================
-    // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (DEDUPLICAÇÃO E EDIÇÃO)
+    // INÍCIO: NOVA LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (DEDUPLICAÇÃO E EDIÇÃO)
     // =================================================================
     
-    // Adiciona ou ATUALIZA entrada de pessoa no dossiê
+    // Adiciona ou ATUALIZA entrada de pessoa no dossiê (Request 1: Deduplicação)
     const addDossierEntry = async (vendaData) => {
         const org = vendaData.organizacao.trim();
         const nome = vendaData.cliente.trim();
@@ -1258,7 +1268,7 @@
         }
     };
     
-    // Atualiza o dossiê quando uma VENDA é editada
+    // Atualiza o dossiê quando uma VENDA é editada (Request 2: Sincronização)
     const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData) => {
         const newOrg = newVendaData.organizacao.trim();
         const newNome = newVendaData.cliente.trim();
@@ -1319,7 +1329,7 @@
     };
 
     // =================================================================
-    // FIM: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ
+    // FIM: NOVA LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ
     // =================================================================
     
     
@@ -1623,7 +1633,7 @@ Negociadoras: ${negociadoras}
             return;
         }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Cargo", "Carro", "Placas", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
-        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, `"${v.carro || ''}"`, `"${v.placas || ''}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, `"${venda.carro || ''}"`, `"${venda.placas || ''}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
