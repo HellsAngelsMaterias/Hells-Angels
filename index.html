@@ -24,7 +24,8 @@
       --cor-tag-admin: #007bff; --cor-tag-hells: #ff0080; --cor-tag-visitante: #28a745;
     }
     body.dark input[type=number], body.dark input[type=text], body.dark select,
-    body.dark .modal-content input[type=text], body.dark .modal-content textarea {
+    body.dark .modal-content input[type=text], body.dark .modal-content textarea,
+    body.dark #modalListaVeiculos {
       background: #33001f; color: var(--cor-texto); border: 1px solid var(--cor-borda);
     }
     .modal-content textarea {
@@ -97,6 +98,7 @@
     h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
     h2 { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--cor-principal); }
     h3 { color: var(--cor-principal); font-weight:600; margin-top: 16px; }
+    h4 { color: var(--cor-principal); font-weight:600; margin-top: 16px; }
 
     .card {
       background: var(--cor-card); padding: 18px; border-radius: 12px;
@@ -428,7 +430,7 @@
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         z-index: 10011; width: 90%; max-width: 500px;
-        max-height: 80vh; overflow-y: auto;
+        max-height: 85vh; overflow-y: auto;
     }
     .modal-content input[type=text] {
         width: 100%; box-sizing: border-box; 
@@ -436,6 +438,26 @@
     .modal-content label {
         margin-top: 10px;
     }
+    
+    /* --- NOVO GERENCIADOR DE VEÍCULOS (MODAL) --- */
+    #modalListaVeiculos, #addModalListaVeiculos, #editModalListaVeiculos {
+        margin-top: 10px; max-height: 120px; overflow-y: auto; 
+        background: var(--cor-fundo); border-radius: 6px; 
+        padding: 8px; border: 1px solid var(--cor-borda);
+        min-height: 40px;
+    }
+    .veiculo-item-modal {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px; border-bottom: 1px solid var(--cor-borda);
+        font-size: 14px;
+    }
+    .veiculo-item-modal:last-child { border-bottom: none; }
+    .veiculo-item-modal span { word-break: break-all; }
+    .veiculo-item-modal button { 
+        font-size: 11px; padding: 3px 6px; 
+        flex-shrink: 0; margin-left: 10px;
+    }
+    /* --- FIM --- */
 
     @media (max-width: 500px) {
         body { padding: 10px; margin: 10px auto; }
@@ -651,6 +673,9 @@
       <p style="font-size: 13px;">Se você tem vendas antigas, clique no botão abaixo UMA VEZ para copiá-las para o novo sistema de Dossiê.</p>
       <button id="migrateDossierBtn" class="danger" style="animation: none;">Migrar Vendas Antigas para Dossiê</button>
       
+      <p style="font-size: 13px; margin-top: 15px;">Se você usava o sistema antigo de Carros/Placas (com vírgulas), clique abaixo UMA VEZ para migrar para o novo gerenciador.</p>
+      <button id="migrateVeiculosBtn" class="danger" style="animation: none; background-color: #cc0000;">Migrar Veículos Antigos (Dossiê)</button>
+      
   </div>
 
 
@@ -733,14 +758,17 @@
       <label for="editDossierCargo">Cargo:</label>
       <input type="text" id="editDossierCargo">
       
-      <label for="editDossierCarro">Carro(s):</label>
-      <input type="text" id="editDossierCarro" placeholder="Separe múltiplos com vírgula">
-      
-      <label for="editDossierPlacas">Placa(s):</label>
-      <input type="text" id="editDossierPlacas" style="text-transform: uppercase;" placeholder="Separe múltiplas com vírgula">
-      
       <label for="editDossierFotoUrl">Foto URL:</label>
       <input type="text" id="editDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
+      
+      <h4 style="margin-top:15px; margin-bottom: 5px; color: var(--cor-principal);">Gerenciador de Veículos</h4>
+      <div class="grid grid-venda-3col" style="gap: 10px;">
+          <input type="text" id="editModalCarroNome" placeholder="Nome do Carro" style="grid-column: span 1;">
+          <input type="text" id="editModalCarroPlaca" placeholder="Placa" style="grid-column: span 1; text-transform: uppercase;">
+          <button id="editModalAddVeiculoBtn" class="muted" style="grid-column: span 1; padding: 6px; height: 100%;">+ Adicionar</button>
+      </div>
+      <div id="editModalListaVeiculos">
+          </div>
       
       <div class="actions" style="margin-top: 20px;">
           <button id="saveDossierBtn" class="success">Salvar</button>
@@ -764,14 +792,17 @@
       <label for="addDossierCargo">Cargo:</label>
       <input type="text" id="addDossierCargo">
       
-      <label for="addDossierCarro">Carro(s):</label>
-      <input type="text" id="addDossierCarro" placeholder="Separe múltiplos com vírgula">
-      
-      <label for="addDossierPlacas">Placa(s):</label>
-      <input type="text" id="addDossierPlacas" style="text-transform: uppercase;" placeholder="Separe múltiplas com vírgula">
-      
       <label for="addDossierFotoUrl">Foto URL:</label>
       <input type="text" id="addDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
+      
+      <h4 style="margin-top:15px; margin-bottom: 5px; color: var(--cor-principal);">Gerenciador de Veículos</h4>
+      <div class="grid grid-venda-3col" style="gap: 10px;">
+          <input type="text" id="addModalCarroNome" placeholder="Nome do Carro" style="grid-column: span 1;">
+          <input type="text" id="addModalCarroPlaca" placeholder="Placa" style="grid-column: span 1; text-transform: uppercase;">
+          <button id="addModalAddVeiculoBtn" class="muted" style="grid-column: span 1; padding: 6px; height: 100%;">+ Adicionar</button>
+      </div>
+      <div id="addModalListaVeiculos">
+          </div>
       
       <div class="actions" style="margin-top: 20px;">
           <button id="saveNewDossierBtn" class="success">Salvar Nova Pessoa</button>
@@ -841,6 +872,11 @@
     
     let globalAllOrgs = []; 
     let globalCurrentPeople = [];
+    
+    // --- NOVO (Gerenciador de Veículos) ---
+    // Armazena temporariamente os veículos ao editar/adicionar um modal
+    let tempVeiculos = {};
+    // --- FIM ---
     
     const perUnit = {
       tickets: { dinheiro_sujo: 525 },
@@ -940,6 +976,7 @@
       dossierPeopleGrid: document.getElementById('dossierPeopleGrid'),
       
       migrateDossierBtn: document.getElementById('migrateDossierBtn'),
+      migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), // Novo botão
       
       editDossierOverlay: document.getElementById('editDossierOverlay'),
       editDossierModal: document.getElementById('editDossierModal'),
@@ -948,11 +985,15 @@
       editDossierNome: document.getElementById('editDossierNome'),
       editDossierNumero: document.getElementById('editDossierNumero'),
       editDossierCargo: document.getElementById('editDossierCargo'),
-      editDossierCarro: document.getElementById('editDossierCarro'), 
-      editDossierPlacas: document.getElementById('editDossierPlacas'),
       editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
       saveDossierBtn: document.getElementById('saveDossierBtn'),
       cancelDossierBtn: document.getElementById('cancelDossierBtn'),
+      
+      // -- Novos elementos (Modal Editar)
+      editModalCarroNome: document.getElementById('editModalCarroNome'),
+      editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
+      editModalAddVeiculoBtn: document.getElementById('editModalAddVeiculoBtn'),
+      editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
       
       addDossierOverlay: document.getElementById('addDossierOverlay'),
       addDossierModal: document.getElementById('addDossierModal'),
@@ -960,11 +1001,15 @@
       addDossierNome: document.getElementById('addDossierNome'),
       addDossierNumero: document.getElementById('addDossierNumero'),
       addDossierCargo: document.getElementById('addDossierCargo'),
-      addDossierCarro: document.getElementById('addDossierCarro'), 
-      addDossierPlacas: document.getElementById('addDossierPlacas'),
       addDossierFotoUrl: document.getElementById('addDossierFotoUrl'),
       saveNewDossierBtn: document.getElementById('saveNewDossierBtn'),
       cancelNewDossierBtn: document.getElementById('cancelNewDossierBtn'),
+
+      // -- Novos elementos (Modal Adicionar)
+      addModalCarroNome: document.getElementById('addModalCarroNome'),
+      addModalCarroPlaca: document.getElementById('addModalCarroPlaca'),
+      addModalAddVeiculoBtn: document.getElementById('addModalAddVeiculoBtn'),
+      addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
       
       orgModalOverlay: document.getElementById('orgModalOverlay'),
       orgModal: document.getElementById('orgModal'),
@@ -1071,10 +1116,9 @@
         els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, 
         els.carroVeiculo, 
         els.addDossierNome, els.addDossierOrganizacao, els.addDossierCargo, 
-        els.addDossierCarro, 
         els.editDossierNome, els.editDossierCargo, 
-        els.editDossierCarro, 
-        els.orgNome 
+        els.orgNome,
+        els.addModalCarroNome, els.editModalCarroNome // Adiciona os novos campos de carro
     ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
@@ -1193,15 +1237,18 @@
     
     
     // =================================================================
-    // INÍCIO: NOVA LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (DEDUPLICAÇÃO E EDIÇÃO)
+    // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (v8)
     // =================================================================
     
-    // Adiciona ou ATUALIZA entrada de pessoa no dossiê (Request 1: Deduplicação)
+    // Adiciona ou ATUALIZA entrada de pessoa no dossiê
+    // Esta função agora SÓ SINCRONIZA dados da venda (Nome, Tel, Cargo, Data).
+    // A gerência de veículos é feita SEPARADAMENTE nos modais do dossiê.
     const addDossierEntry = async (vendaData) => {
         const org = vendaData.organizacao.trim();
         const nome = vendaData.cliente.trim();
         
         if (!org || !nome) {
+            console.warn("addDossierEntry: Org ou Nome faltando. Saindo.");
             return; // Não pode salvar sem org ou nome
         }
 
@@ -1233,13 +1280,6 @@
                 });
 
                 const updates = {};
-                // Atualiza se o campo novo tiver info e o antigo não (ou for 'N/A')
-                if (vendaData.carro && (!existingEntryData.carro || existingEntryData.carro === 'N/A')) {
-                    updates.carro = vendaData.carro;
-                }
-                if (vendaData.placas && (!existingEntryData.placas || existingEntryData.placas === 'N/A')) {
-                    updates.placas = vendaData.placas;
-                }
                 // Sempre atualiza telefone, cargo e data (para ter o mais recente)
                 updates.numero = vendaData.telefone || existingEntryData.numero;
                 updates.cargo = vendaData.vendaValorObs || existingEntryData.cargo;
@@ -1255,8 +1295,7 @@
                     numero: vendaData.telefone,
                     organizacao: org,
                     cargo: vendaData.vendaValorObs || 'N/A',
-                    carro: vendaData.carro || 'N/A',
-                    placas: vendaData.placas || 'N/A',
+                    veiculos: {}, // Cria um objeto de veículos vazio
                     fotoUrl: '',
                     data: vendaData.dataHora // Data da primeira venda
                 };
@@ -1268,7 +1307,7 @@
         }
     };
     
-    // Atualiza o dossiê quando uma VENDA é editada (Request 2: Sincronização)
+    // Atualiza o dossiê quando uma VENDA é editada
     const updateDossierEntryOnEdit = async (oldNome, oldOrg, newVendaData) => {
         const newOrg = newVendaData.organizacao.trim();
         const newNome = newVendaData.cliente.trim();
@@ -1284,18 +1323,6 @@
         try {
             const snapshot = await get(dossierQuery);
             
-            // Cria o objeto de dados do dossiê com base na venda ATUALIZADA
-            const newDossierData = {
-                nome: newVendaData.cliente,
-                numero: newVendaData.telefone,
-                organizacao: newVendaData.organizacao,
-                cargo: newVendaData.vendaValorObs || 'N/A',
-                carro: newVendaData.carro || 'N/A',
-                placas: newVendaData.placas || 'N/A',
-                fotoUrl: '', // Padrão
-                data: newVendaData.dataHora
-            };
-
             if (!snapshot.exists()) {
                 // Não existia um dossiê... então apenas crie um novo (deduplicação vai tratar)
                 addDossierEntry(newVendaData);
@@ -1309,8 +1336,17 @@
                 existingEntryData = child.val();
             });
             
-            // Mantém a foto antiga, se existir
-            newDossierData.fotoUrl = existingEntryData.fotoUrl || '';
+            // Cria o objeto de dados do dossiê com base na venda ATUALIZADA
+            const newDossierData = {
+                nome: newVendaData.cliente,
+                numero: newVendaData.telefone,
+                organizacao: newVendaData.organizacao,
+                cargo: newVendaData.vendaValorObs || 'N/A',
+                data: newVendaData.dataHora,
+                // Mantém os veículos e foto antigos
+                veiculos: existingEntryData.veiculos || {},
+                fotoUrl: existingEntryData.fotoUrl || ''
+            };
 
             if (oldOrg === newOrg) {
                 // Org é a mesma. Apenas atualiza o registro existente
@@ -1329,7 +1365,7 @@
     };
 
     // =================================================================
-    // FIM: NOVA LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ
+    // FIM: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ
     // =================================================================
     
     
@@ -1371,17 +1407,20 @@
 
       const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
       
-      // LÓGICA DE SINCRONIZAÇÃO ATUALIZADA
+      // LÓGICA DE SINCRONIZAÇÃO ATUALIZADA (BUG CORRIGIDO)
       operation
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
-              if (vendaEmEdicaoId) {
-                  // É uma ATUALIZAÇÃO de venda
-                  updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalOrganizacao, newVenda);
-              } else {
-                  // É um NOVO registro
-                  addDossierEntry(newVenda);
+              // **CORREÇÃO DO BUG**: Só sincroniza se tiver uma organização
+              if (newVenda.organizacao && newVenda.organizacao.trim() !== '') {
+                  if (vendaEmEdicaoId) {
+                      // É uma ATUALIZAÇÃO de venda
+                      updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalOrganizacao, newVenda);
+                  } else {
+                      // É um NOVO registro
+                      addDossierEntry(newVenda);
+                  }
               }
               
               clearAllFields();
@@ -1654,7 +1693,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v6) ****
+    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v8) ****
     
     // Nível 1: Mostra as Organizações (Bases)
     const showDossierOrgs = async () => {
@@ -1829,31 +1868,39 @@ Negociadoras: ${negociadoras}
             cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
             
             
-            // --- NOVO LAYOUT (Opção "Carros/Placas" com <details>) ---
-            const details = document.createElement('details');
-            details.style.marginTop = '5px'; // Espaçamento
-            
-            const summary = document.createElement('summary');
-            summary.innerHTML = `<strong>Carros/Placas</strong> (Clique para ver)`;
-            summary.style.cursor = 'pointer';
-            summary.style.fontWeight = '600';
-            summary.style.color = 'var(--cor-principal)';
-            summary.style.fontSize = '13px';
-            
-            const carroP = document.createElement('p');
-            carroP.innerHTML = `<strong>Carro(s):</strong> ${entry.carro || 'N/A'}`;
-            carroP.style.marginTop = '8px'; // Espaçamento interno
-            carroP.style.fontWeight = 'normal';
-            carroP.style.color = 'var(--cor-texto)';
-            
-            const placasP = document.createElement('p');
-            placasP.innerHTML = `<strong>Placa(s):</strong> ${entry.placas || 'N/A'}`;
-            placasP.style.fontWeight = 'normal';
-            placasP.style.color = 'var(--cor-texto)';
-            
-            details.appendChild(summary);
-            details.appendChild(carroP);
-            details.appendChild(placasP);
+            // --- NOVO LAYOUT (Opção "Veículos" com <details>) ---
+            const veiculos = entry.veiculos || {};
+            const veiculosCount = Object.keys(veiculos).length;
+
+            if (veiculosCount > 0) {
+                const details = document.createElement('details');
+                details.style.marginTop = '5px';
+                
+                const summary = document.createElement('summary');
+                summary.innerHTML = `<strong>Veículos (${veiculosCount})</strong> (Clique para ver)`;
+                summary.style.cursor = 'pointer';
+                summary.style.fontWeight = '600';
+                summary.style.color = 'var(--cor-principal)';
+                summary.style.fontSize = '13px';
+                
+                details.appendChild(summary);
+                
+                for (const id in veiculos) {
+                    const veiculo = veiculos[id];
+                    const p = document.createElement('p');
+                    p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}`;
+                    p.style.fontWeight = 'normal';
+                    p.style.color = 'var(--cor-texto)';
+                    p.style.marginTop = '5px';
+                    p.style.textAlign = 'left';
+                    details.appendChild(p);
+                }
+                card.appendChild(details);
+            } else {
+                const p = document.createElement('p');
+                p.innerHTML = '<strong>Veículos:</strong> N/A';
+                card.appendChild(p);
+            }
             // --- FIM DA MUDANÇA ---
             
             
@@ -1868,7 +1915,6 @@ Negociadoras: ${negociadoras}
             card.appendChild(nomeH4);
             card.appendChild(numeroP);
             card.appendChild(cargoP);
-            card.appendChild(details); // Adiciona o novo <details>
             card.appendChild(actionsDiv);
             
             els.dossierPeopleGrid.appendChild(card);
@@ -1885,10 +1931,20 @@ Negociadoras: ${negociadoras}
         
         const filteredPeople = globalCurrentPeople.filter(entry => {
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
-            const placas = entry.placas ? entry.placas.toLowerCase() : '';
             const cargo = entry.cargo ? entry.cargo.toLowerCase() : '';
-            const carro = entry.carro ? entry.carro.toLowerCase() : ''; 
-            return nome.includes(query) || placas.includes(query) || cargo.includes(query) || carro.includes(query); 
+            
+            let veiculoMatch = false;
+            if (entry.veiculos) {
+                for (const id in entry.veiculos) {
+                    const v = entry.veiculos[id];
+                    if ((v.carro && v.carro.toLowerCase().includes(query)) || (v.placa && v.placa.toLowerCase().includes(query))) {
+                        veiculoMatch = true;
+                        break;
+                    }
+                }
+            }
+            
+            return nome.includes(query) || cargo.includes(query) || veiculoMatch; 
         });
         
         displayPeople(filteredPeople);
@@ -1983,14 +2039,65 @@ Negociadoras: ${negociadoras}
     
     // --- Funções dos Modais de Pessoa (Membros) ---
     
+    // --- NOVO: Funções do Gerenciador de Veículos do Modal ---
+    const renderModalVeiculos = (listaElement) => {
+        listaElement.innerHTML = ''; // Limpa a lista
+        if (Object.keys(tempVeiculos).length === 0) {
+            listaElement.innerHTML = '<p style="font-size: 13px; text-align: center; margin: 0; padding: 5px;">Nenhum veículo adicionado.</p>';
+            return;
+        }
+        
+        for (const key in tempVeiculos) {
+            const veiculo = tempVeiculos[key];
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'veiculo-item-modal';
+            itemDiv.innerHTML = `
+                <span><strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}</span>
+                <button class="danger action-btn" data-key="${key}">Remover</button>
+            `;
+            listaElement.appendChild(itemDiv);
+        }
+    };
+    
+    const adicionarVeiculoTemp = (carroEl, placaEl, listaEl) => {
+        const carro = carroEl.value.trim();
+        const placa = placaEl.value.trim().toUpperCase();
+        
+        if (!carro || !placa) {
+            showToast("Preencha o nome do carro e a placa.", "error");
+            return;
+        }
+        
+        const tempKey = `temp_${Date.now()}`;
+        tempVeiculos[tempKey] = { carro, placa };
+        
+        renderModalVeiculos(listaEl);
+        
+        carroEl.value = '';
+        placaEl.value = '';
+        carroEl.focus();
+    };
+    
+    const removerVeiculoTemp = (key, listaEl) => {
+        if (tempVeiculos[key]) {
+            delete tempVeiculos[key];
+            renderModalVeiculos(listaEl);
+        }
+    };
+    // --- FIM: Funções do Gerenciador de Veículos ---
+
+    
     const openAddDossierModal = (orgName) => {
         els.addDossierOrganizacao.value = orgName;
         els.addDossierNome.value = '';
         els.addDossierNumero.value = '';
         els.addDossierCargo.value = '';
-        els.addDossierCarro.value = ''; 
-        els.addDossierPlacas.value = '';
         els.addDossierFotoUrl.value = '';
+        
+        tempVeiculos = {}; // Limpa os veículos temporários
+        renderModalVeiculos(els.addModalListaVeiculos); // Renderiza a lista vazia
+        els.addModalCarroNome.value = '';
+        els.addModalCarroPlaca.value = '';
         
         document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
         
@@ -2031,18 +2138,19 @@ Negociadoras: ${negociadoras}
             nome: nome,
             numero: els.addDossierNumero.value.trim(),
             cargo: els.addDossierCargo.value.trim(),
-            carro: els.addDossierCarro.value.trim(), 
-            placas: els.addDossierPlacas.value.trim().toUpperCase(),
             fotoUrl: els.addDossierFotoUrl.value.trim(),
+            veiculos: tempVeiculos, // Salva o objeto de veículos
             data: `${dia}/${mes}/${ano} ${horas}:${minutos}`
         };
         
-        // Roda a lógica de add (que já faz a deduplicação)
-        addDossierEntry(newEntry).then(() => {
-             showToast("Nova pessoa salva no dossiê!", "success");
-             closeAddDossierModal();
-             showDossierPeople(org);
-        });
+        // Push para o banco de dados
+        push(ref(db, `dossies/${org}`), newEntry)
+            .then(() => {
+                 showToast("Nova pessoa salva no dossiê!", "success");
+                 closeAddDossierModal();
+                 showDossierPeople(org);
+            })
+            .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
     };
     
     const openEditDossierModal = (org, id) => {
@@ -2057,9 +2165,13 @@ Negociadoras: ${negociadoras}
         els.editDossierNome.value = entry.nome || '';
         els.editDossierNumero.value = entry.numero || '';
         els.editDossierCargo.value = entry.cargo || '';
-        els.editDossierCarro.value = entry.carro || ''; 
-        els.editDossierPlacas.value = entry.placas || '';
         els.editDossierFotoUrl.value = entry.fotoUrl || '';
+        
+        // Carrega os veículos existentes para o gerenciador
+        tempVeiculos = { ...(entry.veiculos || {}) };
+        renderModalVeiculos(els.editModalListaVeiculos);
+        els.editModalCarroNome.value = '';
+        els.editModalCarroPlaca.value = '';
         
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
@@ -2090,9 +2202,8 @@ Negociadoras: ${negociadoras}
             nome: els.editDossierNome.value.trim(),
             numero: els.editDossierNumero.value.trim(),
             cargo: els.editDossierCargo.value.trim(),
-            carro: els.editDossierCarro.value.trim(), 
-            placas: els.editDossierPlacas.value.trim().toUpperCase(),
-            fotoUrl: els.editDossierFotoUrl.value.trim()
+            fotoUrl: els.editDossierFotoUrl.value.trim(),
+            veiculos: tempVeiculos // Salva o objeto de veículos atualizado
         };
         
         delete updatedEntry.id;
@@ -2160,9 +2271,8 @@ Negociadoras: ${negociadoras}
                     organizacao: venda.organizacao,
                     telefone: venda.telefone,
                     vendaValorObs: venda.vendaValorObs || 'N/A (Migrado)',
-                    carro: venda.carro || 'N/A (Migrado)', 
-                    placas: venda.placas || 'N/A (Migrado)',
                     dataHora: venda.dataHora
+                    // Não passa mais carro/placa
                 };
 
                 // Roda a lógica de add (que já faz a deduplicação)
@@ -2180,7 +2290,77 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v6) ****
+    // --- NOVA FUNÇÃO DE MIGRAÇÃO DE VEÍCULOS ---
+    const migrateVeiculosData = async () => {
+        if (!confirm("ATENÇÃO: Isso irá converter TODOS os campos 'carro' e 'placas' (com vírgulas) para o novo sistema de veículos. Faça isso APENAS UMA VEZ.\n\nDeseja continuar?")) {
+            return;
+        }
+        
+        showToast("Iniciando migração de veículos... Isso pode demorar.", "default", 5000);
+        els.migrateVeiculosBtn.disabled = true;
+        els.migrateVeiculosBtn.textContent = "Migrando...";
+        
+        try {
+            const dossiesRef = ref(db, 'dossies');
+            const snapshot = await get(dossiesRef);
+            
+            if (!snapshot.exists()) {
+                showToast("Nenhum dossiê encontrado.", "error");
+                return;
+            }
+            
+            const dossies = snapshot.val();
+            let count = 0;
+            const updates = {};
+            
+            for (const org in dossies) {
+                for (const personId in dossies[org]) {
+                    const person = dossies[org][personId];
+                    
+                    // Verifica se a pessoa tem os campos antigos (carro/placas)
+                    // E se ainda NÃO tem o campo novo (veiculos)
+                    if ((person.carro || person.placas) && !person.veiculos) {
+                        const newVeiculos = {};
+                        const carros = person.carro ? person.carro.split(',').map(c => c.trim()) : [];
+                        const placas = person.placas ? person.placas.split(',').map(p => p.trim()) : [];
+                        
+                        const maxLen = Math.max(carros.length, placas.length);
+                        
+                        for (let i = 0; i < maxLen; i++) {
+                            const newKey = `mig_${i}`;
+                            newVeiculos[newKey] = {
+                                carro: carros[i] || 'N/A',
+                                placa: placas[i] || 'N/A'
+                            };
+                        }
+                        
+                        // Prepara o update para esta pessoa
+                        const path = `dossies/${org}/${personId}`;
+                        updates[`${path}/veiculos`] = newVeiculos;
+                        updates[`${path}/carro`] = null; // Remove o campo antigo
+                        updates[`${path}/placas`] = null; // Remove o campo antigo
+                        count++;
+                    }
+                }
+            }
+            
+            if (count > 0) {
+                await update(ref(db), updates);
+                showToast(`Migração de veículos concluída! ${count} registros atualizados.`, "success");
+            } else {
+                showToast("Nenhum registro antigo para migrar.", "default");
+            }
+            
+        } catch (error) {
+            showToast(`Erro na migração de veículos: ${error.message}`, "error");
+        } finally {
+            els.migrateVeiculosBtn.disabled = false;
+            els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
+        }
+    };
+    // --- FIM ---
+    
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v8) ****
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -2219,7 +2399,7 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
-    // Event Listeners (Dossiê v6)
+    // Event Listeners (Dossiê v8)
     els.investigacaoBtn.onclick = () => toggleView('dossier');
     els.toggleCalcBtnDossier.onclick = () => toggleView('main');
     
@@ -2251,7 +2431,7 @@ Negociadoras: ${negociadoras}
         }
     });
     
-    // Modais de Pessoas
+    // Modais de Pessoas (Salvar/Cancelar)
     els.saveDossierBtn.onclick = saveDossierChanges;
     els.cancelDossierBtn.onclick = closeEditDossierModal;
     els.editDossierOverlay.onclick = closeEditDossierModal;
@@ -2259,6 +2439,22 @@ Negociadoras: ${negociadoras}
     els.saveNewDossierBtn.onclick = saveNewDossierEntry;
     els.cancelNewDossierBtn.onclick = closeAddDossierModal;
     els.addDossierOverlay.onclick = closeAddDossierModal;
+    
+    // --- NOVO: Listeners do Gerenciador de Veículos ---
+    els.addModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.addModalCarroNome, els.addModalCarroPlaca, els.addModalListaVeiculos);
+    els.editModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.editModalCarroNome, els.editModalCarroPlaca, els.editModalListaVeiculos);
+    
+    els.addModalListaVeiculos.onclick = (e) => {
+        if (e.target.classList.contains('danger')) {
+            removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
+        }
+    };
+    els.editModalListaVeiculos.onclick = (e) => {
+        if (e.target.classList.contains('danger')) {
+            removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
+        }
+    };
+    // --- FIM ---
     
     // Modais de Orgs
     els.saveOrgBtn.onclick = saveOrg;
@@ -2268,6 +2464,7 @@ Negociadoras: ${negociadoras}
 
     // Admin
     els.migrateDossierBtn.onclick = migrateVendasToDossier;
+    els.migrateVeiculosBtn.onclick = migrateVeiculosData; // Novo listener
     els.toggleCalcBtnAdmin.onclick = () => toggleView('main'); 
     
     const deleteUser = (uid, displayName) => {
