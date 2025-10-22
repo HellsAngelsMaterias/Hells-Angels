@@ -246,7 +246,7 @@
         justify-content: center; align-items: center; gap: 20px;
     }
     
-    /* ########## INÍCIO DAS MUDANÇAS (CSS DOS CARDS) ########## */
+    /* ########## CSS DOS CARDS (Inalterado) ########## */
     .dossier-org-title {
         font-size: 20px;
         font-weight: 700;
@@ -256,34 +256,9 @@
         border-bottom: 2px solid var(--cor-borda);
     }
     
-    /* CSS antigo da tabela (agora desnecessário, mas mantido) */
-    .dossier-table-wrapper {
-        overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; margin-top: 8px;
-    }
-    #dossierCard table {
-        width: 100%; border-collapse: collapse; table-layout: fixed;
-        min-width: 1050px;
-    }
-    #dossierCard th, #dossierCard td {
-        padding: 6px 8px; text-align: center; vertical-align: middle;
-        white-space: nowrap; font-size: 14px; border-bottom: 1px solid var(--cor-borda);
-    }
-    #dossierCard th { background: var(--cor-principal); color: var(--cor-btn-texto); }
-    #dossierCard td { background: var(--cor-card); opacity: 0.95; }
-    body.dark #dossierCard td { background: var(--cor-card); opacity: 0.95; }
-    
-    #dossierCard th:nth-child(1), #dossierCard td:nth-child(1) { width: 150px; } /* Nome */
-    #dossierCard th:nth-child(2), #dossierCard td:nth-child(2) { width: 120px; } /* Numero */
-    #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 140px; } /* Cargo */
-    #dossierCard th:nth-child(4), #dossierCard td:nth-child(4) { width: 80px; }  /* Foto */
-    #dossierCard th:nth-child(5), #dossierCard td:nth-child(5) { width: 180px; white-space: normal; } /* Placas */
-    #dossierCard th:nth-child(6), #dossierCard td:nth-child(6) { width: 150px; } /* Data */
-    #dossierCard th:nth-child(7), #dossierCard td:nth-child(7) { width: 100px; } /* Ações */
-    
-    /* NOVO CSS PARA O LAYOUT DE CARDS */
     .dossier-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Grid responsivo */
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
         gap: 16px;
         margin-top: 15px;
     }
@@ -318,7 +293,7 @@
     }
     .dossier-entry-card .dossier-foto {
         width: 100%;
-        height: 180px; /* Altura fixa para a foto */
+        height: 180px; 
         object-fit: cover; 
         border-radius: 8px;
         background-color: var(--cor-btn-secundario); 
@@ -328,12 +303,12 @@
         justify-content: center;
         font-style: italic;
         font-size: 13px;
-        overflow: hidden; /* Garante que a imagem não vaze */
+        overflow: hidden; 
     }
     .dossier-entry-card .dossier-foto img {
          width: 100%;
          height: 100%;
-         object-fit: cover; /* Faz a imagem preencher o espaço */
+         object-fit: cover; 
     }
     .dossier-entry-card .dossier-actions {
         margin-top: 10px;
@@ -345,7 +320,7 @@
         font-size: 12px;
         padding: 5px 10px;
     }
-    /* ########## FIM DAS MUDANÇAS (CSS DOS CARDS) ########## */
+    /* ########## FIM DO CSS DOS CARDS ########## */
 
 
     .modal-overlay {
@@ -375,9 +350,8 @@
         .grid, .grid-venda { grid-template-columns: 1fr; }
         .user-status-display { display: none; }
         
-        /* Ajuste para o grid de cards no celular */
         .dossier-grid {
-             grid-template-columns: 1fr; /* Uma coluna só */
+             grid-template-columns: 1fr; 
         }
     }
   </style>
@@ -1386,8 +1360,8 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // ########## INÍCIO DA SUBSTITUIÇÃO (displayDossiers) ##########
-    // Esta função foi REESCRITA para usar cards em vez de tabelas
+    // ########## INÍCIO DA MODIFICAÇÃO (displayDossiers) ##########
+    // Função atualizada para agrupar por organização ANTES de criar os grids
     const displayDossiers = (entries) => {
         els.dossierContainer.innerHTML = ''; // Limpa o container
         
@@ -1396,67 +1370,91 @@ Negociadoras: ${negociadoras}
             return;
         }
         
-        // 1. Criar o grid container
-        const grid = document.createElement('div');
-        grid.className = 'dossier-grid';
-        
-        // 2. Iterar sobre as entradas e criar os cards
-        entries.forEach(entry => {
-            const card = document.createElement('div');
-            card.className = 'dossier-entry-card';
-            
-            // Foto
-            const fotoDiv = document.createElement('div');
-            fotoDiv.className = 'dossier-foto';
-            if (entry.fotoUrl) {
-                const img = document.createElement('img');
-                img.src = entry.fotoUrl;
-                img.alt = `Foto de ${entry.nome}`;
-                fotoDiv.appendChild(img);
-            } else {
-                fotoDiv.textContent = 'Sem Foto';
+        // 1. Agrupar entradas por organização
+        const groupedByOrg = entries.reduce((acc, entry) => {
+            const org = entry.organizacao || 'Sem Organização'; // Lida com entradas sem org
+            if (!acc[org]) {
+                acc[org] = [];
             }
-            
-            // Nome
-            const nomeH4 = document.createElement('h4');
-            nomeH4.textContent = entry.nome || '(Sem Nome)';
-            
-            // Número
-            const numeroP = document.createElement('p');
-            numeroP.textContent = entry.numero || '(Sem Número)';
-
-            // Cargo
-            const cargoP = document.createElement('p');
-            cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
-            
-            // Placas
-            const placasP = document.createElement('p');
-            placasP.innerHTML = `<strong>Placa(s):</strong> ${entry.placas || 'N/A'}`;
-            
-            // Ações
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'dossier-actions';
-            actionsDiv.innerHTML = `
-                <button class="action-btn muted edit-dossier-btn" data-org="${entry.org || entry.organizacao}" data-id="${entry.id}">✏️ Editar</button>
-                <button class="action-btn danger delete-dossier-btn" data-org="${entry.org || entry.organizacao}" data-id="${entry.id}">❌ Apagar</button>
-            `;
-            
-            // Montar o card
-            card.appendChild(fotoDiv);
-            card.appendChild(nomeH4);
-            card.appendChild(numeroP);
-            card.appendChild(cargoP);
-            card.appendChild(placasP);
-            card.appendChild(actionsDiv);
-            
-            // Adicionar o card ao grid
-            grid.appendChild(card);
-        });
+            acc[org].push(entry);
+            return acc;
+        }, {});
         
-        // 3. Adicionar o grid ao container principal
-        els.dossierContainer.appendChild(grid);
+        // 2. Ordenar os nomes das organizações
+        const orgNames = Object.keys(groupedByOrg).sort(); 
+
+        // 3. Iterar sobre cada organização agrupada
+        for (const orgName of orgNames) {
+            const orgEntries = groupedByOrg[orgName];
+            
+            // 4. Criar o Título da Organização (como em image_508c87.png)
+            const orgTitle = document.createElement('h3');
+            orgTitle.className = 'dossier-org-title';
+            orgTitle.textContent = orgName;
+            els.dossierContainer.appendChild(orgTitle); // Adiciona o título
+            
+            // 5. Criar um grid APENAS para esta organização
+            const grid = document.createElement('div');
+            grid.className = 'dossier-grid';
+            
+            // 6. Iterar sobre as entradas DESTA organização e criar os cards
+            orgEntries.forEach(entry => {
+                const card = document.createElement('div');
+                card.className = 'dossier-entry-card';
+                
+                // Foto
+                const fotoDiv = document.createElement('div');
+                fotoDiv.className = 'dossier-foto';
+                if (entry.fotoUrl) {
+                    const img = document.createElement('img');
+                    img.src = entry.fotoUrl;
+                    img.alt = `Foto de ${entry.nome}`;
+                    fotoDiv.appendChild(img);
+                } else {
+                    fotoDiv.textContent = 'Sem Foto';
+                }
+                
+                // Nome
+                const nomeH4 = document.createElement('h4');
+                nomeH4.textContent = entry.nome || '(Sem Nome)';
+                
+                // Número
+                const numeroP = document.createElement('p');
+                numeroP.textContent = entry.numero || '(Sem Número)';
+
+                // Cargo
+                const cargoP = document.createElement('p');
+                cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
+                
+                // Placas
+                const placasP = document.createElement('p');
+                placasP.innerHTML = `<strong>Placa(s):</strong> ${entry.placas || 'N/A'}`;
+                
+                // Ações
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'dossier-actions';
+                actionsDiv.innerHTML = `
+                    <button class="action-btn muted edit-dossier-btn" data-org="${entry.org || entry.organizacao}" data-id="${entry.id}">✏️ Editar</button>
+                    <button class="action-btn danger delete-dossier-btn" data-org="${entry.org || entry.organizacao}" data-id="${entry.id}">❌ Apagar</button>
+                `;
+                
+                // Montar o card
+                card.appendChild(fotoDiv);
+                card.appendChild(nomeH4);
+                card.appendChild(numeroP);
+                card.appendChild(cargoP);
+                card.appendChild(placasP);
+                card.appendChild(actionsDiv);
+                
+                // Adicionar o card ao grid DESTA organização
+                grid.appendChild(card);
+            });
+            
+            // 7. Adicionar o grid desta organização ao container principal
+            els.dossierContainer.appendChild(grid);
+        }
     };
-    // ########## FIM DA SUBSTITUIÇÃO (displayDossiers) ##########
+    // ########## FIM DA MODIFICAÇÃO (displayDossiers) ##########
     
     const removeDossierEntry = (orgName, entryId) => {
         const userTagUpper = currentUserData.tag.toUpperCase();
@@ -1489,7 +1487,8 @@ Negociadoras: ${negociadoras}
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
             const placas = entry.placas ? entry.placas.toLowerCase() : '';
             const cargo = entry.cargo ? entry.cargo.toLowerCase() : '';
-            return nome.includes(query) || placas.includes(query) || cargo.includes(query);
+            const org = entry.organizacao ? entry.organizacao.toLowerCase() : '';
+            return nome.includes(query) || placas.includes(query) || cargo.includes(query) || org.includes(query);
         });
         
         displayDossiers(filteredEntries);
@@ -1585,6 +1584,8 @@ Negociadoras: ${negociadoras}
             showToast("Erro: Entrada original não encontrada.", "error");
             return;
         }
+        
+        const orgOriginal = originalEntry.org || originalEntry.organizacao;
 
         const updatedEntry = {
             ...originalEntry,
@@ -1598,7 +1599,7 @@ Negociadoras: ${negociadoras}
         delete updatedEntry.id;
         delete updatedEntry.org;
 
-        const entryRef = ref(db, `dossies/${org}/${id}`);
+        const entryRef = ref(db, `dossies/${orgOriginal}/${id}`);
         set(entryRef, updatedEntry)
             .then(() => {
                 showToast("Dossiê atualizado com sucesso!", "success");
@@ -1711,14 +1712,17 @@ Negociadoras: ${negociadoras}
     els.migrateDossierBtn.onclick = migrateVendasToDossier;
     
     els.dossierContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-dossier-btn')) {
-            const org = e.target.dataset.org;
-            const id = e.target.dataset.id;
+        const editBtn = e.target.closest('.edit-dossier-btn');
+        const deleteBtn = e.target.closest('.delete-dossier-btn');
+        
+        if (deleteBtn) {
+            const org = deleteBtn.dataset.org;
+            const id = deleteBtn.dataset.id;
             removeDossierEntry(org, id);
         }
-        if (e.target.classList.contains('edit-dossier-btn')) {
-            const org = e.target.dataset.org;
-            const id = e.target.dataset.id;
+        if (editBtn) {
+            const org = editBtn.dataset.org;
+            const id = editBtn.dataset.id;
             openEditDossierModal(org, id);
         }
     });
