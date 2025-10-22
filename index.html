@@ -116,6 +116,10 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     input[type=number] { width: 140px; }
+    
+    input#placaVeiculo {
+        text-transform: uppercase;
+    }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
     .grid-venda { grid-template-columns: 1fr 1fr; }
@@ -254,7 +258,7 @@
     }
     #dossierCard table {
         width: 100%; border-collapse: collapse; table-layout: fixed;
-        min-width: 700px;
+        min-width: 800px;
     }
     #dossierCard th, #dossierCard td {
         padding: 6px 8px; text-align: center; vertical-align: middle;
@@ -266,8 +270,9 @@
     
     #dossierCard th:nth-child(1), #dossierCard td:nth-child(1) { width: 150px; } /* Nome */
     #dossierCard th:nth-child(2), #dossierCard td:nth-child(2) { width: 120px; } /* Numero */
-    #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 120px; } /* Placa */
+    #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 180px; white-space: normal; } /* Placas */
     #dossierCard th:nth-child(4), #dossierCard td:nth-child(4) { width: 150px; } /* Data */
+    #dossierCard th:nth-child(5), #dossierCard td:nth-child(5) { width: 80px; }  /* Ações */
 
 
     @media (max-width: 500px) {
@@ -351,17 +356,23 @@
                 <label for="telefone">Telefone:</label>
                 <input id="telefone" type="text" value="" maxlength="13"> 
             </div>
+            
             <div>
-                <label for="placaVeiculo">Placa do Veículo (Opcional):</label>
-                <input id="placaVeiculo" type="text" value="">
+                <label for="negociadoras">Negociadoras:</label>
+                <input id="negociadoras" type="text" value="">
             </div>
-            <div style="grid-column: 1 / -1;">
+
+            <div>
+                <label for="placaVeiculo">Placa(s) do(s) Veículo(s) (Opcional):</label>
+                <input id="placaVeiculo" type="text" value="">
+                <p class="suggestion-tip">Separe múltiplas placas por vírgula.</p>
+            </div>
+            <div>
                 <label for="vendaValorObs">Valor - Observação (Como foi o pagamento):</label>
                 <input id="vendaValorObs" type="text" value="">
             </div>
         </div>
     </div>
-    
     <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--cor-borda);">
 
     <h2>Cálculo de Produtos</h2>
@@ -494,7 +505,7 @@
   
   <div class="card" id="dossierCard" style="display:none">
       <h2>Sistema de Investigação (Dossiês)</h2>
-      <input type="text" id="filtroDossier" placeholder="🔍 Buscar por Nome ou Placa..." style="margin-bottom: 10px; width: 100%;">
+      <input type="text" id="filtroDossier" placeholder="🔍 Buscar por Nome ou Placa(s)..." style="margin-bottom: 10px; width: 100%;">
       <div class="actions">
         <button id="toggleCalcBtnDossier" class="muted">Voltar à Calculadora</button>
       </div>
@@ -519,7 +530,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
       authDomain: "hells-angels-438c2.firebaseapp.com",
-      databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
+      databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
       projectId: "hells-angels-438c2",
       storageBucket: "hells-angels-438c2.firebasestorage.app",
       messagingSenderId: "429406215315",
@@ -576,7 +587,7 @@
       organizacaoTipo: document.getElementById('organizacaoTipo'),
       telefone: document.getElementById('telefone'),
       placaVeiculo: document.getElementById('placaVeiculo'),
-      negociadoras: document.getElementById('negociadoras'),
+      negociadoras: document.getElementById('negociadoras'), // Campo agora existe no HTML
       vendaValorObs: document.getElementById('vendaValorObs'),
       dataVenda: document.getElementById('dataVenda'),
       filtroHistorico: document.getElementById('filtroHistorico'),
@@ -627,11 +638,9 @@
       dossierContainer: document.getElementById('dossierContainer'),
       toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier'),
       
-      // NOVO Elemento de Migração
       migrateDossierBtn: document.getElementById('migrateDossierBtn')
     };
     
-    // Listener das configurações globais (agora com tratamento de erro)
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
@@ -708,7 +717,7 @@
     const atualizarRelogio = () => {
         const agora = new Date();
         const dia = String(agora.getDate()).padStart(2, '0');
-        const mes = String(agora.getMonth() + 1).padStart(2, '0'); // Mês é base 0
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
         const ano = agora.getFullYear();
         const horas = String(agora.getHours()).padStart(2, '0');
         const minutos = String(agora.getMinutes()).padStart(2, '0');
@@ -717,7 +726,8 @@
     atualizarRelogio();
     setInterval(atualizarRelogio, 30000);
     
-    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, els.placaVeiculo ];
+    // Placa não é mais capitalizada, ela é UPPERCASE (via CSS/JS)
+    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
         campo.addEventListener('input', (e) => {
@@ -787,6 +797,7 @@
     };
     
     const clearAllFields = () => {
+      // "negociadoras" agora está incluído para ser limpo
       ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs', 'placaVeiculo'].forEach(id => els[id].value = '');
       els.tipoValor.value = 'limpo';
       els.organizacaoTipo.value = 'CNPJ';
@@ -806,6 +817,7 @@
     
     const validateFields = () => {
         let isValid = true;
+        // "negociadoras" agora é um campo obrigatório
         const camposObrigatorios = [ els.nomeCliente, els.telefone, els.negociadoras ];
         
         camposObrigatorios.forEach(field => {
@@ -832,19 +844,17 @@
         return isValid;
     };
     
-    // **** CORREÇÃO DO BUG (Placa era lida depois de ser limpa) ****
-    // Agora `placa` é um argumento
-    const addDossierEntry = (vendaData, placa) => {
+    const addDossierEntry = (vendaData, placas) => {
         const org = vendaData.organizacao.trim();
         if (!org) {
-            return; // Não salva no dossiê se não houver organização
+            return;
         }
         
         const dossierEntry = {
             nome: vendaData.cliente,
             numero: vendaData.telefone,
             organizacao: org,
-            placa: placa || 'N/A', // Usa a placa passada como argumento
+            placas: placas || 'N/A', 
             data: vendaData.dataHora
         };
         
@@ -869,8 +879,7 @@
           return;
       }
       
-      // **** CORREÇÃO DO BUG: Lê a placa *antes* da operação assíncrona ****
-      const placa = els.placaVeiculo.value.trim();
+      const placas = els.placaVeiculo.value.trim().toUpperCase();
       
       const newVenda = {
         timestamp: vendaEmEdicaoId ? vendaOriginalTimestamp : Date.now(), 
@@ -879,7 +888,7 @@
         organizacao: els.organizacao.value.trim(),
         organizacaoTipo: els.organizacaoTipo.value,
         telefone: els.telefone.value.trim(),
-        negociadoras: els.negociadoras.value.trim(),
+        negociadoras: els.negociadoras.value.trim(), // "negociadoras" agora é salvo
         vendaValorObs: els.vendaValorObs.value.trim(),
         qtyTickets, qtyTablets, qtyNitro,
         valorTotal: totalValue,
@@ -894,14 +903,12 @@
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
               if (!vendaEmEdicaoId) {
-                  // Passa a placa que lemos anteriormente
-                  addDossierEntry(newVenda, placa);
+                  addDossierEntry(newVenda, placas);
               }
               
               clearAllFields();
           })
           .catch((error) => {
-              // Se as regras do Firebase estiverem erradas, o erro aparecerá aqui
               showToast(`Erro ao registrar venda: ${error.message}`, "error");
           });
     };
@@ -914,13 +921,15 @@
         els.organizacao.value = venda.organizacao || '';
         els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
         els.telefone.value = venda.telefone || '';
-        els.negociadoras.value = venda.negociadoras || '';
+        els.negociadoras.value = venda.negociadoras || ''; // "negociadoras" agora é preenchido
         els.vendaValorObs.value = venda.vendaValorObs || '';
         els.tipoValor.value = venda.tipoValor || 'limpo';
         
         els.qtyTickets.value = venda.qtyTickets || 0;
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
+        
+        els.placaVeiculo.value = ''; 
         
         calculate(); 
         
@@ -990,7 +999,7 @@ Negociadoras: ${negociadoras}
                 produtos: produtos.join(', '),
                 valor: formatCurrency(venda.valorTotal || 0),
                 obs: venda.vendaValorObs || valorDescricao[venda.tipoValor],
-                negociadoras: venda.negociadoras
+                negociadoras: venda.negociadoras // "negociadoras" é lido da venda
             };
         } else {
             const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
@@ -1013,7 +1022,7 @@ Negociadoras: ${negociadoras}
                 produtos: produtos.join(', '),
                 valor: formatCurrency(totalValue),
                 obs: els.vendaValorObs.value.trim() || valorDescricao[tipoValor],
-                negociadoras: els.negociadoras.value.trim()
+                negociadoras: els.negociadoras.value.trim() // "negociadoras" é lido do campo
             };
         }
         copyToClipboard(buildDiscordMessage(messageData));
@@ -1168,6 +1177,7 @@ Negociadoras: ${negociadoras}
                 for (const entryId in entries) {
                     globalAllDossierEntries.push({
                         id: entryId,
+                        org: orgName,
                         ...entries[entryId]
                     });
                 }
@@ -1215,8 +1225,9 @@ Negociadoras: ${negociadoras}
             table.innerHTML = `<thead><tr>
                 <th>Nome</th>
                 <th>Número</th>
-                <th>Placa do Veículo</th>
+                <th>Placa(s) do Veículo</th>
                 <th>Data do Registro</th>
+                <th>Ações</th>
             </tr></thead>`;
             
             const tbody = document.createElement('tbody');
@@ -1224,14 +1235,36 @@ Negociadoras: ${negociadoras}
                 tbody.innerHTML += `<tr>
                     <td>${entry.nome}</td>
                     <td>${entry.numero}</td>
-                    <td>${entry.placa || 'N/A'}</td>
+                    <td>${entry.placas || 'N/A'}</td>
                     <td>${entry.data}</td>
+                    <td>
+                        <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌</button>
+                    </td>
                 </tr>`;
             });
             
             table.appendChild(tbody);
             tableWrapper.appendChild(table);
             els.dossierContainer.appendChild(tableWrapper);
+        }
+    };
+    
+    const removeDossierEntry = (orgName, entryId) => {
+        if (!currentUserData || (currentUserData.tag !== 'ADMIN' && currentUserData.tag !== 'HELLS')) {
+            showToast("Apenas Admin/Hells podem remover entradas.", "error");
+            return;
+        }
+        
+        if (confirm("Tem certeza que deseja remover esta entrada do dossiê?")) {
+            const entryRef = ref(db, `dossies/${orgName}/${entryId}`);
+            remove(entryRef)
+                .then(() => {
+                    showToast("Entrada removida do dossiê.", "success");
+                    loadAndDisplayDossiers();
+                })
+                .catch((error) => {
+                    showToast(`Erro ao remover: ${error.message}`, "error");
+                });
         }
     };
 
@@ -1244,14 +1277,13 @@ Negociadoras: ${negociadoras}
         
         const filteredEntries = globalAllDossierEntries.filter(entry => {
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
-            const placa = entry.placa ? entry.placa.toLowerCase() : '';
-            return nome.includes(query) || placa.includes(query);
+            const placas = entry.placas ? entry.placas.toLowerCase() : '';
+            return nome.includes(query) || placas.includes(query);
         });
         
         displayDossiers(filteredEntries);
     };
     
-    // **** NOVA FUNÇÃO DE MIGRAÇÃO ****
     const migrateVendasToDossier = async () => {
         if (!confirm("Isso irá copiar *todas* as vendas com organização para o Dossiê. Vendas sem placa serão marcadas como 'N/A'. Deseja continuar?")) {
             return;
@@ -1277,19 +1309,17 @@ Negociadoras: ${negociadoras}
                 const venda = vendas[vendaId];
                 const org = venda.organizacao ? venda.organizacao.trim() : null;
                 
-                // Só migra se tiver uma organização
                 if (org) {
                     const dossierEntry = {
                         nome: venda.cliente,
                         numero: venda.telefone,
                         organizacao: org,
-                        placa: 'N/A (Migrado)', // Placa não existia
+                        placas: 'N/A (Migrado)',
                         data: venda.dataHora
                     };
                     
-                    // Usamos a 'vendaId' como chave no dossiê para evitar duplicatas
                     const dossierRef = ref(db, `dossies/${org}/${vendaId}`);
-                    await set(dossierRef, dossierEntry); // 'await' garante que uma termine antes da próxima
+                    await set(dossierRef, dossierEntry);
                     count++;
                 }
             }
@@ -1303,7 +1333,6 @@ Negociadoras: ${negociadoras}
             els.migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
         }
     };
-
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -1345,7 +1374,15 @@ Negociadoras: ${negociadoras}
     els.investigacaoBtn.onclick = () => toggleView('dossier');
     els.toggleCalcBtnDossier.onclick = () => toggleView('main');
     els.filtroDossier.addEventListener('input', filterDossiers);
-    els.migrateDossierBtn.onclick = migrateVendasToDossier; // NOVO
+    els.migrateDossierBtn.onclick = migrateVendasToDossier;
+    
+    els.dossierContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-dossier-btn')) {
+            const org = e.target.dataset.org;
+            const id = e.target.dataset.id;
+            removeDossierEntry(org, id);
+        }
+    });
     
     
     const deleteUser = (uid, displayName) => {
