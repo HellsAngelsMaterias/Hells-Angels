@@ -363,6 +363,7 @@
                 <input id="organizacao" type="text" value="" list="sugestoesOrganizacao">
                 <p class="suggestion-tip">Digite para ver sugestões de organizações.</p>
                 <datalist id="sugestoesOrganizacao">
+                    <option value="Hells Angels"></option>
                     <option value="Serpents"></option> <option value="Nox"></option> <option value="NKT"></option> <option value="Ruptura"></option> <option value="Midnight"></option> <option value="Meraki"></option> <option value="Lotus"></option> <option value="Hydra"></option> <option value="Hooligans"></option> <option value="Families"></option> <option value="Cartel"></option> <option value="Blood Street"></option> <option value="Blood Reapers"></option> <option value="Blue Diamond"></option> <option value="Black Heart"></option> <option value="Ballas"></option> <option value="Aura"></option> <option value="Anarquia"></option> <option value="8 Anjo"></option> <option value="Vagos"></option> <option value="Vertice"></option> <option value="Void"></option> <option value="Solo"></option>
                 </datalist>
             </div>
@@ -557,7 +558,7 @@
       <input type="text" id="editDossierNome">
       
       <label for="editDossierNumero">Número:</label>
-      <input type="text" id="editDossierNumero">
+      <input type="text" id="editDossierNumero" maxlength="13">
       
       <label for="editDossierCargo">Cargo:</label>
       <input type="text" id="editDossierCargo">
@@ -585,7 +586,7 @@
       <input type="text" id="addDossierNome">
       
       <label for="addDossierNumero">Número:</label>
-      <input type="text" id="addDossierNumero">
+      <input type="text" id="addDossierNumero" maxlength="13">
       
       <label for="addDossierCargo">Cargo:</label>
       <input type="text" id="addDossierCargo">
@@ -609,7 +610,11 @@
     import { getDatabase, ref, set, push, onValue, remove, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     
     const firebaseConfig = {
-      apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
+      // ########## ATENÇÃO!! ##########
+      // VOCÊ PRECISA GERAR UMA NOVA CHAVE E COLAR AQUI
+      // SUA CHAVE ANTIGA FOI EXPOSTA PUBLICAMENTE
+      apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
+      // ########## ATENÇÃO!! ##########
       authDomain: "hells-angels-438c2.firebaseapp.com",
       databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
       projectId: "hells-angels-438c2",
@@ -750,7 +755,7 @@
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
             console.warn("Nó /configuracoesGlobais/layout não encontrado. Criando...");
-            if(currentUserData && currentUserData.tag.toUpperCase() === 'ADMIN') { // Correção aqui
+            if(currentUserData && currentUserData.tag.toUpperCase() === 'ADMIN') {
                  set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false });
             }
             return;
@@ -810,14 +815,18 @@
         return PREFIX + formattedNumber;
     }
 
-    if (els.telefone) {
-        els.telefone.addEventListener('input', (e) => {
-            e.target.value = e.target.value.length < PREFIX.length ? PREFIX : phoneMask(e.target.value);
-        });
-        els.telefone.addEventListener('focus', (e) => {
-            if (!e.target.value || e.target.value.length < PREFIX.length) { e.target.value = PREFIX; }
-        });
-    }
+    const camposTelefone = [els.telefone, els.editDossierNumero, els.addDossierNumero];
+    
+    camposTelefone.forEach(campo => {
+        if (campo) {
+            campo.addEventListener('input', (e) => {
+                e.target.value = e.target.value.length < PREFIX.length ? PREFIX : phoneMask(e.target.value);
+            });
+            campo.addEventListener('focus', (e) => {
+                if (!e.target.value || e.target.value.length < PREFIX.length) { e.target.value = PREFIX; }
+            });
+        }
+    });
 
     const atualizarRelogio = () => {
         const agora = new Date();
@@ -831,7 +840,7 @@
     atualizarRelogio();
     setInterval(atualizarRelogio, 30000);
     
-    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs ];
+    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, els.addDossierNome, els.addDossierOrganizacao, els.addDossierCargo, els.editDossierNome, els.editDossierCargo ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
         campo.addEventListener('input', (e) => {
@@ -885,7 +894,6 @@
         updateResults(totalQuantities, productValues, totalValue);
       } else {
         els.results.style.display = 'none';
-        showToast("Nenhuma quantidade inserida.", "error");
       }
       return { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities };
     };
@@ -1168,7 +1176,9 @@ Negociadoras: ${negociadoras}
         }
 
         let vendasFiltradas = history;
-        if (currentUserData.tag.toUpperCase() === 'VISITANTE') { // Correção aqui
+        const userTagUpper = currentUserData.tag.toUpperCase();
+        
+        if (userTagUpper === 'VISITANTE') {
             vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
         }
 
@@ -1207,8 +1217,7 @@ Negociadoras: ${negociadoras}
             
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
-            
-            const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
+
             const podeModificar = 
                 (userTagUpper === 'ADMIN') ||
                 (userTagUpper === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
@@ -1254,7 +1263,7 @@ Negociadoras: ${negociadoras}
     };
 
     const clearHistory = () => {
-        if (currentUserData.tag.toUpperCase() !== 'ADMIN') { // Correção aqui
+        if (currentUserData.tag.toUpperCase() !== 'ADMIN') {
             showToast("Apenas administradores podem limpar o histórico.", "error");
             return;
         }
@@ -1369,7 +1378,7 @@ Negociadoras: ${negociadoras}
     };
     
     const removeDossierEntry = (orgName, entryId) => {
-        const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
+        const userTagUpper = currentUserData.tag.toUpperCase();
         if (!currentUserData || (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS')) {
             showToast("Apenas Admin/Hells podem remover entradas.", "error");
             return;
@@ -1679,8 +1688,8 @@ Negociadoras: ${negociadoras}
 
             const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'Visitante': 3 };
             usersList.sort((a, b) => {
-                const tagA = tagOrder[a.tag.toUpperCase()] || 4; // Correção aqui
-                const tagB = tagOrder[b.tag.toUpperCase()] || 4; // Correção aqui
+                const tagA = tagOrder[a.tag.toUpperCase()] || 4;
+                const tagB = tagOrder[b.tag.toUpperCase()] || 4;
                 if (tagA !== tagB) {
                     return tagA - tagB;
                 }
@@ -1720,7 +1729,7 @@ Negociadoras: ${negociadoras}
                     optAdmin.textContent = '👑 Administrador';
                     select.appendChild(optAdmin);
                     
-                    select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante'); // Correção aqui
+                    select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante');
                     select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
                     tagCell.appendChild(select);
                 }
@@ -1865,20 +1874,19 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    
-    // ########## FUNÇÃO DE CONFIGURAÇÃO CORRIGIDA ##########
+
     const configurarInterfacePorTag = (tag) => {
       console.log("Usuário logado com a tag original:", tag);
-      const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE'; // Converte para maiúsculas
+      const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE';
       console.log("Tag normalizada:", tagUpper);
       
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
-          userStatusEl.textContent = `${currentUser.displayName} (${tag})`; // Mostra a tag original
+          userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
           userStatusEl.className = 'user-status-display';
-          if (tagUpper === 'ADMIN') { // Verifica a tag em maiúsculas
+          if (tagUpper === 'ADMIN') {
               userStatusEl.classList.add('tag-admin');
-          } else if (tagUpper === 'HELLS') { // Verifica a tag em maiúsculas
+          } else if (tagUpper === 'HELLS') {
               userStatusEl.classList.add('tag-hells');
           } else {
               userStatusEl.classList.add('tag-visitante');
@@ -1886,7 +1894,7 @@ Negociadoras: ${negociadoras}
           userStatusEl.style.display = 'block';
       }
 
-      if (tagUpper === 'ADMIN') { // Verifica a tag em maiúsculas
+      if (tagUpper === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
       } else {
@@ -1894,18 +1902,16 @@ Negociadoras: ${negociadoras}
         els.adminPanelBtn.style.display = 'none';
       }
       
-      if (tagUpper === 'ADMIN' || tagUpper === 'HELLS') { // Verifica a tag em maiúsculas
+      if (tagUpper === 'ADMIN' || tagUpper === 'HELLS') {
           els.investigacaoBtn.style.display = 'block';
       } else {
           els.investigacaoBtn.style.display = 'none';
       }
       
-      if (tagUpper !== 'ADMIN') { // Verifica a tag em maiúsculas
+      if (tagUpper !== 'ADMIN') {
           els.adminPanel.style.display = 'none';
       }
     };
-    // ########## FIM DA CORREÇÃO ##########
-
 
     let vendasListener = null; 
 
@@ -1932,7 +1938,7 @@ Negociadoras: ${negociadoras}
                 if(vendasListener) vendasListener(); 
                 
                 let vendasRef;
-                const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
+                const userTagUpper = currentUserData.tag.toUpperCase();
                 if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
                     vendasRef = ref(db, 'vendas');
                 } else {
@@ -1953,6 +1959,10 @@ Negociadoras: ${negociadoras}
                         showToast("Erro de permissão ao carregar histórico.", "error");
                     }
                 });
+            }, (error) => {
+                console.error("Erro ao ler dados do usuário:", error);
+                showToast("Erro fatal ao ler permissões do usuário.", "error");
+                configurarInterfacePorTag('Visitante'); 
             });
 
             els.authScreen.style.display = 'none';
