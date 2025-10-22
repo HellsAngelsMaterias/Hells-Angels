@@ -1876,7 +1876,21 @@ Negociadoras: ${negociadoras}
             cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
             
             
-            // --- NOVO LAYOUT (Opção "Veículos" com <details>) ---
+            // --- Bloco de Ações (Criado antes) ---
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'dossier-actions';
+            actionsDiv.innerHTML = `
+                <button class="action-btn muted edit-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">✏️ Editar</button>
+                <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
+            `;
+            
+            // --- Ordem de Apresentação no Card ---
+            card.appendChild(fotoDiv);
+            card.appendChild(nomeH4);
+            card.appendChild(numeroP);
+            card.appendChild(cargoP);
+            
+            // --- INÍCIO DA ALTERAÇÃO 1: Mover Veículos para baixo do Cargo ---
             const veiculos = entry.veiculos || {};
             const veiculosCount = Object.keys(veiculos).length;
 
@@ -1917,23 +1931,14 @@ Negociadoras: ${negociadoras}
             } else {
                 const p = document.createElement('p');
                 p.innerHTML = '<strong>Veículos:</strong> N/A';
+                // Adicionando estilos para consistência
+                p.style.fontWeight = 'normal';
+                p.style.color = 'var(--cor-texto)';
                 card.appendChild(p);
             }
-            // --- FIM DA MUDANÇA ---
+            // --- FIM DA ALTERAÇÃO 1 ---
             
-            
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'dossier-actions';
-            actionsDiv.innerHTML = `
-                <button class="action-btn muted edit-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">✏️ Editar</button>
-                <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
-            `;
-            
-            card.appendChild(fotoDiv);
-            card.appendChild(nomeH4);
-            card.appendChild(numeroP);
-            card.appendChild(cargoP);
-            card.appendChild(actionsDiv);
+            card.appendChild(actionsDiv); // Adiciona as ações no final
             
             els.dossierPeopleGrid.appendChild(card);
         });
