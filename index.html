@@ -762,10 +762,13 @@
       <input type="text" id="editDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
       
       <h4 style="margin-top:15px; margin-bottom: 5px; color: var(--cor-principal);">Gerenciador de Veículos</h4>
-      <div class="grid grid-venda-3col" style="gap: 10px;">
-          <input type="text" id="editModalCarroNome" placeholder="Nome do Carro" style="grid-column: span 1;">
-          <input type="text" id="editModalCarroPlaca" placeholder="Placa" style="grid-column: span 1; text-transform: uppercase;">
-          <button id="editModalAddVeiculoBtn" class="muted" style="grid-column: span 1; padding: 6px; height: 100%;">+ Adicionar</button>
+      <div class="grid grid-venda" style="gap: 10px;">
+          <input type="text" id="editModalCarroNome" placeholder="Nome do Carro">
+          <input type="text" id="editModalCarroPlaca" placeholder="Placa" style="text-transform: uppercase;">
+          
+          <input type="text" id="editModalCarroFoto" placeholder="Foto URL (Opcional)" style="grid-column: 1 / -1;"> 
+          
+          <button id="editModalAddVeiculoBtn" class="muted" style="grid-column: 1 / -1; padding: 6px; height: 100%;">+ Adicionar Veículo</button>
       </div>
       <div id="editModalListaVeiculos">
           </div>
@@ -796,10 +799,13 @@
       <input type="text" id="addDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
       
       <h4 style="margin-top:15px; margin-bottom: 5px; color: var(--cor-principal);">Gerenciador de Veículos</h4>
-      <div class="grid grid-venda-3col" style="gap: 10px;">
-          <input type="text" id="addModalCarroNome" placeholder="Nome do Carro" style="grid-column: span 1;">
-          <input type="text" id="addModalCarroPlaca" placeholder="Placa" style="grid-column: span 1; text-transform: uppercase;">
-          <button id="addModalAddVeiculoBtn" class="muted" style="grid-column: span 1; padding: 6px; height: 100%;">+ Adicionar</button>
+      <div class="grid grid-venda" style="gap: 10px;">
+          <input type="text" id="addModalCarroNome" placeholder="Nome do Carro">
+          <input type="text" id="addModalCarroPlaca" placeholder="Placa" style="text-transform: uppercase;">
+          
+          <input type="text" id="addModalCarroFoto" placeholder="Foto URL (Opcional)" style="grid-column: 1 / -1;"> 
+          
+          <button id="addModalAddVeiculoBtn" class="muted" style="grid-column: 1 / -1; padding: 6px; height: 100%;">+ Adicionar Veículo</button>
       </div>
       <div id="addModalListaVeiculos">
           </div>
@@ -992,6 +998,7 @@
       // -- Novos elementos (Modal Editar)
       editModalCarroNome: document.getElementById('editModalCarroNome'),
       editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
+      editModalCarroFoto: document.getElementById('editModalCarroFoto'), // NOVO
       editModalAddVeiculoBtn: document.getElementById('editModalAddVeiculoBtn'),
       editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
       
@@ -1008,6 +1015,7 @@
       // -- Novos elementos (Modal Adicionar)
       addModalCarroNome: document.getElementById('addModalCarroNome'),
       addModalCarroPlaca: document.getElementById('addModalCarroPlaca'),
+      addModalCarroFoto: document.getElementById('addModalCarroFoto'), // NOVO
       addModalAddVeiculoBtn: document.getElementById('addModalAddVeiculoBtn'),
       addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
       
@@ -1693,7 +1701,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v8) ****
+    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v9 - Com Foto de Veículo) ****
     
     // Nível 1: Mostra as Organizações (Bases)
     const showDossierOrgs = async () => {
@@ -1888,7 +1896,17 @@ Negociadoras: ${negociadoras}
                 for (const id in veiculos) {
                     const veiculo = veiculos[id];
                     const p = document.createElement('p');
-                    p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}`;
+                    
+                    // --- LÓGICA DA FOTO DO VEÍCULO (v9) ---
+                    let fotoLink = '';
+                    if (veiculo.fotoUrl) {
+                        fotoLink = ` <a href="${veiculo.fotoUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 11px; color: var(--cor-principal); text-decoration: none; font-weight: 600;">[Ver Foto]</a>`;
+                    } else {
+                        fotoLink = ` <span style="font-size: 11px; color: #888; font-weight: normal;">[Sem Foto]</span>`;
+                    }
+                    // --- FIM DA LÓGICA DA FOTO ---
+                    
+                    p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}${fotoLink}`;
                     p.style.fontWeight = 'normal';
                     p.style.color = 'var(--cor-texto)';
                     p.style.marginTop = '5px';
@@ -2039,7 +2057,7 @@ Negociadoras: ${negociadoras}
     
     // --- Funções dos Modais de Pessoa (Membros) ---
     
-    // --- NOVO: Funções do Gerenciador de Veículos do Modal ---
+    // --- NOVO: Funções do Gerenciador de Veículos do Modal (v9) ---
     const renderModalVeiculos = (listaElement) => {
         listaElement.innerHTML = ''; // Limpa a lista
         if (Object.keys(tempVeiculos).length === 0) {
@@ -2059,9 +2077,11 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    const adicionarVeiculoTemp = (carroEl, placaEl, listaEl) => {
+    // ATUALIZADO para incluir fotoEl
+    const adicionarVeiculoTemp = (carroEl, placaEl, fotoEl, listaEl) => {
         const carro = carroEl.value.trim();
         const placa = placaEl.value.trim().toUpperCase();
+        const fotoUrl = fotoEl.value.trim(); // Pega a URL da foto
         
         if (!carro || !placa) {
             showToast("Preencha o nome do carro e a placa.", "error");
@@ -2069,12 +2089,13 @@ Negociadoras: ${negociadoras}
         }
         
         const tempKey = `temp_${Date.now()}`;
-        tempVeiculos[tempKey] = { carro, placa };
+        tempVeiculos[tempKey] = { carro, placa, fotoUrl }; // Salva a foto
         
         renderModalVeiculos(listaEl);
         
         carroEl.value = '';
         placaEl.value = '';
+        fotoEl.value = ''; // Limpa o campo da foto
         carroEl.focus();
     };
     
@@ -2098,6 +2119,7 @@ Negociadoras: ${negociadoras}
         renderModalVeiculos(els.addModalListaVeiculos); // Renderiza a lista vazia
         els.addModalCarroNome.value = '';
         els.addModalCarroPlaca.value = '';
+        els.addModalCarroFoto.value = ''; // Limpa o campo de foto
         
         document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
         
@@ -2172,6 +2194,7 @@ Negociadoras: ${negociadoras}
         renderModalVeiculos(els.editModalListaVeiculos);
         els.editModalCarroNome.value = '';
         els.editModalCarroPlaca.value = '';
+        els.editModalCarroFoto.value = ''; // Limpa o campo de foto
         
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
@@ -2290,7 +2313,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // --- NOVA FUNÇÃO DE MIGRAÇÃO DE VEÍCULOS ---
+    // --- FUNÇÃO DE MIGRAÇÃO DE VEÍCULOS (v9 - Atualizada) ---
     const migrateVeiculosData = async () => {
         if (!confirm("ATENÇÃO: Isso irá converter TODOS os campos 'carro' e 'placas' (com vírgulas) para o novo sistema de veículos. Faça isso APENAS UMA VEZ.\n\nDeseja continuar?")) {
             return;
@@ -2330,7 +2353,8 @@ Negociadoras: ${negociadoras}
                             const newKey = `mig_${i}`;
                             newVeiculos[newKey] = {
                                 carro: carros[i] || 'N/A',
-                                placa: placas[i] || 'N/A'
+                                placa: placas[i] || 'N/A',
+                                fotoUrl: '' // ADICIONA O CAMPO DE FOTO VAZIO
                             };
                         }
                         
@@ -2360,7 +2384,7 @@ Negociadoras: ${negociadoras}
     };
     // --- FIM ---
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v8) ****
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v9) ****
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -2440,9 +2464,10 @@ Negociadoras: ${negociadoras}
     els.cancelNewDossierBtn.onclick = closeAddDossierModal;
     els.addDossierOverlay.onclick = closeAddDossierModal;
     
-    // --- NOVO: Listeners do Gerenciador de Veículos ---
-    els.addModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.addModalCarroNome, els.addModalCarroPlaca, els.addModalListaVeiculos);
-    els.editModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.editModalCarroNome, els.editModalCarroPlaca, els.editModalListaVeiculos);
+    // --- NOVO: Listeners do Gerenciador de Veículos (v9) ---
+    // ATUALIZADO para passar o novo campo de foto
+    els.addModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.addModalCarroNome, els.addModalCarroPlaca, els.addModalCarroFoto, els.addModalListaVeiculos);
+    els.editModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.editModalCarroNome, els.editModalCarroPlaca, els.editModalCarroFoto, els.editModalListaVeiculos);
     
     els.addModalListaVeiculos.onclick = (e) => {
         if (e.target.classList.contains('danger')) {
