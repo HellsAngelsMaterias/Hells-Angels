@@ -455,9 +455,41 @@
     .veiculo-item-modal span { word-break: break-all; }
     .veiculo-item-modal button { 
         font-size: 11px; padding: 3px 6px; 
-        flex-shrink: 0; margin-left: 10px;
+        flex-shrink: 0; margin-left: 5px; /* Reduzido o margin-left */
     }
     /* --- FIM --- */
+    
+    /* --- INÍCIO: NOVOS ESTILOS (Lightbox e Edição de Veículo) --- */
+    #imageLightboxModal {
+        display: none; /* Escondido por padrão */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10012; /* Acima dos outros modais */
+        max-width: 90vw;
+        max-height: 90vh;
+        background: #fff;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    }
+    #lightboxImg {
+        max-width: 100%;
+        max-height: 85vh; /* Um pouco menor que o modal para caber */
+        display: block;
+        border-radius: 8px;
+    }
+    body.dark #imageLightboxModal {
+        background: var(--cor-card);
+        border: 1px solid var(--cor-borda);
+    }
+    .btn-cancel-veiculo {
+        display: none; /* Escondido por padrão */
+        background-color: #888;
+        color: #fff;
+    }
+    /* --- FIM: NOVOS ESTILOS --- */
 
     @media (max-width: 500px) {
         body { padding: 10px; margin: 10px auto; }
@@ -769,6 +801,8 @@
           <input type="text" id="editModalCarroFoto" placeholder="Foto URL (Opcional)" style="grid-column: 1 / -1;"> 
           
           <button id="editModalAddVeiculoBtn" class="muted" style="grid-column: 1 / -1; padding: 6px; height: 100%;">+ Adicionar Veículo</button>
+          
+          <button id="editModalCancelVeiculoBtn" class="muted btn-cancel-veiculo" style="grid-column: 1 / -1; padding: 6px;">Cancelar Edição</button>
       </div>
       <div id="editModalListaVeiculos">
           </div>
@@ -806,6 +840,8 @@
           <input type="text" id="addModalCarroFoto" placeholder="Foto URL (Opcional)" style="grid-column: 1 / -1;"> 
           
           <button id="addModalAddVeiculoBtn" class="muted" style="grid-column: 1 / -1; padding: 6px; height: 100%;">+ Adicionar Veículo</button>
+          
+          <button id="addModalCancelVeiculoBtn" class="muted btn-cancel-veiculo" style="grid-column: 1 / -1; padding: 6px;">Cancelar Edição</button>
       </div>
       <div id="addModalListaVeiculos">
           </div>
@@ -835,6 +871,11 @@
           <button id="cancelOrgBtn" class="muted">Cancelar</button>
           <button id="deleteOrgBtn" class="danger" style="display: none; margin-left: auto; animation: none;">Apagar Base</button>
       </div>
+  </div>
+  
+  <div id="imageLightboxOverlay" class="modal-overlay"></div>
+  <div id="imageLightboxModal">
+      <img id="lightboxImg" src="" alt="Visualização da Imagem">
   </div>
   
   
@@ -882,6 +923,8 @@
     // --- NOVO (Gerenciador de Veículos) ---
     // Armazena temporariamente os veículos ao editar/adicionar um modal
     let tempVeiculos = {};
+    // Armazena a chave do veículo sendo editado no modal
+    let veiculoEmEdicaoKey = null; 
     // --- FIM ---
     
     const perUnit = {
@@ -1000,6 +1043,7 @@
       editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
       editModalCarroFoto: document.getElementById('editModalCarroFoto'), // NOVO
       editModalAddVeiculoBtn: document.getElementById('editModalAddVeiculoBtn'),
+      editModalCancelVeiculoBtn: document.getElementById('editModalCancelVeiculoBtn'), // NOVO
       editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
       
       addDossierOverlay: document.getElementById('addDossierOverlay'),
@@ -1017,6 +1061,7 @@
       addModalCarroPlaca: document.getElementById('addModalCarroPlaca'),
       addModalCarroFoto: document.getElementById('addModalCarroFoto'), // NOVO
       addModalAddVeiculoBtn: document.getElementById('addModalAddVeiculoBtn'),
+      addModalCancelVeiculoBtn: document.getElementById('addModalCancelVeiculoBtn'), // NOVO
       addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
       
       orgModalOverlay: document.getElementById('orgModalOverlay'),
@@ -1028,7 +1073,12 @@
       orgInfo: document.getElementById('orgInfo'),
       saveOrgBtn: document.getElementById('saveOrgBtn'),
       cancelOrgBtn: document.getElementById('cancelOrgBtn'),
-      deleteOrgBtn: document.getElementById('deleteOrgBtn')
+      deleteOrgBtn: document.getElementById('deleteOrgBtn'),
+      
+      // --- NOVOS ELEMENTOS DO LIGHTBOX ---
+      imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
+      imageLightboxModal: document.getElementById('imageLightboxModal'),
+      lightboxImg: document.getElementById('lightboxImg')
     };
     
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
@@ -1361,6 +1411,10 @@
             }
         } catch (err) {
             console.error("Erro ao adicionar/atualizar dossiê:", err);
+            // NÃO MOSTRAR ERRO DE PERMISSÃO PARA VISITANTES
+            if(err.code !== "PERMISSION_DENIED") {
+                showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
+            }
         }
     };
     
@@ -1420,6 +1474,10 @@
 
         } catch (err) {
             console.error("Erro ao sincronizar edição da venda com dossiê:", err);
+            // NÃO MOSTRAR ERRO DE PERMISSÃO PARA VISITANTES
+            if(err.code !== "PERMISSION_DENIED") {
+                showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
+            }
         }
     };
 
@@ -1754,6 +1812,23 @@ Negociadoras: ${negociadoras}
     
     // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v9 - Com Foto de Veículo) ****
     
+    // =============================================
+    // NOVAS FUNÇÕES DO LIGHTBOX
+    // =============================================
+    const showImageLightbox = (url) => {
+        if (!url) return;
+        els.lightboxImg.src = url;
+        els.imageLightboxOverlay.style.display = 'block';
+        els.imageLightboxModal.style.display = 'block';
+    };
+    
+    const closeImageLightbox = () => {
+        els.imageLightboxOverlay.style.display = 'none';
+        els.imageLightboxModal.style.display = 'none';
+        els.lightboxImg.src = ''; // Limpa para não "piscar" a imagem antiga
+    };
+    // =============================================
+    
     // Nível 1: Mostra as Organizações (Bases)
     const showDossierOrgs = async () => {
         els.dossierOrgContainer.style.display = 'block';
@@ -1962,10 +2037,10 @@ Negociadoras: ${negociadoras}
                     const veiculo = veiculos[id];
                     const p = document.createElement('p');
                     
-                    // --- LÓGICA DA FOTO DO VEÍCULO (v9) ---
+                    // --- LÓGICA DA FOTO DO VEÍCULO (MODIFICADA P/ LIGHTBOX) ---
                     let fotoLink = '';
                     if (veiculo.fotoUrl) {
-                        fotoLink = ` <a href="${veiculo.fotoUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 11px; color: var(--cor-principal); text-decoration: none; font-weight: 600;">[Ver Foto]</a>`;
+                        fotoLink = ` <a href="#" class="veiculo-foto-link" data-url="${veiculo.fotoUrl}" style="font-size: 11px; color: var(--cor-principal); text-decoration: none; font-weight: 600;">[Ver Foto]</a>`;
                     } else {
                         fotoLink = ` <span style="font-size: 11px; color: #888; font-weight: normal;">[Sem Foto]</span>`;
                     }
@@ -2113,7 +2188,9 @@ Negociadoras: ${negociadoras}
     
     // --- Funções dos Modais de Pessoa (Membros) ---
     
-    // --- NOVO: Funções do Gerenciador de Veículos do Modal (v9) ---
+    // --- INÍCIO: NOVAS FUNÇÕES DO GERENCIADOR DE VEÍCULOS (Com Edição) ---
+    
+    // Renderiza a lista de veículos no modal
     const renderModalVeiculos = (listaElement) => {
         listaElement.innerHTML = ''; // Limpa a lista
         if (Object.keys(tempVeiculos).length === 0) {
@@ -2125,36 +2202,81 @@ Negociadoras: ${negociadoras}
             const veiculo = tempVeiculos[key];
             const itemDiv = document.createElement('div');
             itemDiv.className = 'veiculo-item-modal';
+            // Adicionado botão de Editar
             itemDiv.innerHTML = `
-                <span><strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}</span>
-                <button class="danger action-btn" data-key="${key}">Remover</button>
+                <span style="flex-grow: 1;"><strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}</span>
+                <button class="muted action-btn edit-veiculo-btn" data-key="${key}">Editar</button>
+                <button class="danger action-btn remove-veiculo-btn" data-key="${key}">Remover</button>
             `;
             listaElement.appendChild(itemDiv);
         }
     };
     
-    // ATUALIZADO para incluir fotoEl
-    const adicionarVeiculoTemp = (carroEl, placaEl, fotoEl, listaEl) => {
+    // Inicia a edição de um veículo (preenche os campos)
+    const iniciarEdicaoVeiculo = (key, modalPrefix) => {
+        if (!tempVeiculos[key]) return;
+        
+        const veiculo = tempVeiculos[key];
+        veiculoEmEdicaoKey = key; // Define a chave global
+        
+        // Preenche os campos do modal correto
+        els[modalPrefix + 'CarroNome'].value = veiculo.carro;
+        els[modalPrefix + 'CarroPlaca'].value = veiculo.placa;
+        els[modalPrefix + 'CarroFoto'].value = veiculo.fotoUrl;
+        
+        // Muda os botões
+        els[modalPrefix + 'AddVeiculoBtn'].textContent = 'Atualizar Veículo';
+        els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'inline-block';
+        
+        els[modalPrefix + 'CarroNome'].focus();
+    };
+    
+    // Cancela a edição de um veículo (limpa campos e reseta botões)
+    const cancelarEdicaoVeiculo = (modalPrefix) => {
+        veiculoEmEdicaoKey = null; // Limpa a chave global
+        
+        // Limpa os campos
+        els[modalPrefix + 'CarroNome'].value = '';
+        els[modalPrefix + 'CarroPlaca'].value = '';
+        els[modalPrefix + 'CarroFoto'].value = '';
+        
+        // Reseta os botões
+        els[modalPrefix + 'AddVeiculoBtn'].textContent = '+ Adicionar Veículo';
+        els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'none';
+    };
+
+    // Adiciona OU Atualiza um veículo no objeto tempVeiculos
+    const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
+        const carroEl = els[modalPrefix + 'CarroNome'];
+        const placaEl = els[modalPrefix + 'CarroPlaca'];
+        const fotoEl = els[modalPrefix + 'CarroFoto'];
+        const listaEl = els[modalPrefix + 'ListaVeiculos'];
+
         const carro = carroEl.value.trim();
         const placa = placaEl.value.trim().toUpperCase();
-        const fotoUrl = fotoEl.value.trim(); // Pega a URL da foto
+        const fotoUrl = fotoEl.value.trim();
         
         if (!carro || !placa) {
             showToast("Preencha o nome do carro e a placa.", "error");
             return;
         }
         
-        const tempKey = `temp_${Date.now()}`;
-        tempVeiculos[tempKey] = { carro, placa, fotoUrl }; // Salva a foto
+        if (veiculoEmEdicaoKey) {
+            // --- MODO DE ATUALIZAÇÃO ---
+            if (tempVeiculos[veiculoEmEdicaoKey]) {
+                tempVeiculos[veiculoEmEdicaoKey] = { carro, placa, fotoUrl };
+            }
+        } else {
+            // --- MODO DE ADIÇÃO ---
+            const tempKey = `temp_${Date.now()}`;
+            tempVeiculos[tempKey] = { carro, placa, fotoUrl };
+        }
         
-        renderModalVeiculos(listaEl);
-        
-        carroEl.value = '';
-        placaEl.value = '';
-        fotoEl.value = ''; // Limpa o campo da foto
-        carroEl.focus();
+        renderModalVeiculos(listaEl); // Re-renderiza a lista
+        cancelarEdicaoVeiculo(modalPrefix); // Limpa campos e reseta botões/chave
     };
     
+    // Remove um veículo do objeto tempVeiculos
     const removerVeiculoTemp = (key, listaEl) => {
         if (tempVeiculos[key]) {
             delete tempVeiculos[key];
@@ -2172,10 +2294,8 @@ Negociadoras: ${negociadoras}
         els.addDossierFotoUrl.value = '';
         
         tempVeiculos = {}; // Limpa os veículos temporários
+        cancelarEdicaoVeiculo('addModal'); // Garante que o estado de edição seja resetado
         renderModalVeiculos(els.addModalListaVeiculos); // Renderiza a lista vazia
-        els.addModalCarroNome.value = '';
-        els.addModalCarroPlaca.value = '';
-        els.addModalCarroFoto.value = ''; // Limpa o campo de foto
         
         document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
         
@@ -2187,6 +2307,7 @@ Negociadoras: ${negociadoras}
     const closeAddDossierModal = () => {
         els.addDossierOverlay.style.display = 'none';
         els.addDossierModal.style.display = 'none';
+        cancelarEdicaoVeiculo('addModal'); // Limpa o estado de edição ao fechar
     };
     
     const saveNewDossierEntry = () => {
@@ -2247,10 +2368,8 @@ Negociadoras: ${negociadoras}
         
         // Carrega os veículos existentes para o gerenciador
         tempVeiculos = { ...(entry.veiculos || {}) };
+        cancelarEdicaoVeiculo('editModal'); // Garante que o estado de edição seja resetado
         renderModalVeiculos(els.editModalListaVeiculos);
-        els.editModalCarroNome.value = '';
-        els.editModalCarroPlaca.value = '';
-        els.editModalCarroFoto.value = ''; // Limpa o campo de foto
         
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
@@ -2259,6 +2378,7 @@ Negociadoras: ${negociadoras}
     const closeEditDossierModal = () => {
         els.editDossierOverlay.style.display = 'none';
         els.editDossierModal.style.display = 'none';
+        cancelarEdicaoVeiculo('editModal'); // Limpa o estado de edição ao fechar
     };
     
     const saveDossierChanges = () => {
@@ -2500,6 +2620,14 @@ Negociadoras: ${negociadoras}
     els.dossierPeopleGrid.addEventListener('click', (e) => {
         const editBtn = e.target.closest('.edit-dossier-btn');
         const deleteBtn = e.target.closest('.delete-dossier-btn');
+        const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // NOVO (Lightbox)
+        
+        // NOVO (Lightbox)
+        if (fotoLinkBtn) {
+            e.preventDefault(); // Impede o link href="#" de rolar a página
+            const url = fotoLinkBtn.dataset.url;
+            showImageLightbox(url);
+        }
         
         if (deleteBtn) {
             const org = deleteBtn.dataset.org;
@@ -2522,19 +2650,37 @@ Negociadoras: ${negociadoras}
     els.cancelNewDossierBtn.onclick = closeAddDossierModal;
     els.addDossierOverlay.onclick = closeAddDossierModal;
     
-    // --- NOVO: Listeners do Gerenciador de Veículos (v9) ---
-    // ATUALIZADO para passar o novo campo de foto
-    els.addModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.addModalCarroNome, els.addModalCarroPlaca, els.addModalCarroFoto, els.addModalListaVeiculos);
-    els.editModalAddVeiculoBtn.onclick = () => adicionarVeiculoTemp(els.editModalCarroNome, els.editModalCarroPlaca, els.editModalCarroFoto, els.editModalListaVeiculos);
+    // --- NOVOS Listeners do Gerenciador de Veículos (Com Edição) ---
     
+    // Botões de Adicionar/Atualizar
+    els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
+    els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
+    
+    // Botões de Cancelar Edição
+    els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
+    els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
+    
+    // Listeners das listas para botões de Editar/Remover
     els.addModalListaVeiculos.onclick = (e) => {
-        if (e.target.classList.contains('danger')) {
-            removerVeiculoTemp(e.target.dataset.key, els.addModalListaVeiculos);
+        const removeBtn = e.target.closest('.remove-veiculo-btn');
+        const editBtn = e.target.closest('.edit-veiculo-btn');
+        
+        if (removeBtn) {
+            removerVeiculoTemp(removeBtn.dataset.key, els.addModalListaVeiculos);
+        }
+        if (editBtn) {
+            iniciarEdicaoVeiculo(editBtn.dataset.key, 'addModal');
         }
     };
     els.editModalListaVeiculos.onclick = (e) => {
-        if (e.target.classList.contains('danger')) {
-            removerVeiculoTemp(e.target.dataset.key, els.editModalListaVeiculos);
+        const removeBtn = e.target.closest('.remove-veiculo-btn');
+        const editBtn = e.target.closest('.edit-veiculo-btn');
+        
+        if (removeBtn) {
+            removerVeiculoTemp(removeBtn.dataset.key, els.editModalListaVeiculos);
+        }
+        if (editBtn) {
+            iniciarEdicaoVeiculo(editBtn.dataset.key, 'editModal');
         }
     };
     // --- FIM ---
@@ -2545,6 +2691,9 @@ Negociadoras: ${negociadoras}
     els.cancelOrgBtn.onclick = closeOrgModal;
     els.orgModalOverlay.onclick = closeOrgModal;
 
+    // NOVO (Lightbox)
+    els.imageLightboxOverlay.onclick = closeImageLightbox;
+    
     // Admin
     els.migrateDossierBtn.onclick = migrateVendasToDossier;
     els.migrateVeiculosBtn.onclick = migrateVeiculosData; // Novo listener
