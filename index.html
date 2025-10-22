@@ -1248,6 +1248,48 @@
     // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (v8)
     // =================================================================
     
+    // =================================================================
+    // INÍCIO: FUNÇÃO AUXILIAR PARA VEÍCULOS (NOVA)
+    // =================================================================
+    
+    /**
+     * Mescla veículos de uma venda (formato string) com um objeto de veículos existente.
+     * Usa a PLACA como chave única para evitar duplicatas.
+     */
+    const parseAndMergeVeiculos = (vendaData, existingVeiculos = {}) => {
+        const carros = (vendaData.carro || '').split(',').map(c => c.trim());
+        const placas = (vendaData.placas || '').split(',').map(p => p.trim());
+        const maxLen = Math.max(carros.length, placas.length);
+        
+        const merged = { ...existingVeiculos }; // Começa com os veículos existentes
+
+        for (let i = 0; i < maxLen; i++) {
+            const carro = carros[i] || 'N/A';
+            const placa = placas[i] || '';
+            
+            if (placa) {
+                // Se tem placa, usa como chave.
+                if (!merged[placa]) { // Só adiciona se a placa NÃO existir
+                    merged[placa] = { carro: carro, placa: placa, fotoUrl: '' };
+                } else if (carro !== 'N/A' && merged[placa].carro === 'N/A') {
+                    // Se já existe mas o carro era N/A, atualiza o nome do carro
+                    merged[placa].carro = carro;
+                }
+            } else if (carro !== 'N/A') {
+                // Se não tem placa, é difícil... vamos adicionar com uma chave temporária.
+                // O usuário terá que limpar duplicatas manualmente no dossiê.
+                const tempKey = `venda_${Date.now()}_${i}`;
+                merged[tempKey] = { carro: carro, placa: '', fotoUrl: '' };
+            }
+        }
+        return merged;
+    };
+    
+    // =================================================================
+    // FIM: FUNÇÃO AUXILIAR
+    // =================================================================
+
+
     // Adiciona ou ATUALIZA entrada de pessoa no dossiê
     // Esta função agora SÓ SINCRONIZA dados da venda (Nome, Tel, Cargo, Data).
     // A gerência de veículos é feita SEPARADAMENTE nos modais do dossiê.
@@ -1293,6 +1335,11 @@
                 updates.cargo = vendaData.vendaValorObs || existingEntryData.cargo;
                 updates.data = vendaData.dataHora; // Atualiza para a data da última venda
 
+                // **** INÍCIO DA MODIFICAÇÃO ****
+                const existingVeiculos = existingEntryData.veiculos || {};
+                updates.veiculos = parseAndMergeVeiculos(vendaData, existingVeiculos);
+                // **** FIM DA MODIFICAÇÃO ****
+
                 const updateRef = ref(db, `dossies/${org}/${existingEntryId}`);
                 await update(updateRef, updates);
 
@@ -1303,7 +1350,9 @@
                     numero: vendaData.telefone,
                     organizacao: org,
                     cargo: vendaData.vendaValorObs || 'N/A',
-                    veiculos: {}, // Cria um objeto de veículos vazio
+                    // **** INÍCIO DA MODIFICAÇÃO ****
+                    veiculos: parseAndMergeVeiculos(vendaData, {}), // Adiciona veículos da venda
+                    // **** FIM DA MODIFICAÇÃO ****
                     fotoUrl: '',
                     data: vendaData.dataHora // Data da primeira venda
                 };
@@ -1351,8 +1400,10 @@
                 organizacao: newVendaData.organizacao,
                 cargo: newVendaData.vendaValorObs || 'N/A',
                 data: newVendaData.dataHora,
-                // Mantém os veículos e foto antigos
-                veiculos: existingEntryData.veiculos || {},
+                // **** INÍCIO DA MODIFICAÇÃO ****
+                // Mescla veículos antigos com os da venda atualizada
+                veiculos: parseAndMergeVeiculos(newVendaData, existingEntryData.veiculos || {}),
+                // **** FIM DA MODIFICAÇÃO ****
                 fotoUrl: existingEntryData.fotoUrl || ''
             };
 
@@ -2299,11 +2350,13 @@ Negociadoras: ${negociadoras}
                     organizacao: venda.organizacao,
                     telefone: venda.telefone,
                     vendaValorObs: venda.vendaValorObs || 'N/A (Migrado)',
-                    dataHora: venda.dataHora
-                    // Não passa mais carro/placa
+                    dataHora: venda.dataHora,
+                    // *** MODIFICAÇÃO: Passa os dados de veículo para a função de migração ***
+                    carro: venda.carro,
+                    placas: venda.placas
                 };
 
-                // Roda a lógica de add (que já faz a deduplicação)
+                // Roda a lógica de add (que já faz a deduplicação E mescla veículos)
                 await addDossierEntry(vendaData);
                 count++;
             }
