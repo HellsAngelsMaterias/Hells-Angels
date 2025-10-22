@@ -510,7 +510,7 @@
       <h2>Painel do Administrador (Hierarquia)</h2>
       
       <h3>Gerenciamento de Usuários</h3>
-      <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag. O usuário "Snow" está oculto.</p>
+      <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag. O usuário "snow" está oculto.</p>
       <div class="history-table-wrapper">
           
           <table id="adminUserTable">
@@ -660,7 +660,7 @@
     const firebaseConfig = {
       // ########## ATENÇÃO!! ##########
       // COLE SUA NOVA CHAVE DE API AQUI
-      apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
+      apiKey: "SUA_NOVA_CHAVE_API_AQUI", 
       // ########## ATENÇÃO!! ##########
       authDomain: "hells-angels-438c2.firebaseapp.com",
       databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
@@ -1263,7 +1263,8 @@ Negociadoras: ${negociadoras}
             
             // ########## INÍCIO DA MUDANÇA (MODO FANTASMA) ##########
             const registradoPorCell = row.insertCell();
-            if (venda.registradoPor === 'Snow') {
+            // Verifica se o campo existe E se é 'snow' (minúsculo)
+            if (venda.registradoPor && venda.registradoPor.toLowerCase() === 'snow') {
                 registradoPorCell.textContent = '???';
                 registradoPorCell.style.fontStyle = 'italic';
                 registradoPorCell.style.color = '#aaa';
@@ -1755,16 +1756,19 @@ Negociadoras: ${negociadoras}
             const usersList = [];
             usersSnapshot.forEach(userSnap => {
                 const userData = userSnap.val();
-                if (userData.displayName === 'Snow') { // MODO FANTASMA (OCULTA DO PAINEL)
+                // ########## INÍCIO DA MUDANÇA (MODO FANTASMA) ##########
+                // Verifica se o displayName existe e é 'snow' (minúsculo)
+                if (userData.displayName && userData.displayName.toLowerCase() === 'snow') {
                     return;
                 }
+                // ########## FIM DA MUDANÇA (MODO FANTASMA) ##########
                 usersList.push({ uid: userSnap.key, ...userData });
             });
 
             const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'Visitante': 3 };
             usersList.sort((a, b) => {
-                const tagA = tagOrder[a.tag.toUpperCase()] || 4;
-                const tagB = tagOrder[b.tag.toUpperCase()] || 4;
+                const tagA = (tagOrder[a.tag.toUpperCase()] || 4);
+                const tagB = (tagOrder[b.tag.toUpperCase()] || 4);
                 if (tagA !== tagB) {
                     return tagA - tagB;
                 }
@@ -1833,7 +1837,7 @@ Negociadoras: ${negociadoras}
             
         } catch (error) {
             showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-            els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Erro ao carregar.</td></tr>';
+            els.adminUserListBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
         }
         
         try {
@@ -1895,10 +1899,10 @@ Negociadoras: ${negociadoras}
             createUserWithEmailAndPassword(auth, email, password)
                 .then(userCredential => {
                     const user = userCredential.user;
-                    return updateProfile(user, { displayName: displayName })
+                    return updateProfile(user, { displayName: displayName }) // Salva o nome (ex: "snow") no Auth
                         .then(() => {
                             const userRef = ref(db, `usuarios/${user.uid}`);
-                            const newUserProfile = {
+                            const newUserProfile = { // Salva o nome no Database
                                 displayName: displayName,
                                 email: user.email,
                                 tag: 'Visitante'
@@ -1957,8 +1961,8 @@ Negociadoras: ${negociadoras}
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
           
-          // Se o usuário for 'Snow', esconde o status box e sai da função.
-          if (currentUser.displayName === 'Snow') {
+          // Se o usuário for 'snow' (minúsculo), esconde o status box.
+          if (currentUser.displayName.toLowerCase() === 'snow') {
               userStatusEl.style.display = 'none';
           } else {
               // Lógica normal para todos os outros usuários
@@ -1975,7 +1979,7 @@ Negociadoras: ${negociadoras}
           }
       }
 
-      // O resto da função continua normal, 'Snow' ainda terá seus botões de admin
+      // O resto da função continua normal, 'snow' ainda terá seus botões de admin
       if (tagUpper === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
@@ -2001,15 +2005,16 @@ Negociadoras: ${negociadoras}
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            currentUser = user;
+            currentUser = user; // currentUser.displayName vem do Auth (ex: "snow")
             const userRef = ref(db, `usuarios/${user.uid}`);
             
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
-                    currentUserData = snapshot.val();
+                    currentUserData = snapshot.val(); // currentUserData.tag vem do DB (ex: "ADMIN")
                 } else {
+                    // Se o usuário não existir no DB, cria um perfil básico
                     const newUserProfile = {
-                        displayName: user.displayName,
+                        displayName: user.displayName, // Salva o nome do Auth (ex: "snow")
                         email: user.email,
                         tag: 'Visitante' 
                     };
@@ -2017,18 +2022,23 @@ Negociadoras: ${negociadoras}
                     currentUserData = newUserProfile; 
                 }
                 
+                // Configura a interface com a tag do DB (ex: "ADMIN")
                 configurarInterfacePorTag(currentUserData.tag);
                  
-                if(vendasListener) vendasListener(); 
+                if(vendasListener) vendasListener(); // Limpa o listener de vendas antigo
                 
                 let vendasRef;
                 const userTagUpper = currentUserData.tag.toUpperCase();
+                
+                // Admin e Hells podem ver tudo
                 if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
                     vendasRef = ref(db, 'vendas');
                 } else {
+                    // Visitantes só veem as vendas que ELES registraram
                     vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
                 }
 
+                // Cria o novo listener de vendas com a permissão correta
                 vendasListener = onValue(vendasRef, (vendasSnapshot) => {
                     vendas = [];
                     vendasSnapshot.forEach((child) => {
@@ -2053,9 +2063,10 @@ Negociadoras: ${negociadoras}
             toggleView('main');
 
         } else {
+            // Usuário deslogado
             currentUser = null;
             currentUserData = null;
-            if (vendasListener) vendasListener(); 
+            if (vendasListener) vendasListener(); // Limpa o listener de vendas
             vendas = []; 
             
             els.authScreen.style.display = 'block';
@@ -2068,6 +2079,7 @@ Negociadoras: ${negociadoras}
         }
     });
 
+    // --- Inicialização da UI ---
     const savedTheme = localStorage.getItem('theme') || 'light';
     if(savedTheme === 'dark') {
         document.body.classList.add('dark');
