@@ -246,7 +246,6 @@
         justify-content: center; align-items: center; gap: 20px;
     }
     
-    /* ########## CSS DOS CARDS (Inalterado) ########## */
     .dossier-org-title {
         font-size: 20px;
         font-weight: 700;
@@ -320,7 +319,6 @@
         font-size: 12px;
         padding: 5px 10px;
     }
-    /* ########## FIM DO CSS DOS CARDS ########## */
 
 
     .modal-overlay {
@@ -1262,7 +1260,17 @@ Negociadoras: ${negociadoras}
             valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span>`;
 
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
-            row.insertCell().textContent = venda.registradoPor || 'Desconhecido';
+            
+            // ########## INÍCIO DA MUDANÇA (MODO FANTASMA) ##########
+            const registradoPorCell = row.insertCell();
+            if (venda.registradoPor === 'Snow') {
+                registradoPorCell.textContent = '???';
+                registradoPorCell.style.fontStyle = 'italic';
+                registradoPorCell.style.color = '#aaa';
+            } else {
+                registradoPorCell.textContent = venda.registradoPor || 'Desconhecido';
+            }
+            // ########## FIM DA MUDANÇA (MODO FANTASMA) ##########
             
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
@@ -1360,19 +1368,16 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // ########## INÍCIO DA MODIFICAÇÃO (displayDossiers) ##########
-    // Função atualizada para agrupar por organização ANTES de criar os grids
     const displayDossiers = (entries) => {
-        els.dossierContainer.innerHTML = ''; // Limpa o container
+        els.dossierContainer.innerHTML = ''; 
         
         if (entries.length === 0) {
             els.dossierContainer.innerHTML = '<p>Nenhum registro encontrado para este filtro.</p>';
             return;
         }
         
-        // 1. Agrupar entradas por organização
         const groupedByOrg = entries.reduce((acc, entry) => {
-            const org = entry.organizacao || 'Sem Organização'; // Lida com entradas sem org
+            const org = entry.organizacao || 'Sem Organização'; 
             if (!acc[org]) {
                 acc[org] = [];
             }
@@ -1380,29 +1385,23 @@ Negociadoras: ${negociadoras}
             return acc;
         }, {});
         
-        // 2. Ordenar os nomes das organizações
         const orgNames = Object.keys(groupedByOrg).sort(); 
 
-        // 3. Iterar sobre cada organização agrupada
         for (const orgName of orgNames) {
             const orgEntries = groupedByOrg[orgName];
             
-            // 4. Criar o Título da Organização (como em image_508c87.png)
             const orgTitle = document.createElement('h3');
             orgTitle.className = 'dossier-org-title';
             orgTitle.textContent = orgName;
-            els.dossierContainer.appendChild(orgTitle); // Adiciona o título
+            els.dossierContainer.appendChild(orgTitle); 
             
-            // 5. Criar um grid APENAS para esta organização
             const grid = document.createElement('div');
             grid.className = 'dossier-grid';
             
-            // 6. Iterar sobre as entradas DESTA organização e criar os cards
             orgEntries.forEach(entry => {
                 const card = document.createElement('div');
                 card.className = 'dossier-entry-card';
                 
-                // Foto
                 const fotoDiv = document.createElement('div');
                 fotoDiv.className = 'dossier-foto';
                 if (entry.fotoUrl) {
@@ -1414,23 +1413,18 @@ Negociadoras: ${negociadoras}
                     fotoDiv.textContent = 'Sem Foto';
                 }
                 
-                // Nome
                 const nomeH4 = document.createElement('h4');
                 nomeH4.textContent = entry.nome || '(Sem Nome)';
                 
-                // Número
                 const numeroP = document.createElement('p');
                 numeroP.textContent = entry.numero || '(Sem Número)';
 
-                // Cargo
                 const cargoP = document.createElement('p');
                 cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
                 
-                // Placas
                 const placasP = document.createElement('p');
                 placasP.innerHTML = `<strong>Placa(s):</strong> ${entry.placas || 'N/A'}`;
                 
-                // Ações
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'dossier-actions';
                 actionsDiv.innerHTML = `
@@ -1438,7 +1432,6 @@ Negociadoras: ${negociadoras}
                     <button class="action-btn danger delete-dossier-btn" data-org="${entry.org || entry.organizacao}" data-id="${entry.id}">❌ Apagar</button>
                 `;
                 
-                // Montar o card
                 card.appendChild(fotoDiv);
                 card.appendChild(nomeH4);
                 card.appendChild(numeroP);
@@ -1446,15 +1439,12 @@ Negociadoras: ${negociadoras}
                 card.appendChild(placasP);
                 card.appendChild(actionsDiv);
                 
-                // Adicionar o card ao grid DESTA organização
                 grid.appendChild(card);
             });
             
-            // 7. Adicionar o grid desta organização ao container principal
             els.dossierContainer.appendChild(grid);
         }
     };
-    // ########## FIM DA MODIFICAÇÃO (displayDossiers) ##########
     
     const removeDossierEntry = (orgName, entryId) => {
         const userTagUpper = currentUserData.tag.toUpperCase();
@@ -1765,7 +1755,7 @@ Negociadoras: ${negociadoras}
             const usersList = [];
             usersSnapshot.forEach(userSnap => {
                 const userData = userSnap.val();
-                if (userData.displayName === 'Snow') {
+                if (userData.displayName === 'Snow') { // MODO FANTASMA (OCULTA DO PAINEL)
                     return;
                 }
                 usersList.push({ uid: userSnap.key, ...userData });
@@ -1960,25 +1950,32 @@ Negociadoras: ${negociadoras}
     };
 
 
+    // ########## INÍCIO DA MUDANÇA (MODO FANTASMA) ##########
     const configurarInterfacePorTag = (tag) => {
-      console.log("Usuário logado com a tag original:", tag);
       const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE';
-      console.log("Tag normalizada:", tagUpper);
       
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
-          userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
-          userStatusEl.className = 'user-status-display';
-          if (tagUpper === 'ADMIN') {
-              userStatusEl.classList.add('tag-admin');
-          } else if (tagUpper === 'HELLS') {
-              userStatusEl.classList.add('tag-hells');
+          
+          // Se o usuário for 'Snow', esconde o status box e sai da função.
+          if (currentUser.displayName === 'Snow') {
+              userStatusEl.style.display = 'none';
           } else {
-              userStatusEl.classList.add('tag-visitante');
+              // Lógica normal para todos os outros usuários
+              userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
+              userStatusEl.className = 'user-status-display';
+              if (tagUpper === 'ADMIN') {
+                  userStatusEl.classList.add('tag-admin');
+              } else if (tagUpper === 'HELLS') {
+                  userStatusEl.classList.add('tag-hells');
+              } else {
+                  userStatusEl.classList.add('tag-visitante');
+              }
+              userStatusEl.style.display = 'block';
           }
-          userStatusEl.style.display = 'block';
       }
 
+      // O resto da função continua normal, 'Snow' ainda terá seus botões de admin
       if (tagUpper === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
@@ -1997,6 +1994,8 @@ Negociadoras: ${negociadoras}
           els.adminPanel.style.display = 'none';
       }
     };
+    // ########## FIM DA MUDANÇA (MODO FANTASMA) ##########
+
 
     let vendasListener = null; 
 
