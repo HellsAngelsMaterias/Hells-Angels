@@ -14,18 +14,14 @@
       --cor-btn-texto: #fff; --cor-btn-secundario: #ffd6eb;
       --cor-btn-secundario-texto: #4a0033; --cor-erro: #cc0000;
       --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
-      --cor-tag-admin: #0056b3; /* Azul Escuro */
-      --cor-tag-hells: #e60073; /* Rosa Pink (cor principal) */
-      --cor-tag-visitante: #008000; /* Verde Escuro */
+      --cor-tag-admin: #0056b3; --cor-tag-hells: #e60073; --cor-tag-visitante: #008000;
     }
     body.dark {
       --cor-fundo: #1a000d; --cor-texto: #ffccf0; --cor-principal: #ff0080; 
       --cor-card: #2c001a; --cor-borda: #e60073; --cor-btn-primario: #ff0080; 
       --cor-btn-texto: #fff; --cor-btn-secundario: #4d002a; 
       --cor-btn-secundario-texto: #ffccf0; --cor-glow-pulsante: rgba(255, 0, 128, 0.6);
-      --cor-tag-admin: #007bff; /* Azul mais claro */
-      --cor-tag-hells: #ff0080; /* Rosa mais claro (cor principal dark) */
-      --cor-tag-visitante: #28a745; /* Verde mais claro */
+      --cor-tag-admin: #007bff; --cor-tag-hells: #ff0080; --cor-tag-visitante: #28a745;
     }
     body.dark input[type=number], body.dark input[type=text], body.dark select {
       background: #33001f; color: var(--cor-texto); border: 1px solid var(--cor-borda);
@@ -85,6 +81,8 @@
       transition: background 0.25s ease, color 0.25s ease, max-width 0.4s ease-in-out;
     }
     body.history-view-active { max-width: 1200px; }
+    /* NOVO: Classe para a view do Dossiê */
+    body.dossier-view-active { max-width: 1200px; }
 
     #mainCard { display: block; }
     h1 { margin: 0; font-size: 24px; font-weight: 700; color: var(--cor-principal); text-align: center; flex-grow: 1; }
@@ -147,7 +145,7 @@
     .success { background: #00b33c; color: #fff; }
     .danger { background: var(--cor-erro); color: #fff; }
 
-    .top-right-controls { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 9999; }
+    .top-right-controls { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
     .control-btn {
         padding: 10px 14px; border-radius: 10px; background: var(--cor-btn-primario);
         color: var(--cor-btn-texto); font-weight: 700; cursor: pointer;
@@ -243,6 +241,36 @@
         display: none; /* Controlado pelo Admin */
         justify-content: center; align-items: center; gap: 20px;
     }
+    
+    /* NOVOS ESTILOS DO DOSSIÊ */
+    .dossier-org-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--cor-principal);
+        margin: 20px 0 5px 0;
+        padding-bottom: 5px;
+        border-bottom: 2px solid var(--cor-borda);
+    }
+    .dossier-table-wrapper {
+        overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; margin-top: 8px;
+    }
+    #dossierCard table {
+        width: 100%; border-collapse: collapse; table-layout: fixed;
+        min-width: 700px; /* Mais simples que o histórico */
+    }
+    #dossierCard th, #dossierCard td {
+        padding: 6px 8px; text-align: center; vertical-align: middle;
+        white-space: nowrap; font-size: 14px; border-bottom: 1px solid var(--cor-borda);
+    }
+    #dossierCard th { background: var(--cor-principal); color: var(--cor-btn-texto); }
+    #dossierCard td { background: var(--cor-card); opacity: 0.95; }
+    body.dark #dossierCard td { background: var(--cor-card); opacity: 0.95; }
+    
+    #dossierCard th:nth-child(1), #dossierCard td:nth-child(1) { width: 150px; } /* Nome */
+    #dossierCard th:nth-child(2), #dossierCard td:nth-child(2) { width: 120px; } /* Numero */
+    #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 120px; } /* Placa */
+    #dossierCard th:nth-child(4), #dossierCard td:nth-child(4) { width: 150px; } /* Data */
+
 
     @media (max-width: 500px) {
         body { padding: 10px; margin: 10px auto; }
@@ -269,6 +297,7 @@
   <div class="top-right-controls">
       <button class="control-btn" id="tutorialBtn">💡 Tutorial</button> 
       <button class="control-btn" id="themeBtn">🌙 Modo Noturno</button>
+      <button class="control-btn" id="investigacaoBtn" style="display:none; background-color: #0056b3;">🔎 Investigação</button> 
   </div>
 
   <div id="authScreen" class="card" style="max-width: 400px; margin: 100px auto 20px auto; display: none;">
@@ -325,8 +354,8 @@
                 <input id="telefone" type="text" value="" maxlength="13"> 
             </div>
             <div>
-                <label for="negociadoras">Negociadoras:</label>
-                <input id="negociadoras" type="text" value="">
+                <label for="placaVeiculo">Placa do Veículo (Opcional):</label>
+                <input id="placaVeiculo" type="text" value="">
             </div>
             <div style="grid-column: 1 / -1;">
                 <label for="vendaValorObs">Valor - Observação (Como foi o pagamento):</label>
@@ -460,6 +489,19 @@
       </div>
   </div>
   
+  <div class="card" id="dossierCard" style="display:none">
+      <h2>Sistema de Investigação (Dossiês)</h2>
+      <input type="text" id="filtroDossier" placeholder="🔍 Buscar por Nome ou Placa..." style="margin-bottom: 10px; width: 100%;">
+      <div class="actions">
+        <button id="toggleCalcBtnDossier" class="muted">Voltar à Calculadora</button>
+      </div>
+      
+      <div id="dossierContainer" style="margin-top: 15px;">
+          <p>Carregando dossiês...</p>
+      </div>
+  </div>
+  
+  
   <div id="toast-container"></div>
   
   <div id="bottomPanel">
@@ -494,7 +536,10 @@
     let vendaOriginalDataHora = null;
     
     let currentUser = null;
-    let currentUserData = null; // Para guardar os dados do DB (incluindo a tag)
+    let currentUserData = null; 
+    
+    // NOVO: Variável global para guardar os dossiês carregados
+    let globalAllDossierEntries = [];
     
     const perUnit = {
       tickets: { dinheiro_sujo: 525 },
@@ -529,6 +574,7 @@
       organizacao: document.getElementById('organizacao'),
       organizacaoTipo: document.getElementById('organizacaoTipo'),
       telefone: document.getElementById('telefone'),
+      placaVeiculo: document.getElementById('placaVeiculo'), // NOVO
       negociadoras: document.getElementById('negociadoras'),
       vendaValorObs: document.getElementById('vendaValorObs'),
       dataVenda: document.getElementById('dataVenda'),
@@ -572,14 +618,20 @@
       layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
       layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
       bottomPanel: document.getElementById('bottomPanel'),
-      userStatus: document.getElementById('userStatus')
+      userStatus: document.getElementById('userStatus'),
+      
+      // NOVOS Elementos do Dossiê
+      investigacaoBtn: document.getElementById('investigacaoBtn'),
+      dossierCard: document.getElementById('dossierCard'),
+      filtroDossier: document.getElementById('filtroDossier'),
+      dossierContainer: document.getElementById('dossierContainer'),
+      toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier')
     };
     
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
             console.warn("Nó /configuracoesGlobais/layout não encontrado. Criando...");
-            // Se você é admin, pode tentar criar
             if(currentUserData && currentUserData.tag === 'ADMIN') {
                  set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false });
             }
@@ -599,7 +651,6 @@
             els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
         }
     }, (error) => {
-        // Erro de permissão é esperado para não-admins
         if(error.code !== "PERMISSION_DENIED") {
             showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
         }
@@ -662,7 +713,7 @@
     atualizarRelogio(); // Chama uma vez ao carregar
     setInterval(atualizarRelogio, 30000); // Atualiza a cada 30 segundos
     
-    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs ];
+    const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, els.placaVeiculo ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
         campo.addEventListener('input', (e) => {
@@ -732,7 +783,7 @@
     };
     
     const clearAllFields = () => {
-      ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs'].forEach(id => els[id].value = '');
+      ['qtyTickets', 'qtyTablets', 'qtyNitro', 'nomeCliente', 'organizacao', 'negociadoras', 'vendaValorObs', 'placaVeiculo'].forEach(id => els[id].value = '');
       els.tipoValor.value = 'limpo';
       els.organizacaoTipo.value = 'CNPJ';
       els.telefone.value = '';
@@ -777,6 +828,29 @@
         return isValid;
     };
     
+    // NOVO: Função para adicionar entrada ao dossiê
+    const addDossierEntry = (vendaData) => {
+        const org = vendaData.organizacao.trim();
+        // Só adiciona ao dossiê se tiver uma organização
+        if (!org) {
+            return;
+        }
+        
+        const dossierEntry = {
+            nome: vendaData.cliente,
+            numero: vendaData.telefone,
+            organizacao: org,
+            placa: els.placaVeiculo.value.trim() || 'N/A', // Pega a placa
+            data: vendaData.dataHora // Usa a data da venda
+        };
+        
+        // Cria uma nova entrada no nó daquela organização
+        const dossierRef = ref(db, `dossies/${org}`);
+        push(dossierRef, dossierEntry)
+            .catch(err => console.error("Erro ao salvar dossiê:", err));
+    };
+    
+    
     const registerVenda = () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
       if (!hasQuantities) {
@@ -812,6 +886,12 @@
       operation
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
+              
+              // NOVO: Adiciona ao dossiê apenas se for um *novo* registro
+              if (!vendaEmEdicaoId) {
+                  addDossierEntry(newVenda);
+              }
+              
               clearAllFields();
           })
           .catch((error) => {
@@ -835,6 +915,9 @@
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
         
+        // Nota: O campo 'placa' não é salvo na venda, então não pode ser recuperado aqui.
+        // A placa só é enviada ao dossiê no momento da CRIAÇÃO da venda.
+        
         calculate(); 
         
         vendaEmEdicaoId = id;
@@ -844,7 +927,7 @@
         vendaOriginalDataHora = venda.dataHora;
         
         els.registerBtn.textContent = 'Atualizar Venda';
-        toggleView(false); 
+        toggleView('main'); 
         showToast(`Editando venda de ${venda.cliente}`, "default");
     };
 
@@ -932,15 +1015,33 @@ Negociadoras: ${negociadoras}
         copyToClipboard(buildDiscordMessage(messageData));
     };
 
-    const toggleView = (showHistory) => {
-        document.body.classList.toggle('history-view-active', showHistory);
-        els.mainCard.style.display = showHistory ? 'none' : 'block';
-        els.historyCard.style.display = showHistory ? 'block' : 'none';
-        els.adminPanel.style.display = 'none'; // Esconde painel admin ao trocar de tela
-        if (showHistory) {
+    // **** MUDANÇA: toggleView agora aceita 'main', 'history', 'admin', 'dossier' ****
+    const toggleView = (viewName) => {
+        // Esconde todos os painéis
+        els.mainCard.style.display = 'none';
+        els.historyCard.style.display = 'none';
+        els.adminPanel.style.display = 'none';
+        els.dossierCard.style.display = 'none';
+        
+        // Remove classes do body
+        document.body.classList.remove('history-view-active', 'dossier-view-active');
+
+        if (viewName === 'history') {
+            document.body.classList.add('history-view-active');
+            els.historyCard.style.display = 'block';
             els.historyImg.src = historyBackgroundSrc;
             els.filtroHistorico.value = ''; 
             displaySalesHistory(vendas); 
+        } else if (viewName === 'admin') {
+            els.adminPanel.style.display = 'block';
+            loadAdminPanel(); // Carrega dados frescos
+        } else if (viewName === 'dossier') {
+            document.body.classList.add('dossier-view-active');
+            els.dossierCard.style.display = 'block';
+            loadAndDisplayDossiers(); // Carrega os dossiês
+        } else {
+            // Padrão é 'main'
+            els.mainCard.style.display = 'block';
         }
     };
 
@@ -1026,7 +1127,7 @@ Negociadoras: ${negociadoras}
             return;
         }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Observação", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
-        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
@@ -1046,6 +1147,122 @@ Negociadoras: ${negociadoras}
                 .catch(e => showToast(`Erro: ${e.message}`, "error"));
         }
     };
+    
+    // **** NOVAS FUNÇÕES DO DOSSIÊ ****
+    
+    // 1. Carrega os dados do Firebase e armazena globalmente
+    const loadAndDisplayDossiers = async () => {
+        els.dossierContainer.innerHTML = '<p>Carregando dossiês...</p>';
+        globalAllDossierEntries = []; // Limpa cache
+        
+        try {
+            const dossiersRef = ref(db, 'dossies');
+            const snapshot = await get(dossiersRef);
+            
+            if (!snapshot.exists()) {
+                els.dossierContainer.innerHTML = '<p>Nenhum dossiê encontrado.</p>';
+                return;
+            }
+            
+            const allDossiers = snapshot.val();
+            
+            // Transforma o objeto de objetos em uma lista plana
+            for (const orgName in allDossiers) {
+                const entries = allDossiers[orgName];
+                for (const entryId in entries) {
+                    globalAllDossierEntries.push({
+                        id: entryId,
+                        ...entries[entryId]
+                    });
+                }
+            }
+            
+            // Ordena por data (mais recente primeiro)
+            globalAllDossierEntries.sort((a, b) => new Date(b.data.split(' ')[0].split('/').reverse().join('-')) - new Date(a.data.split(' ')[0].split('/').reverse().join('-')));
+            
+            // Exibe tudo (sem filtro inicial)
+            displayDossiers(globalAllDossierEntries);
+            
+        } catch (error) {
+            els.dossierContainer.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar dossiês: ${error.message}</p>`;
+        }
+    };
+
+    // 2. Renderiza as tabelas com base em uma lista de entradas (filtrada ou não)
+    const displayDossiers = (entries) => {
+        els.dossierContainer.innerHTML = '';
+        
+        if (entries.length === 0) {
+            els.dossierContainer.innerHTML = '<p>Nenhum registro encontrado para este filtro.</p>';
+            return;
+        }
+        
+        // Agrupa as entradas por organização
+        const groupedByOrg = entries.reduce((acc, entry) => {
+            const org = entry.organizacao;
+            if (!acc[org]) {
+                acc[org] = [];
+            }
+            acc[org].push(entry);
+            return acc;
+        }, {});
+        
+        // Renderiza uma tabela para cada organização
+        for (const orgName in groupedByOrg) {
+            const orgEntries = groupedByOrg[orgName];
+            
+            const orgTitle = document.createElement('h3');
+            orgTitle.className = 'dossier-org-title';
+            orgTitle.textContent = orgName;
+            els.dossierContainer.appendChild(orgTitle);
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'dossier-table-wrapper';
+            
+            const table = document.createElement('table');
+            table.className = 'dossier-table';
+            table.innerHTML = `<thead><tr>
+                <th>Nome</th>
+                <th>Número</th>
+                <th>Placa do Veículo</th>
+                <th>Data do Registro</th>
+            </tr></thead>`;
+            
+            const tbody = document.createElement('tbody');
+            orgEntries.forEach(entry => {
+                tbody.innerHTML += `<tr>
+                    <td>${entry.nome}</td>
+                    <td>${entry.numero}</td>
+                    <td>${entry.placa || 'N/A'}</td>
+                    <td>${entry.data}</td>
+                </tr>`;
+            });
+            
+            table.appendChild(tbody);
+            tableWrapper.appendChild(table);
+            els.dossierContainer.appendChild(tableWrapper);
+        }
+    };
+
+    // 3. Filtra a lista global e chama o display
+    const filterDossiers = () => {
+        const query = els.filtroDossier.value.toLowerCase().trim();
+        if (!query) {
+            displayDossiers(globalAllDossierEntries); // Mostra tudo se a busca estiver vazia
+            return;
+        }
+        
+        const filteredEntries = globalAllDossierEntries.filter(entry => {
+            const nome = entry.nome ? entry.nome.toLowerCase() : '';
+            const placa = entry.placa ? entry.placa.toLowerCase() : '';
+            return nome.includes(query) || placa.includes(query);
+        });
+        
+        displayDossiers(filteredEntries);
+    };
+    
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ ****
+
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -1071,17 +1288,24 @@ Negociadoras: ${negociadoras}
     const clearTour = () => { if(tourOverlay) { tourOverlay.classList.remove('active'); setTimeout(() => { if (tourOverlay && tourOverlay.parentNode) tourOverlay.parentNode.removeChild(tourOverlay); tourOverlay = null; }, 300); } if (currentTooltip) { currentTooltip.classList.remove('active'); setTimeout(() => { if (currentTooltip && currentTooltip.parentNode) currentTooltip.parentNode.removeChild(currentTooltip); currentTooltip = null; }, 300); } document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight')); currentStepIndex = -1; };
     const showNextTourStep = () => { if (currentStepIndex >= 0) { document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight')); if(currentTooltip) currentTooltip.classList.remove('active'); } currentStepIndex++; if (currentStepIndex >= tourSteps.length) { showToast("Tutorial concluído!", "success"); clearTour(); return; } const step = tourSteps[currentStepIndex]; const targetElement = els[step.element]; if (!targetElement) { clearTour(); return; } if (currentStepIndex === 0) { tourOverlay = document.createElement('div'); tourOverlay.id = 'tour-overlay'; document.body.appendChild(tourOverlay); setTimeout(() => tourOverlay.classList.add('active'), 10); } targetElement.classList.add('tour-highlight'); if(currentTooltip && currentTooltip.parentNode) document.body.removeChild(currentTooltip); currentTooltip = document.createElement('div'); currentTooltip.className = 'tour-tooltip'; currentTooltip.innerHTML = `<h4>${step.title}</h4><p>${step.content}</p><div><button class="tourNextBtn">${currentStepIndex === tourSteps.length - 1 ? 'Finalizar' : 'Próximo'}</button><button class="tourSkipBtn">Pular</button></div>`; document.body.appendChild(currentTooltip); const rect = targetElement.getBoundingClientRect(); let top = rect.top < currentTooltip.offsetHeight + 20 ? rect.bottom + window.scrollY + 10 : rect.top + window.scrollY - currentTooltip.offsetHeight - 10; let left = Math.max(10, Math.min(rect.left + window.scrollX, window.innerWidth - currentTooltip.offsetWidth - 20)); currentTooltip.style.top = `${top}px`; currentTooltip.style.left = `${left}px`; setTimeout(() => currentTooltip.classList.add('active'), 10); currentTooltip.querySelector('.tourNextBtn').onclick = showNextTourStep; currentTooltip.querySelector('.tourSkipBtn').onclick = clearTour; targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 
+    // Event Listeners
     els.calcBtn.onclick = calculate;
     els.resetBtn.onclick = clearAllFields;
     els.registerBtn.onclick = registerVenda;
-    els.toggleHistoryBtn.onclick = () => toggleView(true);
-    els.toggleCalcBtn.onclick = () => toggleView(false);
+    els.toggleHistoryBtn.onclick = () => toggleView('history');
+    els.toggleCalcBtn.onclick = () => toggleView('main');
     els.clearHistoryBtn.onclick = clearHistory;
     els.csvBtn.onclick = exportToCsv;
     els.themeBtn.onclick = toggleTheme;
-    els.tutorialBtn.onclick = () => { if (!currentUser) { showToast("Faça login para iniciar o tutorial.", "default"); return; } showNextTourStep(); };
+    els.tutorialBtn.onclick = () => { if (!currentUser) { showToast("Faça login para iniciar o tutorial.", "default"); return; } toggleView('main'); showNextTourStep(); };
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
+    
+    // Novos Listeners
+    els.investigacaoBtn.onclick = () => toggleView('dossier');
+    els.toggleCalcBtnDossier.onclick = () => toggleView('main');
+    els.filtroDossier.addEventListener('input', filterDossiers);
+    
     
     const deleteUser = (uid, displayName) => {
         if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
@@ -1114,7 +1338,6 @@ Negociadoras: ${negociadoras}
                 const userData = userSnap.val();
                 
                 const row = els.adminUserListBody.insertRow();
-                // **** AQUI ESTÁ A LINHA QUE MOSTRA (Sem nome) ****
                 row.insertCell().textContent = userData.displayName || '(Sem nome)';
                 
                 const tagCell = row.insertCell();
@@ -1181,7 +1404,6 @@ Negociadoras: ${negociadoras}
                 els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
             }
         } catch (error) {
-             // Não mostra toast de permissão negada, pois é esperado para não-admins
             if(error.code !== "PERMISSION_DENIED") {
                 showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
             }
@@ -1207,18 +1429,11 @@ Negociadoras: ${negociadoras}
             });
     };
     
-    els.adminPanelBtn.onclick = () => {
-        const isHidden = els.adminPanel.style.display === 'none';
-        els.adminPanel.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) {
-            loadAdminPanel(); // Carrega os dados frescos sempre que o painel é aberto
-        }
-    };
+    els.adminPanelBtn.onclick = () => toggleView('admin');
     els.layoutToggleNightMode.onchange = (e) => updateGlobalLayout('enableNightMode', e.target.checked);
     els.layoutToggleBottomPanel.onchange = (e) => updateGlobalLayout('enableBottomPanel', e.target.checked);
     
     
-    // **** MUDANÇA: 'handleAuthAction' corrigido para evitar (Sem nome) ****
     const handleAuthAction = (isLogin, creds) => {
         const email = creds.username.trim() + "@ha.com";
         const password = creds.password;
@@ -1230,7 +1445,6 @@ Negociadoras: ${negociadoras}
         }
 
         if (isLogin) {
-            // --- LOGIN ---
             signInWithEmailAndPassword(auth, email, password)
                 .catch((error) => {
                     const code = error.code;
@@ -1238,21 +1452,18 @@ Negociadoras: ${negociadoras}
                     showToast(msg, "error");
                 });
         } else {
-            // --- REGISTRO (COM CORREÇÃO DE RACE CONDITION) ---
             createUserWithEmailAndPassword(auth, email, password)
                 .then(userCredential => {
                     const user = userCredential.user;
-                    // 1. Atualiza o perfil do Auth (para o user.displayName funcionar)
                     return updateProfile(user, { displayName: displayName })
                         .then(() => {
-                            // 2. AGORA que o perfil está atualizado, cria o registro no Database
                             const userRef = ref(db, `usuarios/${user.uid}`);
                             const newUserProfile = {
-                                displayName: displayName, // Usa a variável local
+                                displayName: displayName,
                                 email: user.email,
                                 tag: 'Visitante'
                             };
-                            return set(userRef, newUserProfile); // Retorna a promessa
+                            return set(userRef, newUserProfile); 
                         });
                 })
                 .catch((error) => {
@@ -1316,12 +1527,20 @@ Negociadoras: ${negociadoras}
           userStatusEl.style.display = 'block';
       }
 
+      // Controla botões do Admin
       if (tag === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
       } else {
         els.clearHistoryBtn.style.display = 'none';
         els.adminPanelBtn.style.display = 'none';
+      }
+      
+      // NOVO: Controla botão de Investigação
+      if (tag === 'ADMIN' || tag === 'HELLS') {
+          els.investigacaoBtn.style.display = 'block';
+      } else {
+          els.investigacaoBtn.style.display = 'none';
       }
       
       if (tag !== 'ADMIN') {
@@ -1340,10 +1559,8 @@ Negociadoras: ${negociadoras}
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val();
                 } else {
-                    // Fallback para caso o usuário exista no Auth mas não no DB
-                    // (graças ao novo handleAuthAction, isso é menos provável de dar 'null')
                     const newUserProfile = {
-                        displayName: user.displayName, // user.displayName deve estar correto agora
+                        displayName: user.displayName,
                         email: user.email,
                         tag: 'Visitante' 
                     };
@@ -1372,7 +1589,6 @@ Negociadoras: ${negociadoras}
                     }
                 }, (error) => {
                     console.error("Erro ao carregar vendas: ", error);
-                    // Não mostra o toast de permissão, pois é esperado para Visitantes
                     if(error.code !== "PERMISSION_DENIED") {
                         showToast("Erro de permissão ao carregar histórico.", "error");
                     }
@@ -1380,7 +1596,7 @@ Negociadoras: ${negociadoras}
             });
 
             els.authScreen.style.display = 'none';
-            els.mainCard.style.display = 'block';
+            toggleView('main'); // Mostra a main card por padrão
 
         } else {
             currentUser = null;
@@ -1392,7 +1608,9 @@ Negociadoras: ${negociadoras}
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
             els.adminPanel.style.display = 'none'; 
-            if(els.userStatus) els.userStatus.style.display = 'none'; // Esconde status ao deslogar
+            els.dossierCard.style.display = 'none'; // Esconde dossiê
+            if(els.userStatus) els.userStatus.style.display = 'none';
+            if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none'; // Esconde botão dossiê
         }
     });
 
