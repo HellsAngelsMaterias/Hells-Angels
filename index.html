@@ -24,7 +24,7 @@
       --cor-tag-admin: #007bff; --cor-tag-hells: #ff0080; --cor-tag-visitante: #28a745;
     }
     body.dark input[type=number], body.dark input[type=text], body.dark select,
-    body.dark #editDossierModal input[type=text] {
+    body.dark .modal-content input[type=text] {
       background: #33001f; color: var(--cor-texto); border: 1px solid var(--cor-borda);
     }
     input[list]:focus, input[list]:hover { border-color: var(--cor-principal) !important; box-shadow: 0 0 5px rgba(230, 0, 115, 0.4); }
@@ -259,7 +259,7 @@
     }
     #dossierCard table {
         width: 100%; border-collapse: collapse; table-layout: fixed;
-        min-width: 950px; /* Aumentado para nova coluna */
+        min-width: 1050px; /* Aumentado para nova coluna */
     }
     #dossierCard th, #dossierCard td {
         padding: 6px 8px; text-align: center; vertical-align: middle;
@@ -273,27 +273,29 @@
     #dossierCard th:nth-child(1), #dossierCard td:nth-child(1) { width: 150px; } /* Nome */
     #dossierCard th:nth-child(2), #dossierCard td:nth-child(2) { width: 120px; } /* Numero */
     #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 140px; } /* Cargo */
-    #dossierCard th:nth-child(4), #dossierCard td:nth-child(4) { width: 180px; white-space: normal; } /* Placas */
-    #dossierCard th:nth-child(5), #dossierCard td:nth-child(5) { width: 150px; } /* Data */
-    #dossierCard th:nth-child(6), #dossierCard td:nth-child(6) { width: 100px; }  /* Ações */
+    #dossierCard th:nth-child(4), #dossierCard td:nth-child(4) { width: 80px; }  /* Foto */
+    #dossierCard th:nth-child(5), #dossierCard td:nth-child(5) { width: 180px; white-space: normal; } /* Placas */
+    #dossierCard th:nth-child(6), #dossierCard td:nth-child(6) { width: 150px; } /* Data */
+    #dossierCard th:nth-child(7), #dossierCard td:nth-child(7) { width: 100px; } /* Ações */
 
     /* NOVO: Estilos do Modal */
-    #editDossierOverlay {
+    .modal-overlay {
         display: none; position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
         background: rgba(0,0,0,0.6);
         z-index: 10010;
     }
-    #editDossierModal {
+    .modal-content {
         display: none; position: fixed;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         z-index: 10011; width: 90%; max-width: 500px;
+        max-height: 80vh; overflow-y: auto;
     }
-    #editDossierModal input[type=text] {
+    .modal-content input[type=text] {
         width: 100%; box-sizing: border-box; 
     }
-    #editDossierModal label {
+    .modal-content label {
         margin-top: 10px;
     }
 
@@ -396,6 +398,7 @@
             </div>
         </div>
     </div>
+    
     <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--cor-borda);">
 
     <h2>Cálculo de Produtos</h2>
@@ -528,9 +531,10 @@
   
   <div class="card" id="dossierCard" style="display:none">
       <h2>Sistema de Investigação (Dossiês)</h2>
-      <input type="text" id="filtroDossier" placeholder="🔍 Buscar por Nome ou Placa(s)..." style="margin-bottom: 10px; width: 100%;">
-      <div class="actions">
-        <button id="toggleCalcBtnDossier" class="muted">Voltar à Calculadora</button>
+      <div class="actions" style="margin-top: 0; margin-bottom: 10px;">
+          <input type="text" id="filtroDossier" placeholder="🔍 Buscar por Nome ou Placa(s)..." style="margin: 0; flex-grow: 1;">
+          <button id="addDossierBtn" class="success" style="animation: none; margin-left: 10px;">+ Adicionar Manual</button>
+          <button id="toggleCalcBtnDossier" class="muted">Voltar à Calculadora</button>
       </div>
       
       <div id="dossierContainer" style="margin-top: 15px;">
@@ -545,8 +549,8 @@
       <span>Este é o painel inferior. O conteúdo pode ser personalizado.</span>
   </div>
   
-  <div id="editDossierOverlay"></div>
-  <div id="editDossierModal" class="card">
+  <div id="editDossierOverlay" class="modal-overlay"></div>
+  <div id="editDossierModal" class="card modal-content">
       <h2>Editar Entrada do Dossiê</h2>
       <input type="hidden" id="editDossierOrg">
       <input type="hidden" id="editDossierId">
@@ -563,9 +567,40 @@
       <label for="editDossierPlacas">Placa(s):</label>
       <input type="text" id="editDossierPlacas" style="text-transform: uppercase;">
       
+      <label for="editDossierFotoUrl">Foto URL:</label>
+      <input type="text" id="editDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
+      
       <div class="actions" style="margin-top: 20px;">
           <button id="saveDossierBtn" class="success">Salvar</button>
           <button id="cancelDossierBtn" class="muted">Cancelar</button>
+      </div>
+  </div>
+  
+  <div id="addDossierOverlay" class="modal-overlay"></div>
+  <div id="addDossierModal" class="card modal-content">
+      <h2>Adicionar ao Dossiê Manualmente</h2>
+      
+      <label for="addDossierOrganizacao">Organização: (Obrigatório)</label>
+      <input type="text" id="addDossierOrganizacao" list="sugestoesOrganizacao">
+      
+      <label for="addDossierNome">Nome:</label>
+      <input type="text" id="addDossierNome">
+      
+      <label for="addDossierNumero">Número:</label>
+      <input type="text" id="addDossierNumero">
+      
+      <label for="addDossierCargo">Cargo:</label>
+      <input type="text" id="addDossierCargo">
+      
+      <label for="addDossierPlacas">Placa(s):</label>
+      <input type="text" id="addDossierPlacas" style="text-transform: uppercase;">
+      
+      <label for="addDossierFotoUrl">Foto URL:</label>
+      <input type="text" id="addDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
+      
+      <div class="actions" style="margin-top: 20px;">
+          <button id="saveNewDossierBtn" class="success">Salvar Novo</button>
+          <button id="cancelNewDossierBtn" class="muted">Cancelar</button>
       </div>
   </div>
   
@@ -578,7 +613,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyAhDVBfXoO_Rdi3e-trdbaaPppwDkTDgVc",
       authDomain: "hells-angels-438c2.firebaseapp.com",
-      databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
+      databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
       projectId: "hells-angels-438c2",
       storageBucket: "hells-angels-438c2.firebasestorage.app",
       messagingSenderId: "429406215315",
@@ -636,7 +671,7 @@
       telefone: document.getElementById('telefone'),
       placaVeiculo: document.getElementById('placaVeiculo'),
       negociadoras: document.getElementById('negociadoras'),
-      vendaValorObs: document.getElementById('vendaValorObs'), // Este agora é o "Cargo"
+      vendaValorObs: document.getElementById('vendaValorObs'),
       dataVenda: document.getElementById('dataVenda'),
       filtroHistorico: document.getElementById('filtroHistorico'),
       resultsBody: document.getElementById('resultsBody'),
@@ -685,10 +720,10 @@
       filtroDossier: document.getElementById('filtroDossier'),
       dossierContainer: document.getElementById('dossierContainer'),
       toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier'),
+      addDossierBtn: document.getElementById('addDossierBtn'),
       
       migrateDossierBtn: document.getElementById('migrateDossierBtn'),
       
-      // NOVO: Elementos do Modal de Edição
       editDossierOverlay: document.getElementById('editDossierOverlay'),
       editDossierModal: document.getElementById('editDossierModal'),
       editDossierOrg: document.getElementById('editDossierOrg'),
@@ -697,8 +732,20 @@
       editDossierNumero: document.getElementById('editDossierNumero'),
       editDossierCargo: document.getElementById('editDossierCargo'),
       editDossierPlacas: document.getElementById('editDossierPlacas'),
+      editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
       saveDossierBtn: document.getElementById('saveDossierBtn'),
-      cancelDossierBtn: document.getElementById('cancelDossierBtn')
+      cancelDossierBtn: document.getElementById('cancelDossierBtn'),
+      
+      addDossierOverlay: document.getElementById('addDossierOverlay'),
+      addDossierModal: document.getElementById('addDossierModal'),
+      addDossierOrganizacao: document.getElementById('addDossierOrganizacao'),
+      addDossierNome: document.getElementById('addDossierNome'),
+      addDossierNumero: document.getElementById('addDossierNumero'),
+      addDossierCargo: document.getElementById('addDossierCargo'),
+      addDossierPlacas: document.getElementById('addDossierPlacas'),
+      addDossierFotoUrl: document.getElementById('addDossierFotoUrl'),
+      saveNewDossierBtn: document.getElementById('saveNewDossierBtn'),
+      cancelNewDossierBtn: document.getElementById('cancelNewDossierBtn')
     };
     
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
@@ -786,7 +833,6 @@
     atualizarRelogio();
     setInterval(atualizarRelogio, 30000);
     
-    // "vendaValorObs" (Cargo) agora é capitalizado
     const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
@@ -902,7 +948,6 @@
         return isValid;
     };
     
-    // NOVO: "addDossierEntry" agora salva o "cargo"
     const addDossierEntry = (vendaData, placas) => {
         const org = vendaData.organizacao.trim();
         if (!org) {
@@ -913,8 +958,9 @@
             nome: vendaData.cliente,
             numero: vendaData.telefone,
             organizacao: org,
-            cargo: vendaData.vendaValorObs || 'N/A', // Salva o campo "Cargo"
+            cargo: vendaData.vendaValorObs || 'N/A',
             placas: placas || 'N/A', 
+            fotoUrl: '', // Foto é vazia por padrão na venda
             data: vendaData.dataHora
         };
         
@@ -949,7 +995,7 @@
         organizacaoTipo: els.organizacaoTipo.value,
         telefone: els.telefone.value.trim(),
         negociadoras: els.negociadoras.value.trim(),
-        vendaValorObs: els.vendaValorObs.value.trim(), // Salva o "Cargo"
+        vendaValorObs: els.vendaValorObs.value.trim(),
         qtyTickets, qtyTablets, qtyNitro,
         valorTotal: totalValue,
         tipoValor,
@@ -982,7 +1028,7 @@
         els.organizacaoTipo.value = venda.organizacaoTipo || 'CNPJ';
         els.telefone.value = venda.telefone || '';
         els.negociadoras.value = venda.negociadoras || '';
-        els.vendaValorObs.value = venda.vendaValorObs || ''; // Preenche o "Cargo"
+        els.vendaValorObs.value = venda.vendaValorObs || '';
         els.tipoValor.value = venda.tipoValor || 'limpo';
         
         els.qtyTickets.value = venda.qtyTickets || 0;
@@ -1027,7 +1073,6 @@
           });
     };
 
-    // NOVO: "buildDiscordMessage" agora usa "cargo"
     const buildDiscordMessage = (vendaData) => {
         const { cliente, data, orgTipo, org, tel, produtos, valor, obs, negociadoras, cargo } = vendaData;
         return `
@@ -1058,10 +1103,10 @@ Negociadoras: ${negociadoras}
                 orgTipo: venda.organizacaoTipo,
                 org: venda.organizacao,
                 tel: venda.telefone,
-                cargo: venda.vendaValorObs || 'N/A', // "vendaValorObs" é o "Cargo"
+                cargo: venda.vendaValorObs || 'N/A',
                 produtos: produtos.join(', '),
                 valor: formatCurrency(venda.valorTotal || 0),
-                obs: valorDescricao[venda.tipoValor], // Obs agora é só o tipo de valor
+                obs: valorDescricao[venda.tipoValor],
                 negociadoras: venda.negociadoras
             };
         } else {
@@ -1082,10 +1127,10 @@ Negociadoras: ${negociadoras}
                 orgTipo: els.organizacaoTipo.value,
                 org: els.organizacao.value.trim(),
                 tel: els.telefone.value.trim(),
-                cargo: els.vendaValorObs.value.trim() || 'N/A', // Pega o "Cargo"
+                cargo: els.vendaValorObs.value.trim() || 'N/A',
                 produtos: produtos.join(', '),
                 valor: formatCurrency(totalValue),
-                obs: valorDescricao[tipoValor], // Obs agora é só o tipo de valor
+                obs: valorDescricao[tipoValor],
                 negociadoras: els.negociadoras.value.trim()
             };
         }
@@ -1157,7 +1202,6 @@ Negociadoras: ${negociadoras}
             
             const valorCell = row.insertCell();
             valorCell.className = 'valor-total-cell';
-            // NOVO: "vendaValorObs" (Cargo) não é mais exibido aqui
             valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span>`;
 
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
@@ -1200,7 +1244,6 @@ Negociadoras: ${negociadoras}
             showToast("Nenhum dado para exportar.", "error");
             return;
         }
-        // NOVO: "Observação" foi trocada por "Cargo"
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Cargo", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
         const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
@@ -1223,7 +1266,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v4) ****
+    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v5) ****
     
     const loadAndDisplayDossiers = async () => {
         els.dossierContainer.innerHTML = '<p>Carregando dossiês...</p>';
@@ -1234,7 +1277,7 @@ Negociadoras: ${negociadoras}
             const snapshot = await get(dossiersRef);
             
             if (!snapshot.exists()) {
-                els.dossierContainer.innerHTML = '<p>Nenhum dossiê encontrado. Comece a registrar vendas com organização para preenchê-lo, ou migre dados antigos no Painel Admin.</p>';
+                els.dossierContainer.innerHTML = '<p>Nenhum dossiê encontrado. Clique em "+ Adicionar Manual" para começar, ou migre dados antigos no Painel Admin.</p>';
                 return;
             }
             
@@ -1290,11 +1333,11 @@ Negociadoras: ${negociadoras}
             
             const table = document.createElement('table');
             table.className = 'dossier-table';
-            // NOVO: Coluna "Cargo" adicionada
             table.innerHTML = `<thead><tr>
                 <th>Nome</th>
                 <th>Número</th>
                 <th>Cargo</th>
+                <th>Foto</th>
                 <th>Placa(s) do Veículo</th>
                 <th>Data do Registro</th>
                 <th>Ações</th>
@@ -1302,11 +1345,15 @@ Negociadoras: ${negociadoras}
             
             const tbody = document.createElement('tbody');
             orgEntries.forEach(entry => {
-                // NOVO: "entry.cargo" e botão de editar
+                const fotoHtml = entry.fotoUrl 
+                    ? `<a href="${entry.fotoUrl}" target="_blank" class="action-btn muted" style="padding: 5px;">🖼️ Ver</a>` 
+                    : 'N/A';
+                    
                 tbody.innerHTML += `<tr>
                     <td>${entry.nome}</td>
                     <td>${entry.numero}</td>
                     <td>${entry.cargo || 'N/A'}</td>
+                    <td>${fotoHtml}</td>
                     <td>${entry.placas || 'N/A'}</td>
                     <td>${entry.data}</td>
                     <td>
@@ -1351,14 +1398,13 @@ Negociadoras: ${negociadoras}
         const filteredEntries = globalAllDossierEntries.filter(entry => {
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
             const placas = entry.placas ? entry.placas.toLowerCase() : '';
-            const cargo = entry.cargo ? entry.cargo.toLowerCase() : ''; // Filtra por cargo
+            const cargo = entry.cargo ? entry.cargo.toLowerCase() : '';
             return nome.includes(query) || placas.includes(query) || cargo.includes(query);
         });
         
         displayDossiers(filteredEntries);
     };
     
-    // NOVO: "migrateVendasToDossier" agora salva o "cargo"
     const migrateVendasToDossier = async () => {
         if (!confirm("Isso irá copiar *todas* as vendas com organização para o Dossiê. Vendas sem placa serão marcadas como 'N/A'. Deseja continuar?")) {
             return;
@@ -1389,8 +1435,9 @@ Negociadoras: ${negociadoras}
                         nome: venda.cliente,
                         numero: venda.telefone,
                         organizacao: org,
-                        cargo: venda.vendaValorObs || 'N/A (Migrado)', // Salva o "Cargo"
+                        cargo: venda.vendaValorObs || 'N/A (Migrado)',
                         placas: 'N/A (Migrado)',
+                        fotoUrl: '', // Adiciona campo de foto vazio
                         data: venda.dataHora
                     };
                     
@@ -1410,7 +1457,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // NOVO: Funções do Modal de Edição
+    // --- Funções do Modal de Edição ---
     const openEditDossierModal = (org, id) => {
         const entry = globalAllDossierEntries.find(e => e.id === id && e.org === org);
         if (!entry) {
@@ -1424,6 +1471,7 @@ Negociadoras: ${negociadoras}
         els.editDossierNumero.value = entry.numero || '';
         els.editDossierCargo.value = entry.cargo || '';
         els.editDossierPlacas.value = entry.placas || '';
+        els.editDossierFotoUrl.value = entry.fotoUrl || '';
         
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
@@ -1443,7 +1491,6 @@ Negociadoras: ${negociadoras}
             return;
         }
         
-        // Pega a entrada original para preservar dados não editáveis (como a data)
         const originalEntry = globalAllDossierEntries.find(e => e.id === id && e.org === org);
         if (!originalEntry) {
             showToast("Erro: Entrada original não encontrada.", "error");
@@ -1451,14 +1498,14 @@ Negociadoras: ${negociadoras}
         }
 
         const updatedEntry = {
-            ...originalEntry, // Mantém dados originais (como 'data', 'organizacao')
+            ...originalEntry,
             nome: els.editDossierNome.value.trim(),
             numero: els.editDossierNumero.value.trim(),
             cargo: els.editDossierCargo.value.trim(),
-            placas: els.editDossierPlacas.value.trim().toUpperCase()
+            placas: els.editDossierPlacas.value.trim().toUpperCase(),
+            fotoUrl: els.editDossierFotoUrl.value.trim()
         };
         
-        // Remove os campos 'id' e 'org' que adicionei ao objeto
         delete updatedEntry.id;
         delete updatedEntry.org;
 
@@ -1467,14 +1514,72 @@ Negociadoras: ${negociadoras}
             .then(() => {
                 showToast("Dossiê atualizado com sucesso!", "success");
                 closeEditDossierModal();
-                loadAndDisplayDossiers(); // Recarrega tudo
+                loadAndDisplayDossiers();
             })
             .catch((error) => {
                 showToast(`Erro ao salvar: ${error.message}`, "error");
             });
     };
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v4) ****
+    // --- Funções do Novo Modal de Adição ---
+    const openAddDossierModal = () => {
+        // Limpa os campos
+        els.addDossierOrganizacao.value = '';
+        els.addDossierNome.value = '';
+        els.addDossierNumero.value = '';
+        els.addDossierCargo.value = '';
+        els.addDossierPlacas.value = '';
+        els.addDossierFotoUrl.value = '';
+        
+        els.addDossierOverlay.style.display = 'block';
+        els.addDossierModal.style.display = 'block';
+        els.addDossierOrganizacao.focus();
+    };
+    
+    const closeAddDossierModal = () => {
+        els.addDossierOverlay.style.display = 'none';
+        els.addDossierModal.style.display = 'none';
+    };
+    
+    const saveNewDossierEntry = () => {
+        const org = capitalizeText(els.addDossierOrganizacao.value.trim());
+        if (!org) {
+            showToast("O campo Organização é obrigatório.", "error");
+            els.addDossierOrganizacao.classList.add('input-invalido');
+            return;
+        }
+        els.addDossierOrganizacao.classList.remove('input-invalido');
+
+        const agora = new Date();
+        const dia = String(agora.getDate()).padStart(2, '0');
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
+        const ano = agora.getFullYear();
+        const horas = String(agora.getHours()).padStart(2, '0');
+        const minutos = String(agora.getMinutes()).padStart(2, '0');
+
+        const newEntry = {
+            organizacao: org,
+            nome: els.addDossierNome.value.trim(),
+            numero: els.addDossierNumero.value.trim(),
+            cargo: els.addDossierCargo.value.trim(),
+            placas: els.addDossierPlacas.value.trim().toUpperCase(),
+            fotoUrl: els.addDossierFotoUrl.value.trim(),
+            data: `${dia}/${mes}/${ano} ${horas}:${minutos}` // Adiciona data atual
+        };
+        
+        const dossierRef = ref(db, `dossies/${org}`);
+        push(dossierRef, newEntry)
+            .then(() => {
+                showToast("Nova entrada salva no dossiê!", "success");
+                closeAddDossierModal();
+                loadAndDisplayDossiers();
+            })
+            .catch((error) => {
+                showToast(`Erro ao salvar: ${error.message}`, "error");
+            });
+    };
+    
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v5) ****
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -1518,7 +1623,6 @@ Negociadoras: ${negociadoras}
     els.filtroDossier.addEventListener('input', filterDossiers);
     els.migrateDossierBtn.onclick = migrateVendasToDossier;
     
-    // NOVO: Listeners do Modal e Dossiê
     els.dossierContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('delete-dossier-btn')) {
             const org = e.target.dataset.org;
@@ -1531,9 +1635,17 @@ Negociadoras: ${negociadoras}
             openEditDossierModal(org, id);
         }
     });
+    
+    // Listeners do Modal de Edição
     els.saveDossierBtn.onclick = saveDossierChanges;
     els.cancelDossierBtn.onclick = closeEditDossierModal;
     els.editDossierOverlay.onclick = closeEditDossierModal;
+    
+    // Listeners do Modal de Adição
+    els.addDossierBtn.onclick = openAddDossierModal;
+    els.saveNewDossierBtn.onclick = saveNewDossierEntry;
+    els.cancelNewDossierBtn.onclick = closeAddDossierModal;
+    els.addDossierOverlay.onclick = closeAddDossierModal;
     
     
     const deleteUser = (uid, displayName) => {
@@ -1551,7 +1663,6 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // NOVO: "loadAdminPanel" com ordenação e "Snow" oculto
     const loadAdminPanel = async () => {
         els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
         
@@ -1565,25 +1676,23 @@ Negociadoras: ${negociadoras}
             const usersList = [];
             usersSnapshot.forEach(userSnap => {
                 const userData = userSnap.val();
-                // *** IMPLEMENTAÇÃO 'SNOW FANTASMA' ***
                 if (userData.displayName === 'Snow') {
-                    return; // Pula o usuário Snow
+                    return;
                 }
                 usersList.push({ uid: userSnap.key, ...userData });
             });
 
-            // *** IMPLEMENTAÇÃO 'HIERARQUIA' ***
             const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'Visitante': 3 };
             usersList.sort((a, b) => {
                 const tagA = tagOrder[a.tag] || 4;
                 const tagB = tagOrder[b.tag] || 4;
                 if (tagA !== tagB) {
-                    return tagA - tagB; // Compara por tag
+                    return tagA - tagB;
                 }
-                return (a.displayName || '').localeCompare(b.displayName || ''); // Se for a mesma tag, ordena por nome
+                return (a.displayName || '').localeCompare(b.displayName || '');
             });
 
-            els.adminUserListBody.innerHTML = ''; // Limpa o "Carregando"
+            els.adminUserListBody.innerHTML = '';
             
             usersList.forEach(user => {
                 const uid = user.uid;
