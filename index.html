@@ -81,7 +81,6 @@
       transition: background 0.25s ease, color 0.25s ease, max-width 0.4s ease-in-out;
     }
     body.history-view-active { max-width: 1200px; }
-    /* NOVO: Classe para a view do Dossiê */
     body.dossier-view-active { max-width: 1200px; }
 
     #mainCard { display: block; }
@@ -102,7 +101,7 @@
       font-weight: 700;
       padding: 6px 12px;
       border-radius: 8px;
-      color: var(--cor-btn-texto); /* Texto branco */
+      color: var(--cor-btn-texto);
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       margin-left: 10px;
     }
@@ -238,11 +237,10 @@
         background: var(--cor-card); border-top: 2px solid var(--cor-principal);
         box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
         padding: 10px 20px; z-index: 9997;
-        display: none; /* Controlado pelo Admin */
+        display: none;
         justify-content: center; align-items: center; gap: 20px;
     }
     
-    /* NOVOS ESTILOS DO DOSSIÊ */
     .dossier-org-title {
         font-size: 20px;
         font-weight: 700;
@@ -256,7 +254,7 @@
     }
     #dossierCard table {
         width: 100%; border-collapse: collapse; table-layout: fixed;
-        min-width: 700px; /* Mais simples que o histórico */
+        min-width: 700px;
     }
     #dossierCard th, #dossierCard td {
         padding: 6px 8px; text-align: center; vertical-align: middle;
@@ -277,7 +275,7 @@
         .top-right-controls { top: 10px; right: 10px; }
         .control-btn { padding: 8px 10px; font-size: 12px; }
         .grid, .grid-venda { grid-template-columns: 1fr; }
-        .user-status-display { display: none; } /* Esconde status em telas pequenas */
+        .user-status-display { display: none; }
     }
   </style>
 </head>
@@ -458,6 +456,11 @@
               Ligar "Painel Inferior" para todos
           </label>
       </div>
+      
+      <h3 style="margin-top: 20px;">Ações de Dossiê</h3>
+      <p style="font-size: 13px;">Se você tem vendas antigas, clique no botão abaixo UMA VEZ para copiá-las para o novo sistema de Dossiê.</p>
+      <button id="migrateDossierBtn" class="danger" style="animation: none;">Migrar Vendas Antigas para Dossiê</button>
+      
   </div>
 
 
@@ -537,8 +540,6 @@
     
     let currentUser = null;
     let currentUserData = null; 
-    
-    // NOVO: Variável global para guardar os dossiês carregados
     let globalAllDossierEntries = [];
     
     const perUnit = {
@@ -574,7 +575,7 @@
       organizacao: document.getElementById('organizacao'),
       organizacaoTipo: document.getElementById('organizacaoTipo'),
       telefone: document.getElementById('telefone'),
-      placaVeiculo: document.getElementById('placaVeiculo'), // NOVO
+      placaVeiculo: document.getElementById('placaVeiculo'),
       negociadoras: document.getElementById('negociadoras'),
       vendaValorObs: document.getElementById('vendaValorObs'),
       dataVenda: document.getElementById('dataVenda'),
@@ -620,14 +621,17 @@
       bottomPanel: document.getElementById('bottomPanel'),
       userStatus: document.getElementById('userStatus'),
       
-      // NOVOS Elementos do Dossiê
       investigacaoBtn: document.getElementById('investigacaoBtn'),
       dossierCard: document.getElementById('dossierCard'),
       filtroDossier: document.getElementById('filtroDossier'),
       dossierContainer: document.getElementById('dossierContainer'),
-      toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier')
+      toggleCalcBtnDossier: document.getElementById('toggleCalcBtnDossier'),
+      
+      // NOVO Elemento de Migração
+      migrateDossierBtn: document.getElementById('migrateDossierBtn')
     };
     
+    // Listener das configurações globais (agora com tratamento de erro)
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
@@ -642,7 +646,7 @@
         if (els.themeBtn) {
             els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
             if (!settings.enableNightMode) {
-                document.body.classList.remove('dark'); // Força modo claro se desabilitado
+                document.body.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
             }
         }
@@ -710,8 +714,8 @@
         const minutos = String(agora.getMinutes()).padStart(2, '0');
         els.dataVenda.value = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
     };
-    atualizarRelogio(); // Chama uma vez ao carregar
-    setInterval(atualizarRelogio, 30000); // Atualiza a cada 30 segundos
+    atualizarRelogio();
+    setInterval(atualizarRelogio, 30000);
     
     const camposParaCapitalizar = [ els.nomeCliente, els.organizacao, els.negociadoras, els.vendaValorObs, els.placaVeiculo ];
     camposParaCapitalizar.forEach(campo => {
@@ -814,37 +818,36 @@
         });
         
         const tipoOrg = els.organizacaoTipo.value;
-        if (tipoOrg === 'CNPJ') { // Só é obrigatório se for CNPJ
+        if (tipoOrg === 'CNPJ') {
             if (!els.organizacao.value.trim()) {
                 els.organizacao.classList.add('input-invalido');
                 isValid = false;
             } else {
                 els.organizacao.classList.remove('input-invalido');
             }
-        } else { // Se for CPF ou OUTROS, não é obrigatório
+        } else {
             els.organizacao.classList.remove('input-invalido');
         }
         
         return isValid;
     };
     
-    // NOVO: Função para adicionar entrada ao dossiê
-    const addDossierEntry = (vendaData) => {
+    // **** CORREÇÃO DO BUG (Placa era lida depois de ser limpa) ****
+    // Agora `placa` é um argumento
+    const addDossierEntry = (vendaData, placa) => {
         const org = vendaData.organizacao.trim();
-        // Só adiciona ao dossiê se tiver uma organização
         if (!org) {
-            return;
+            return; // Não salva no dossiê se não houver organização
         }
         
         const dossierEntry = {
             nome: vendaData.cliente,
             numero: vendaData.telefone,
             organizacao: org,
-            placa: els.placaVeiculo.value.trim() || 'N/A', // Pega a placa
-            data: vendaData.dataHora // Usa a data da venda
+            placa: placa || 'N/A', // Usa a placa passada como argumento
+            data: vendaData.dataHora
         };
         
-        // Cria uma nova entrada no nó daquela organização
         const dossierRef = ref(db, `dossies/${org}`);
         push(dossierRef, dossierEntry)
             .catch(err => console.error("Erro ao salvar dossiê:", err));
@@ -865,6 +868,9 @@
           showToast("Erro: Usuário não autenticado.", "error");
           return;
       }
+      
+      // **** CORREÇÃO DO BUG: Lê a placa *antes* da operação assíncrona ****
+      const placa = els.placaVeiculo.value.trim();
       
       const newVenda = {
         timestamp: vendaEmEdicaoId ? vendaOriginalTimestamp : Date.now(), 
@@ -887,15 +893,16 @@
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
-              // NOVO: Adiciona ao dossiê apenas se for um *novo* registro
               if (!vendaEmEdicaoId) {
-                  addDossierEntry(newVenda);
+                  // Passa a placa que lemos anteriormente
+                  addDossierEntry(newVenda, placa);
               }
               
               clearAllFields();
           })
           .catch((error) => {
-              showToast(`Erro: ${error.message}`, "error");
+              // Se as regras do Firebase estiverem erradas, o erro aparecerá aqui
+              showToast(`Erro ao registrar venda: ${error.message}`, "error");
           });
     };
 
@@ -914,9 +921,6 @@
         els.qtyTickets.value = venda.qtyTickets || 0;
         els.qtyTablets.value = venda.qtyTablets || 0;
         els.qtyNitro.value = venda.qtyNitro || 0;
-        
-        // Nota: O campo 'placa' não é salvo na venda, então não pode ser recuperado aqui.
-        // A placa só é enviada ao dossiê no momento da CRIAÇÃO da venda.
         
         calculate(); 
         
@@ -1015,15 +1019,12 @@ Negociadoras: ${negociadoras}
         copyToClipboard(buildDiscordMessage(messageData));
     };
 
-    // **** MUDANÇA: toggleView agora aceita 'main', 'history', 'admin', 'dossier' ****
     const toggleView = (viewName) => {
-        // Esconde todos os painéis
         els.mainCard.style.display = 'none';
         els.historyCard.style.display = 'none';
         els.adminPanel.style.display = 'none';
         els.dossierCard.style.display = 'none';
         
-        // Remove classes do body
         document.body.classList.remove('history-view-active', 'dossier-view-active');
 
         if (viewName === 'history') {
@@ -1034,13 +1035,12 @@ Negociadoras: ${negociadoras}
             displaySalesHistory(vendas); 
         } else if (viewName === 'admin') {
             els.adminPanel.style.display = 'block';
-            loadAdminPanel(); // Carrega dados frescos
+            loadAdminPanel();
         } else if (viewName === 'dossier') {
             document.body.classList.add('dossier-view-active');
             els.dossierCard.style.display = 'block';
-            loadAndDisplayDossiers(); // Carrega os dossiês
+            loadAndDisplayDossiers();
         } else {
-            // Padrão é 'main'
             els.mainCard.style.display = 'block';
         }
     };
@@ -1148,25 +1148,21 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** NOVAS FUNÇÕES DO DOSSIÊ ****
-    
-    // 1. Carrega os dados do Firebase e armazena globalmente
     const loadAndDisplayDossiers = async () => {
         els.dossierContainer.innerHTML = '<p>Carregando dossiês...</p>';
-        globalAllDossierEntries = []; // Limpa cache
+        globalAllDossierEntries = []; 
         
         try {
             const dossiersRef = ref(db, 'dossies');
             const snapshot = await get(dossiersRef);
             
             if (!snapshot.exists()) {
-                els.dossierContainer.innerHTML = '<p>Nenhum dossiê encontrado.</p>';
+                els.dossierContainer.innerHTML = '<p>Nenhum dossiê encontrado. Comece a registrar vendas com organização para preenchê-lo, ou migre dados antigos no Painel Admin.</p>';
                 return;
             }
             
             const allDossiers = snapshot.val();
             
-            // Transforma o objeto de objetos em uma lista plana
             for (const orgName in allDossiers) {
                 const entries = allDossiers[orgName];
                 for (const entryId in entries) {
@@ -1177,10 +1173,8 @@ Negociadoras: ${negociadoras}
                 }
             }
             
-            // Ordena por data (mais recente primeiro)
             globalAllDossierEntries.sort((a, b) => new Date(b.data.split(' ')[0].split('/').reverse().join('-')) - new Date(a.data.split(' ')[0].split('/').reverse().join('-')));
             
-            // Exibe tudo (sem filtro inicial)
             displayDossiers(globalAllDossierEntries);
             
         } catch (error) {
@@ -1188,7 +1182,6 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // 2. Renderiza as tabelas com base em uma lista de entradas (filtrada ou não)
     const displayDossiers = (entries) => {
         els.dossierContainer.innerHTML = '';
         
@@ -1197,9 +1190,8 @@ Negociadoras: ${negociadoras}
             return;
         }
         
-        // Agrupa as entradas por organização
         const groupedByOrg = entries.reduce((acc, entry) => {
-            const org = entry.organizacao;
+            const org = entry.organizacao || 'Sem Organização';
             if (!acc[org]) {
                 acc[org] = [];
             }
@@ -1207,7 +1199,6 @@ Negociadoras: ${negociadoras}
             return acc;
         }, {});
         
-        // Renderiza uma tabela para cada organização
         for (const orgName in groupedByOrg) {
             const orgEntries = groupedByOrg[orgName];
             
@@ -1244,11 +1235,10 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    // 3. Filtra a lista global e chama o display
     const filterDossiers = () => {
         const query = els.filtroDossier.value.toLowerCase().trim();
         if (!query) {
-            displayDossiers(globalAllDossierEntries); // Mostra tudo se a busca estiver vazia
+            displayDossiers(globalAllDossierEntries);
             return;
         }
         
@@ -1261,7 +1251,58 @@ Negociadoras: ${negociadoras}
         displayDossiers(filteredEntries);
     };
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ ****
+    // **** NOVA FUNÇÃO DE MIGRAÇÃO ****
+    const migrateVendasToDossier = async () => {
+        if (!confirm("Isso irá copiar *todas* as vendas com organização para o Dossiê. Vendas sem placa serão marcadas como 'N/A'. Deseja continuar?")) {
+            return;
+        }
+        
+        showToast("Iniciando migração... Isso pode demorar.", "default", 5000);
+        els.migrateDossierBtn.disabled = true;
+        els.migrateDossierBtn.textContent = "Migrando...";
+        
+        try {
+            const vendasRef = ref(db, 'vendas');
+            const snapshot = await get(vendasRef);
+            
+            if (!snapshot.exists()) {
+                showToast("Nenhuma venda encontrada para migrar.", "error");
+                return;
+            }
+            
+            const vendas = snapshot.val();
+            let count = 0;
+            
+            for (const vendaId in vendas) {
+                const venda = vendas[vendaId];
+                const org = venda.organizacao ? venda.organizacao.trim() : null;
+                
+                // Só migra se tiver uma organização
+                if (org) {
+                    const dossierEntry = {
+                        nome: venda.cliente,
+                        numero: venda.telefone,
+                        organizacao: org,
+                        placa: 'N/A (Migrado)', // Placa não existia
+                        data: venda.dataHora
+                    };
+                    
+                    // Usamos a 'vendaId' como chave no dossiê para evitar duplicatas
+                    const dossierRef = ref(db, `dossies/${org}/${vendaId}`);
+                    await set(dossierRef, dossierEntry); // 'await' garante que uma termine antes da próxima
+                    count++;
+                }
+            }
+            
+            showToast(`Migração concluída! ${count} registros adicionados/atualizados.`, "success");
+            
+        } catch (error) {
+            showToast(`Erro na migração: ${error.message}`, "error");
+        } finally {
+            els.migrateDossierBtn.disabled = false;
+            els.migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
+        }
+    };
 
     
     const toggleTheme = () => {
@@ -1301,10 +1342,10 @@ Negociadoras: ${negociadoras}
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
     
-    // Novos Listeners
     els.investigacaoBtn.onclick = () => toggleView('dossier');
     els.toggleCalcBtnDossier.onclick = () => toggleView('main');
     els.filtroDossier.addEventListener('input', filterDossiers);
+    els.migrateDossierBtn.onclick = migrateVendasToDossier; // NOVO
     
     
     const deleteUser = (uid, displayName) => {
@@ -1314,7 +1355,7 @@ Negociadoras: ${negociadoras}
             remove(userRef)
                 .then(() => {
                     showToast(`Usuário "${displayName}" apagado do banco de dados.`, 'success');
-                    loadAdminPanel(); // Recarrega a lista
+                    loadAdminPanel();
                 })
                 .catch((error) => {
                     showToast(`Erro ao apagar usuário: ${error.message}`, 'error');
@@ -1332,7 +1373,7 @@ Negociadoras: ${negociadoras}
                 return;
             }
             
-            els.adminUserListBody.innerHTML = ''; // Limpa o "Carregando"
+            els.adminUserListBody.innerHTML = '';
             usersSnapshot.forEach(userSnap => {
                 const uid = userSnap.key;
                 const userData = userSnap.val();
@@ -1516,18 +1557,17 @@ Negociadoras: ${negociadoras}
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
           userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
-          userStatusEl.className = 'user-status-display'; // Reseta classes
+          userStatusEl.className = 'user-status-display';
           if (tag === 'ADMIN') {
               userStatusEl.classList.add('tag-admin');
           } else if (tag === 'HELLS') {
               userStatusEl.classList.add('tag-hells');
-          } else { // Visitante
+          } else {
               userStatusEl.classList.add('tag-visitante');
           }
           userStatusEl.style.display = 'block';
       }
 
-      // Controla botões do Admin
       if (tag === 'ADMIN') {
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
@@ -1536,7 +1576,6 @@ Negociadoras: ${negociadoras}
         els.adminPanelBtn.style.display = 'none';
       }
       
-      // NOVO: Controla botão de Investigação
       if (tag === 'ADMIN' || tag === 'HELLS') {
           els.investigacaoBtn.style.display = 'block';
       } else {
@@ -1596,7 +1635,7 @@ Negociadoras: ${negociadoras}
             });
 
             els.authScreen.style.display = 'none';
-            toggleView('main'); // Mostra a main card por padrão
+            toggleView('main');
 
         } else {
             currentUser = null;
@@ -1608,9 +1647,9 @@ Negociadoras: ${negociadoras}
             els.mainCard.style.display = 'none';
             els.historyCard.style.display = 'none';
             els.adminPanel.style.display = 'none'; 
-            els.dossierCard.style.display = 'none'; // Esconde dossiê
+            els.dossierCard.style.display = 'none';
             if(els.userStatus) els.userStatus.style.display = 'none';
-            if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none'; // Esconde botão dossiê
+            if(els.investigacaoBtn) els.investigacaoBtn.style.display = 'none';
         }
     });
 
