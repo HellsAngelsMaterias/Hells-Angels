@@ -259,7 +259,7 @@
     }
     #dossierCard table {
         width: 100%; border-collapse: collapse; table-layout: fixed;
-        min-width: 1050px; /* Aumentado para nova coluna */
+        min-width: 1050px;
     }
     #dossierCard th, #dossierCard td {
         padding: 6px 8px; text-align: center; vertical-align: middle;
@@ -269,7 +269,6 @@
     #dossierCard td { background: var(--cor-card); opacity: 0.95; }
     body.dark #dossierCard td { background: var(--cor-card); opacity: 0.95; }
     
-    /* NOVO: Ajuste de colunas do Dossiê */
     #dossierCard th:nth-child(1), #dossierCard td:nth-child(1) { width: 150px; } /* Nome */
     #dossierCard th:nth-child(2), #dossierCard td:nth-child(2) { width: 120px; } /* Numero */
     #dossierCard th:nth-child(3), #dossierCard td:nth-child(3) { width: 140px; } /* Cargo */
@@ -278,7 +277,6 @@
     #dossierCard th:nth-child(6), #dossierCard td:nth-child(6) { width: 150px; } /* Data */
     #dossierCard th:nth-child(7), #dossierCard td:nth-child(7) { width: 100px; } /* Ações */
 
-    /* NOVO: Estilos do Modal */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
@@ -752,7 +750,7 @@
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
             console.warn("Nó /configuracoesGlobais/layout não encontrado. Criando...");
-            if(currentUserData && currentUserData.tag === 'ADMIN') {
+            if(currentUserData && currentUserData.tag.toUpperCase() === 'ADMIN') { // Correção aqui
                  set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false });
             }
             return;
@@ -960,7 +958,7 @@
             organizacao: org,
             cargo: vendaData.vendaValorObs || 'N/A',
             placas: placas || 'N/A', 
-            fotoUrl: '', // Foto é vazia por padrão na venda
+            fotoUrl: '',
             data: vendaData.dataHora
         };
         
@@ -1170,7 +1168,7 @@ Negociadoras: ${negociadoras}
         }
 
         let vendasFiltradas = history;
-        if (currentUserData.tag === 'Visitante') {
+        if (currentUserData.tag.toUpperCase() === 'VISITANTE') { // Correção aqui
             vendasFiltradas = history.filter(v => v.registradoPorId === currentUser.uid);
         }
 
@@ -1209,11 +1207,12 @@ Negociadoras: ${negociadoras}
             
             const actionsCell = row.insertCell();
             actionsCell.className = 'history-actions-cell';
-
+            
+            const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
             const podeModificar = 
-                (currentUserData.tag === 'ADMIN') ||
-                (currentUserData.tag === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
-                (currentUserData.tag === 'Visitante' && venda.registradoPorId === currentUser.uid);
+                (userTagUpper === 'ADMIN') ||
+                (userTagUpper === 'HELLS' && venda.registradoPorId === currentUser.uid) ||
+                (userTagUpper === 'VISITANTE' && venda.registradoPorId === currentUser.uid);
 
             actionsCell.innerHTML = `
                 <button class="action-btn muted edit-btn" ${!podeModificar ? 'disabled' : ''}>Editar</button>
@@ -1255,7 +1254,7 @@ Negociadoras: ${negociadoras}
     };
 
     const clearHistory = () => {
-        if (currentUserData.tag !== 'ADMIN') {
+        if (currentUserData.tag.toUpperCase() !== 'ADMIN') { // Correção aqui
             showToast("Apenas administradores podem limpar o histórico.", "error");
             return;
         }
@@ -1370,7 +1369,8 @@ Negociadoras: ${negociadoras}
     };
     
     const removeDossierEntry = (orgName, entryId) => {
-        if (!currentUserData || (currentUserData.tag !== 'ADMIN' && currentUserData.tag !== 'HELLS')) {
+        const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
+        if (!currentUserData || (userTagUpper !== 'ADMIN' && userTagUpper !== 'HELLS')) {
             showToast("Apenas Admin/Hells podem remover entradas.", "error");
             return;
         }
@@ -1437,7 +1437,7 @@ Negociadoras: ${negociadoras}
                         organizacao: org,
                         cargo: venda.vendaValorObs || 'N/A (Migrado)',
                         placas: 'N/A (Migrado)',
-                        fotoUrl: '', // Adiciona campo de foto vazio
+                        fotoUrl: '',
                         data: venda.dataHora
                     };
                     
@@ -1457,7 +1457,6 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // --- Funções do Modal de Edição ---
     const openEditDossierModal = (org, id) => {
         const entry = globalAllDossierEntries.find(e => e.id === id && e.org === org);
         if (!entry) {
@@ -1521,9 +1520,7 @@ Negociadoras: ${negociadoras}
             });
     };
     
-    // --- Funções do Novo Modal de Adição ---
     const openAddDossierModal = () => {
-        // Limpa os campos
         els.addDossierOrganizacao.value = '';
         els.addDossierNome.value = '';
         els.addDossierNumero.value = '';
@@ -1564,7 +1561,7 @@ Negociadoras: ${negociadoras}
             cargo: els.addDossierCargo.value.trim(),
             placas: els.addDossierPlacas.value.trim().toUpperCase(),
             fotoUrl: els.addDossierFotoUrl.value.trim(),
-            data: `${dia}/${mes}/${ano} ${horas}:${minutos}` // Adiciona data atual
+            data: `${dia}/${mes}/${ano} ${horas}:${minutos}`
         };
         
         const dossierRef = ref(db, `dossies/${org}`);
@@ -1636,12 +1633,10 @@ Negociadoras: ${negociadoras}
         }
     });
     
-    // Listeners do Modal de Edição
     els.saveDossierBtn.onclick = saveDossierChanges;
     els.cancelDossierBtn.onclick = closeEditDossierModal;
     els.editDossierOverlay.onclick = closeEditDossierModal;
     
-    // Listeners do Modal de Adição
     els.addDossierBtn.onclick = openAddDossierModal;
     els.saveNewDossierBtn.onclick = saveNewDossierEntry;
     els.cancelNewDossierBtn.onclick = closeAddDossierModal;
@@ -1684,8 +1679,8 @@ Negociadoras: ${negociadoras}
 
             const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'Visitante': 3 };
             usersList.sort((a, b) => {
-                const tagA = tagOrder[a.tag] || 4;
-                const tagB = tagOrder[b.tag] || 4;
+                const tagA = tagOrder[a.tag.toUpperCase()] || 4; // Correção aqui
+                const tagB = tagOrder[b.tag.toUpperCase()] || 4; // Correção aqui
                 if (tagA !== tagB) {
                     return tagA - tagB;
                 }
@@ -1725,7 +1720,7 @@ Negociadoras: ${negociadoras}
                     optAdmin.textContent = '👑 Administrador';
                     select.appendChild(optAdmin);
                     
-                    select.value = userData.tag; 
+                    select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante'); // Correção aqui
                     select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
                     tagCell.appendChild(select);
                 }
@@ -1870,17 +1865,20 @@ Negociadoras: ${negociadoras}
         }
     };
 
-
+    
+    // ########## FUNÇÃO DE CONFIGURAÇÃO CORRIGIDA ##########
     const configurarInterfacePorTag = (tag) => {
-      console.log("Usuário logado com a tag:", tag);
+      console.log("Usuário logado com a tag original:", tag);
+      const tagUpper = tag ? tag.toUpperCase() : 'VISITANTE'; // Converte para maiúsculas
+      console.log("Tag normalizada:", tagUpper);
       
       const userStatusEl = els.userStatus;
       if (currentUser && userStatusEl) {
-          userStatusEl.textContent = `${currentUser.displayName} (${tag})`;
+          userStatusEl.textContent = `${currentUser.displayName} (${tag})`; // Mostra a tag original
           userStatusEl.className = 'user-status-display';
-          if (tag === 'ADMIN') {
+          if (tagUpper === 'ADMIN') { // Verifica a tag em maiúsculas
               userStatusEl.classList.add('tag-admin');
-          } else if (tag === 'HELLS') {
+          } else if (tagUpper === 'HELLS') { // Verifica a tag em maiúsculas
               userStatusEl.classList.add('tag-hells');
           } else {
               userStatusEl.classList.add('tag-visitante');
@@ -1888,7 +1886,7 @@ Negociadoras: ${negociadoras}
           userStatusEl.style.display = 'block';
       }
 
-      if (tag === 'ADMIN') {
+      if (tagUpper === 'ADMIN') { // Verifica a tag em maiúsculas
         els.clearHistoryBtn.style.display = 'inline-block';
         els.adminPanelBtn.style.display = 'inline-block';
       } else {
@@ -1896,16 +1894,18 @@ Negociadoras: ${negociadoras}
         els.adminPanelBtn.style.display = 'none';
       }
       
-      if (tag === 'ADMIN' || tag === 'HELLS') {
+      if (tagUpper === 'ADMIN' || tagUpper === 'HELLS') { // Verifica a tag em maiúsculas
           els.investigacaoBtn.style.display = 'block';
       } else {
           els.investigacaoBtn.style.display = 'none';
       }
       
-      if (tag !== 'ADMIN') {
+      if (tagUpper !== 'ADMIN') { // Verifica a tag em maiúsculas
           els.adminPanel.style.display = 'none';
       }
     };
+    // ########## FIM DA CORREÇÃO ##########
+
 
     let vendasListener = null; 
 
@@ -1932,7 +1932,8 @@ Negociadoras: ${negociadoras}
                 if(vendasListener) vendasListener(); 
                 
                 let vendasRef;
-                if (currentUserData.tag === 'ADMIN' || currentUserData.tag === 'HELLS') {
+                const userTagUpper = currentUserData.tag.toUpperCase(); // Correção aqui
+                if (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS') {
                     vendasRef = ref(db, 'vendas');
                 } else {
                     vendasRef = query(ref(db, 'vendas'), orderByChild('registradoPorId'), equalTo(currentUser.uid));
