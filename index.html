@@ -1828,12 +1828,34 @@ Negociadoras: ${negociadoras}
             const cargoP = document.createElement('p');
             cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
             
-            // --- MUDANÇA DE LAYOUT (Unir Carro/Placa) ---
-            const carroTxt = entry.carro || 'N/A';
-            const placasTxt = entry.placas || 'N/A';
-            const veiculoP = document.createElement('p');
-            veiculoP.innerHTML = `<strong>Veículo:</strong> ${carroTxt} (${placasTxt})`;
+            
+            // --- NOVO LAYOUT (Opção "Carros/Placas" com <details>) ---
+            const details = document.createElement('details');
+            details.style.marginTop = '5px'; // Espaçamento
+            
+            const summary = document.createElement('summary');
+            summary.innerHTML = `<strong>Carros/Placas</strong> (Clique para ver)`;
+            summary.style.cursor = 'pointer';
+            summary.style.fontWeight = '600';
+            summary.style.color = 'var(--cor-principal)';
+            summary.style.fontSize = '13px';
+            
+            const carroP = document.createElement('p');
+            carroP.innerHTML = `<strong>Carro(s):</strong> ${entry.carro || 'N/A'}`;
+            carroP.style.marginTop = '8px'; // Espaçamento interno
+            carroP.style.fontWeight = 'normal';
+            carroP.style.color = 'var(--cor-texto)';
+            
+            const placasP = document.createElement('p');
+            placasP.innerHTML = `<strong>Placa(s):</strong> ${entry.placas || 'N/A'}`;
+            placasP.style.fontWeight = 'normal';
+            placasP.style.color = 'var(--cor-texto)';
+            
+            details.appendChild(summary);
+            details.appendChild(carroP);
+            details.appendChild(placasP);
             // --- FIM DA MUDANÇA ---
+            
             
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'dossier-actions';
@@ -1846,7 +1868,7 @@ Negociadoras: ${negociadoras}
             card.appendChild(nomeH4);
             card.appendChild(numeroP);
             card.appendChild(cargoP);
-            card.appendChild(veiculoP); // Adiciona a nova linha combinada
+            card.appendChild(details); // Adiciona o novo <details>
             card.appendChild(actionsDiv);
             
             els.dossierPeopleGrid.appendChild(card);
