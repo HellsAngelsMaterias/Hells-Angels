@@ -1321,14 +1321,51 @@
         return isValid;
     };
     
+    // =================================================================
+    // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (v12)
+    // =================================================================
     
-    // =================================================================
-    // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (v8)
-    // =================================================================
-    
-    // =================================================================
-    // INÍCIO: FUNÇÃO AUXILIAR PARA VEÍCULOS (NOVA)
-    // =================================================================
+    // **** INÍCIO: FUNÇÃO GLOBAL DE BUSCA (v12) ****
+    /**
+     * Procura por um nome de pessoa em TODAS as organizações do dossiê.
+     * Retorna os dados, a org e o ID se encontrar.
+     */
+    const findDossierEntryGlobal = async (nome) => {
+        if (!nome) return null;
+        
+        try {
+            // Esta permissão (ler 'dossies/') é necessária para a função de "mover"
+            const dossiesRef = ref(db, 'dossies');
+            const snapshot = await get(dossiesRef);
+            
+            if (!snapshot.exists()) return null;
+            
+            const dossies = snapshot.val();
+            
+            for (const orgKey in dossies) {
+                const orgData = dossies[orgKey];
+                // Itera sobre as chaves de pessoa (personId) dentro de cada org
+                for (const personId in orgData) {
+                    if (orgData[personId].nome && orgData[personId].nome.toLowerCase() === nome.toLowerCase()) {
+                        // Encontrado!
+                        return {
+                            personData: orgData[personId],
+                            oldOrg: orgKey,
+                            personId: personId
+                        };
+                    }
+                }
+            }
+        } catch (error) {
+            // Não mostra erro de permissão para visitantes
+            if(error.code !== "PERMISSION_DENIED") {
+                console.error("Erro na busca global:", error);
+            }
+            return null;
+        }
+        return null; // Não encontrado
+    };
+    // **** FIM: FUNÇÃO GLOBAL DE BUSCA ****
     
     /**
      * Mescla veículos de uma venda (formato string) com um objeto de veículos existente.
@@ -1363,15 +1400,10 @@
         return merged;
     };
     
-    // =================================================================
-    // FIM: FUNÇÃO AUXILIAR
-    // =================================================================
-
-
+    
     // Adiciona ou ATUALIZA entrada de pessoa no dossiê
-    // Esta função agora SÓ SINCRONIZA dados da venda (Nome, Tel, Cargo, Data).
-    // A gerência de veículos é feita SEPARADAMENTE nos modais do dossiê.
-    const addDossierEntry = async (vendaData) => {
+    // **** MODIFICADO (v12): Aceita 'dadosAntigos' para mesclar ao criar/atualizar ****
+    const addDossierEntry = async (vendaData, dadosAntigos = null) => {
         const org = vendaData.organizacao.trim();
         const nome = vendaData.cliente.trim();
         
@@ -1392,7 +1424,7 @@
             }
         });
 
-        // Procura por uma pessoa com o mesmo nome nessa organização
+        // Procura por uma pessoa com o mesmo nome NESSA organização
         const dossierQuery = query(ref(db, `dossies/${org}`), orderByChild('nome'), equalTo(nome));
         
         try {
@@ -1408,34 +1440,53 @@
                 });
 
                 const updates = {};
-                // Sempre atualiza telefone, cargo e data (para ter o mais recente)
+                
+                // **** INÍCIO DA MODIFICAÇÃO (v12) ****
+                // Mescla dados antigos (se movidos) com dados existentes
+                
+                // Atualiza telefone, cargo e data (para ter o mais recente da venda)
                 updates.numero = vendaData.telefone || existingEntryData.numero;
                 updates.cargo = vendaData.vendaValorObs || existingEntryData.cargo;
-                updates.data = vendaData.dataHora; // Atualiza para a data da última venda
+                updates.data = vendaData.dataHora; 
+                
+                // Base para veículos: usa dados antigos (se movido) ou dados já existentes
+                const baseVeiculos = (dadosAntigos ? dadosAntigos.veiculos : existingEntryData.veiculos) || {};
+                updates.veiculos = parseAndMergeVeiculos(vendaData, baseVeiculos);
 
-                // **** INÍCIO DA MODIFICAÇÃO ****
-                const existingVeiculos = existingEntryData.veiculos || {};
-                updates.veiculos = parseAndMergeVeiculos(vendaData, existingVeiculos);
-                // **** FIM DA MODIFICAÇÃO ****
+                // Preserva dados do registro antigo (se movido)
+                if (dadosAntigos) {
+                    updates.fotoUrl = dadosAntigos.fotoUrl || existingEntryData.fotoUrl || '';
+                    updates.instagram = dadosAntigos.instagram || existingEntryData.instagram || '';
+                    // Preserva a hierarquia, se não houver, usa a existente, senão 9999
+                    updates.hierarquiaIndex = dadosAntigos.hierarquiaIndex !== undefined ? dadosAntigos.hierarquiaIndex : (existingEntryData.hierarquiaIndex !== undefined ? existingEntryData.hierarquiaIndex : 9999);
+                }
+                // **** FIM DA MODIFICAÇÃO (v12) ****
 
                 const updateRef = ref(db, `dossies/${org}/${existingEntryId}`);
                 await update(updateRef, updates);
 
             } else {
                 // NÃO EXISTE: Cria uma nova entrada
-                const dossierEntry = {
-                    nome: vendaData.cliente,
-                    numero: vendaData.telefone,
-                    organizacao: org,
-                    cargo: vendaData.vendaValorObs || 'N/A',
-                    // **** INÍCIO DA MODIFICAÇÃO ****
-                    veiculos: parseAndMergeVeiculos(vendaData, {}), // Adiciona veículos da venda
-                    // **** FIM DA MODIFICAÇÃO ****
-                    fotoUrl: '',
-                    instagram: '', // <-- MUDANÇA: INSTAGRAM (Inicializa)
-                    hierarquiaIndex: 9999, // <-- MUDANÇA: HIERARQUIA (Vai para o fim)
-                    data: vendaData.dataHora // Data da primeira venda
-                };
+                
+                // **** INÍCIO DA MODIFICAÇÃO (v12) ****
+                // Começa com os dados antigos (se movidos)
+                const dossierEntry = { ...dadosAntigos };
+                
+                // Sobrescreve/Adiciona dados da venda atual
+                dossierEntry.nome = vendaData.cliente;
+                dossierEntry.numero = vendaData.telefone;
+                dossierEntry.organizacao = org;
+                dossierEntry.cargo = vendaData.vendaValorObs || 'N/A';
+                dossierEntry.data = vendaData.dataHora; // Data da venda
+                
+                // Mescla veículos da venda com veículos antigos (se movidos)
+                dossierEntry.veiculos = parseAndMergeVeiculos(vendaData, (dadosAntigos ? dadosAntigos.veiculos : {}));
+
+                // Garante que campos opcionais existam (caso 'dadosAntigos' seja null)
+                dossierEntry.fotoUrl = dossierEntry.fotoUrl || '';
+                dossierEntry.instagram = dossierEntry.instagram || '';
+                dossierEntry.hierarquiaIndex = dossierEntry.hierarquiaIndex !== undefined ? dossierEntry.hierarquiaIndex : 9999;
+                // **** FIM DA MODIFICAÇÃO (v12) ****
                 
                 await push(ref(db, `dossies/${org}`), dossierEntry);
             }
@@ -1465,8 +1516,21 @@
             const snapshot = await get(dossierQuery);
             
             if (!snapshot.exists()) {
-                // Não existia um dossiê... então apenas crie um novo (deduplicação vai tratar)
-                addDossierEntry(newVendaData);
+                // Não existia um dossiê...
+                // **** MUDANÇA (v12): Verifica se o nome existe em outro lugar antes de criar
+                // (Cenário: Editou uma venda que não tinha dossiê, para um nome que já existe em outra org)
+                const globalEntry = await findDossierEntryGlobal(newNome);
+                
+                let dadosAntigos = null;
+                if (globalEntry && globalEntry.oldOrg !== newOrg) {
+                    // Encontrou em outra org, vamos movê-lo
+                    dadosAntigos = globalEntry.personData;
+                    await remove(ref(db, `dossies/${globalEntry.oldOrg}/${globalEntry.personId}`));
+                    showToast(`"${newNome}" movido de "${globalEntry.oldOrg}" para "${newOrg}".`, "default", 4000);
+                }
+                
+                // Cria um novo (com ou sem dados antigos)
+                addDossierEntry(newVendaData, dadosAntigos);
                 return;
             }
 
@@ -1478,19 +1542,16 @@
             });
             
             // Cria o objeto de dados do dossiê com base na venda ATUALIZADA
+            // (Esta lógica já preserva os dados antigos, está correta)
             const newDossierData = {
+                ...existingEntryData, // Preserva foto, insta, hierarquia
                 nome: newVendaData.cliente,
                 numero: newVendaData.telefone,
                 organizacao: newVendaData.organizacao,
                 cargo: newVendaData.vendaValorObs || 'N/A',
                 data: newVendaData.dataHora,
-                // **** INÍCIO DA MODIFICAÇÃO ****
                 // Mescla veículos antigos com os da venda atualizada
                 veiculos: parseAndMergeVeiculos(newVendaData, existingEntryData.veiculos || {}),
-                // **** FIM DA MODIFICAÇÃO ****
-                fotoUrl: existingEntryData.fotoUrl || '',
-                instagram: existingEntryData.instagram || '', // <-- MUDANÇA: INSTAGRAM (Preserva)
-                hierarquiaIndex: existingEntryData.hierarquiaIndex !== undefined ? existingEntryData.hierarquiaIndex : 9999 // <-- MUDANÇA: HIERARQUIA (Preserva)
             };
 
             if (oldOrg === newOrg) {
@@ -1500,8 +1561,10 @@
             } else {
                 // Org mudou. Apaga o antigo e cria um novo (com a lógica de deduplicação).
                 await remove(ref(db, `dossies/${oldOrg}/${existingEntryId}`));
+                
                 // Roda a lógica de add para verificar se o nome já existe na *nova* org
-                addDossierEntry(newVendaData); 
+                // **** MUDANÇA (v12): Passa os dados preservados para o addDossierEntry
+                addDossierEntry(newVendaData, existingEntryData); 
             }
 
         } catch (err) {
@@ -1518,7 +1581,8 @@
     // =================================================================
     
     
-    const registerVenda = () => {
+    // **** MODIFICADO (v12): Tornou-se uma função 'async' ****
+    const registerVenda = async () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
       if (!hasQuantities) {
         showToast("É necessário calcular a venda antes de registrar.", "error");
@@ -1553,49 +1617,70 @@
         registradoPor: vendaEmEdicaoId ? vendaOriginalRegistradoPor : currentUser.displayName,
         registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
       };
+      
+      // --- INÍCIO DA LÓGICA DE MOVIMENTAÇÃO DE DOSSIÊ (v12) ---
+      
+      // 1. Determina a Base (Organização) de destino do Dossiê
+      let dossierOrgDestino = '';
+      if (newVenda.organizacaoTipo === 'CPF') {
+          dossierOrgDestino = 'CPF';
+      } else if (newVenda.organizacaoTipo === 'OUTROS') {
+          dossierOrgDestino = 'Outros';
+      } else { // 'CNPJ'
+          dossierOrgDestino = newVenda.organizacao.trim();
+      }
+      
+      // 2. Variável para armazenar os dados do registro antigo, se for movido
+      let dadosAntigosParaMover = null;
+      
+      // 3. Verifica se é um NOVO REGISTRO e se o cliente precisa ser movido
+      if (!vendaEmEdicaoId && dossierOrgDestino !== '' && newVenda.cliente !== '') {
+          try {
+              const existingEntry = await findDossierEntryGlobal(newVenda.cliente);
+              
+              if (existingEntry && existingEntry.oldOrg !== dossierOrgDestino) {
+                  // ENCONTRADO EM OUTRA ORG! Esta é a 'move operation'.
+                  
+                  // 1. Salva os dados antigos para mover
+                  dadosAntigosParaMover = { ...existingEntry.personData };
+                  
+                  // 2. Remove da organização antiga
+                  await remove(ref(db, `dossies/${existingEntry.oldOrg}/${existingEntry.personId}`));
+                  
+                  showToast(`"${newVenda.cliente}" movido de "${existingEntry.oldOrg}" para "${dossierOrgDestino}".`, "default", 4000);
+              }
+          } catch (e) {
+              if (e.code !== "PERMISSION_DENIED") {
+                  showToast(`Erro ao verificar dossiê global: ${e.message}`, "error");
+              }
+          }
+      }
+      // --- FIM DA LÓGICA DE MOVIMENTAÇÃO ---
+      
 
       const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
       
-      // LÓGICA DE SINCRONIZAÇÃO ATUALIZADA (BUG CORRIGIDO)
       operation
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
-              // --- INÍCIO DA LÓGICA DE DOSSIÊ ATUALIZADA (CPF/CNPJ) ---
+              // --- LÓGICA DE SINCRONIZAÇÃO (Atualizada v12) ---
               
-              // 1. Prepara os dados para o Dossiê
-              // Copia a newVenda para não modificar o objeto que foi salvo no histórico
               const dossierVendaData = { ...newVenda }; 
-              
-              // 2. Determina a Base (Organização) de destino do Dossiê
-              let dossierOrgDestino = '';
-              if (dossierVendaData.organizacaoTipo === 'CPF') {
-                  dossierOrgDestino = 'CPF';
-              } else if (dossierVendaData.organizacaoTipo === 'OUTROS') {
-                  dossierOrgDestino = 'Outros';
-              } else { // 'CNPJ'
-                  // Somente tipo CNPJ usa o nome da organização digitado
-                  dossierOrgDestino = dossierVendaData.organizacao.trim();
-              }
-              
-              // 3. Atualiza o objeto de dados com a Base de destino
-              // O addDossierEntry usará este campo para saber onde salvar
+              // Usa o 'dossierOrgDestino' que já calculamos
               dossierVendaData.organizacao = dossierOrgDestino;
 
-              // 4. Executa a sincronização, se a Base de destino não estiver vazia
-              // (Não sincroniza se for CNPJ e o nome estiver em branco)
               if (dossierOrgDestino !== '') {
                   if (vendaEmEdicaoId) {
                       // É uma ATUALIZAÇÃO de venda
-                      // Usamos a 'vendaOriginalDossierOrg' (CPF, Outros, ou Hells) que salvamos no editVenda
-                      // E os dados do cliente antigo 'vendaOriginalCliente'
                       updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalDossierOrg, dossierVendaData);
                   } else {
                       // É um NOVO registro
-                      addDossierEntry(dossierVendaData);
+                      // **** MUDANÇA (v12): Passa os dados antigos (se houver) para a função
+                      addDossierEntry(dossierVendaData, dadosAntigosParaMover);
                   }
               }
-              // --- FIM DA LÓGICA DE DOSSIÊ ATUALIZADA ---
+              // --- FIM DA LÓGICA DE SINCRONIZAÇÃO ---
               
               clearAllFields();
           })
@@ -1879,7 +1964,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v10 - Hierarquia e Instagram) ****
+    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v12) ****
     
     // =============================================
     // NOVAS FUNÇÕES DO LIGHTBOX
@@ -2658,7 +2743,8 @@ Negociadoras: ${negociadoras}
                 };
 
                 // Roda a lógica de add (que já faz a deduplicação E mescla veículos)
-                await addDossierEntry(vendaData);
+                // **** MODIFICAÇÃO (v12): Passa 'null' para dadosAntigos
+                await addDossierEntry(vendaData, null);
                 count++;
             }
             
@@ -2743,7 +2829,7 @@ Negociadoras: ${negociadoras}
     };
     // --- FIM ---
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v10) ****
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v12) ****
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
