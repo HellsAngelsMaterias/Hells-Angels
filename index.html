@@ -758,7 +758,7 @@
       <div id="dossierOrgContainer">
           <h2>Sistema de Investigação (Bases)</h2>
           <div class="actions" style="margin-top: 0; margin-bottom: 10px;">
-              <input type="text" id="filtroDossierOrgs" placeholder="🔍 Buscar por Organização..." style="margin: 0; flex-grow: 1;">
+              <input type="text" id="filtroDossierOrgs" placeholder="🔍 Buscar por Base ou Nome de Pessoa..." style="margin: 0; flex-grow: 1;">
               <button id="addOrgBtn" class="success" style="animation: none; margin-left: 10px;">+ Adicionar Base</button>
               <button id="toggleCalcBtnDossier" class="muted">Voltar à Calculadora</button>
           </div>
@@ -1135,11 +1135,26 @@
       return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
     };
 
+    // =================================================================
+    // INÍCIO: ALTERAÇÃO (Request 2 - Correção do CPF)
+    // =================================================================
     const capitalizeText = (text) => {
         if (!text) return '';
+        
+        const upperText = text.toUpperCase();
+        
+        // Exceções para Acrônimos e Casos Específicos
+        if (upperText === 'CPF' || upperText === 'OUTROS' || upperText === 'CNPJ' || upperText === 'NKT') {
+            return upperText;
+        }
         if (text === 'dinheiro sujo') return 'Dinheiro Sujo';
+        
+        // Lógica original
         return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     };
+    // =================================================================
+    // FIM: ALTERAÇÃO
+    // =================================================================
     
     const showToast = (message, type = 'default', duration = 3000) => {
       const toastContainer = document.getElementById('toast-container');
@@ -1366,6 +1381,56 @@
         return null; // Não encontrado
     };
     // **** FIM: FUNÇÃO GLOBAL DE BUSCA ****
+    
+    // =================================================================
+    // INÍCIO: ADIÇÃO (Request 1 - Busca Global de Pessoas)
+    // =================================================================
+    // **** INÍCIO: NOVA FUNÇÃO DE BUSCA GLOBAL (Request 1) ****
+    /**
+     * Procura por um NOME PARCIAL de pessoa em TODAS as organizações do dossiê.
+     * Retorna um array de resultados.
+     */
+    const searchAllPeopleGlobal = async (query) => {
+        if (!query) return [];
+        
+        const results = [];
+        const queryLower = query.toLowerCase();
+        
+        try {
+            const dossiesRef = ref(db, 'dossies');
+            const snapshot = await get(dossiesRef);
+            
+            if (!snapshot.exists()) return [];
+            
+            const dossies = snapshot.val();
+            
+            for (const orgKey in dossies) {
+                const orgData = dossies[orgKey];
+                for (const personId in orgData) {
+                    const person = orgData[personId];
+                    const nome = person.nome ? person.nome.toLowerCase() : '';
+                    
+                    // Verifica se o nome da pessoa inclui o texto da busca
+                    if (nome.includes(queryLower)) {
+                        results.push({
+                            ...person,
+                            id: personId,
+                            org: orgKey // Adiciona a org/base ao resultado
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            if(error.code !== "PERMISSION_DENIED") {
+                console.error("Erro na busca global de pessoas:", error);
+            }
+        }
+        return results;
+    };
+    // **** FIM: NOVA FUNÇÃO DE BUSCA GLOBAL ****
+    // =================================================================
+    // FIM: ADIÇÃO
+    // =================================================================
     
     /**
      * Mescla veículos de uma venda (formato string) com um objeto de veículos existente.
@@ -2199,18 +2264,215 @@ Negociadoras: ${negociadoras}
         });
     };
     
-    // Filtra a lista de Organizações (Bases)
-    const filterOrgs = () => {
-        const query = els.filtroDossierOrgs.value.toLowerCase().trim();
-        if (!query) {
-            displayOrgs(globalAllOrgs);
+    // =================================================================
+    // INÍCIO: ADIÇÃO (Request 1 - Exibição da Busca Global)
+    // =================================================================
+    // **** INÍCIO: NOVA FUNÇÃO DE EXIBIÇÃO DE BUSCA (Request 1) ****
+    /**
+     * Exibe os resultados da busca global (Bases e Pessoas) no grid de organizações.
+     */
+    const displayGlobalSearchResults = (orgs, people) => {
+        els.dossierOrgGrid.innerHTML = ''; // Limpa o grid
+        
+        if (orgs.length === 0 && people.length === 0) {
+            els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização ou pessoa encontrada para este filtro.</p>';
             return;
         }
+
+        // 1. Renderiza as Organizações (Bases) encontradas
+        if (orgs.length > 0) {
+            const orgsHeader = document.createElement('h3');
+            orgsHeader.className = 'dossier-org-title';
+            orgsHeader.textContent = 'Bases (Organizações) Encontradas';
+            els.dossierOrgGrid.appendChild(orgsHeader);
+            
+            orgs.forEach(org => {
+                // (Lógica copiada de displayOrgs)
+                const card = document.createElement('div');
+                card.className = 'dossier-org-card';
+                card.dataset.orgName = org.nome;
+                
+                const fotoDiv = document.createElement('div');
+                fotoDiv.className = 'dossier-org-foto';
+                if (org.fotoUrl) {
+                    const img = document.createElement('img');
+                    img.src = org.fotoUrl;
+                    img.alt = `Base de ${org.nome}`;
+                    fotoDiv.appendChild(img);
+                } else {
+                    fotoDiv.textContent = 'Sem Foto da Base';
+                }
+                
+                const nomeH4 = document.createElement('h4');
+                nomeH4.textContent = org.nome;
+                
+                const infoP = document.createElement('p');
+                infoP.textContent = org.info || '(Sem informações da base)';
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'dossier-org-actions';
+                actionsDiv.innerHTML = `<button class="action-btn muted edit-org-btn" data-org-id="${org.id}">✏️ Editar Base</button>`;
+                
+                card.appendChild(fotoDiv);
+                card.appendChild(nomeH4);
+                card.appendChild(infoP);
+                card.appendChild(actionsDiv);
+                
+                actionsDiv.querySelector('.edit-org-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditOrgModal(org.id);
+                });
+                card.addEventListener('click', () => {
+                    showDossierPeople(org.nome);
+                });
+                
+                els.dossierOrgGrid.appendChild(card);
+            });
+        }
+
+        // 2. Renderiza as Pessoas encontradas
+        if (people.length > 0) {
+            const peopleHeader = document.createElement('h3');
+            peopleHeader.className = 'dossier-org-title';
+            peopleHeader.textContent = 'Pessoas Encontradas';
+            els.dossierOrgGrid.appendChild(peopleHeader);
+            
+            people.forEach(entry => {
+                // SOLICITAÇÃO DO USUÁRIO: "aparecer em cima do card o nome da base"
+                const baseTitle = document.createElement('h4');
+                baseTitle.textContent = `Base: ${entry.org}`;
+                baseTitle.style.color = 'var(--cor-texto)';
+                baseTitle.style.fontSize = '14px';
+                baseTitle.style.textAlign = 'center';
+                baseTitle.style.marginTop = '15px'; // Espaçamento
+                baseTitle.style.marginBottom = '2px';
+                baseTitle.style.fontWeight = '600';
+                els.dossierOrgGrid.appendChild(baseTitle);
+
+                // (Lógica copiada de displayPeople)
+                const card = document.createElement('div');
+                card.className = 'dossier-entry-card';
+                card.dataset.id = entry.id; 
+                card.style.cursor = 'default'; // O card em si não é clicável aqui
+                
+                const fotoDiv = document.createElement('div');
+                fotoDiv.className = 'dossier-foto';
+                if (entry.fotoUrl) {
+                    const img = document.createElement('img');
+                    img.src = entry.fotoUrl;
+                    img.alt = `Foto de ${entry.nome}`;
+                    fotoDiv.appendChild(img);
+                } else {
+                    fotoDiv.textContent = 'Sem Foto';
+                }
+                
+                const nomeH4 = document.createElement('h4');
+                nomeH4.textContent = entry.nome || '(Sem Nome)';
+                
+                const numeroP = document.createElement('p');
+                numeroP.textContent = entry.numero || '(Sem Número)';
+
+                const cargoP = document.createElement('p');
+                cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'dossier-actions';
+                actionsDiv.innerHTML = `
+                    <button class="action-btn muted edit-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">✏️ Editar</button>
+                    <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
+                `;
+                
+                card.appendChild(fotoDiv);
+                card.appendChild(nomeH4);
+                card.appendChild(numeroP);
+                card.appendChild(cargoP);
+                
+                if (entry.instagram) {
+                    const instagramP = document.createElement('p');
+                    let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
+                    instaHandle = instaHandle.split('/')[0]; 
+                    instagramP.innerHTML = `<strong>Instagram:</strong> <span style="color: var(--cor-principal); font-weight: 500;">@${instaHandle}</span>`;
+                    instagramP.style.fontSize = '13px';
+                    card.appendChild(instagramP);
+                }
+                
+                const veiculos = entry.veiculos || {};
+                const veiculosCount = Object.keys(veiculos).length;
+
+                if (veiculosCount > 0) {
+                    const details = document.createElement('details');
+                    details.style.marginTop = '5px';
+                    const summary = document.createElement('summary');
+                    summary.innerHTML = `<strong>Veículos (${veiculosCount})</strong> (Clique para ver)`;
+                    summary.style.cursor = 'pointer';
+                    summary.style.fontWeight = '600';
+                    summary.style.color = 'var(--cor-principal)';
+                    summary.style.fontSize = '13px';
+                    details.appendChild(summary);
+                    for (const id in veiculos) {
+                        const veiculo = veiculos[id];
+                        const p = document.createElement('p');
+                        let fotoLink = '';
+                        if (veiculo.fotoUrl) {
+                            fotoLink = ` <a href="#" class="veiculo-foto-link" data-url="${veiculo.fotoUrl}" style="font-size: 11px; color: var(--cor-principal); text-decoration: none; font-weight: 600;">[Ver Foto]</a>`;
+                        } else {
+                            fotoLink = ` <span style="font-size: 11px; color: #888; font-weight: normal;">[Sem Foto]</span>`;
+                        }
+                        p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}${fotoLink}`;
+                        p.style.fontWeight = 'normal';
+                        p.style.color = 'var(--cor-texto)';
+                        p.style.marginTop = '5px';
+                        p.style.textAlign = 'left';
+                        details.appendChild(p);
+                    }
+                    card.appendChild(details);
+                } else {
+                    const p = document.createElement('p');
+                    p.innerHTML = '<strong>Veículos:</strong> N/A';
+                    p.style.fontWeight = 'normal';
+                    p.style.color = 'var(--cor-texto)';
+                    card.appendChild(p);
+                }
+                
+                card.appendChild(actionsDiv);
+                els.dossierOrgGrid.appendChild(card);
+            });
+        }
+    };
+    // **** FIM: NOVA FUNÇÃO DE EXIBIÇÃO ****
+    // =================================================================
+    // FIM: ADIÇÃO
+    // =================================================================
+    
+    // =================================================================
+    // INÍCIO: ALTERAÇÃO (Request 1 - Função de Filtragem)
+    // =================================================================
+    // Filtra a lista de Organizações (Bases)
+    // **** MODIFICADO (Request 1): Agora é async e busca pessoas globalmente ****
+    const filterOrgs = async () => {
+        const query = els.filtroDossierOrgs.value.toLowerCase().trim();
+        
+        if (!query) {
+            displayOrgs(globalAllOrgs); // Mostra todas as orgs (do cache)
+            return;
+        }
+        
+        els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>'; // Feedback de carregamento
+        
+        // 1. Filtra as Organizações (do cache)
         const filteredOrgs = globalAllOrgs.filter(org => 
             org.nome.toLowerCase().includes(query)
         );
-        displayOrgs(filteredOrgs);
+        
+        // 2. Busca Pessoas (do Banco de Dados)
+        const filteredPeople = await searchAllPeopleGlobal(query);
+        
+        // 3. Exibe ambos os resultados
+        displayGlobalSearchResults(filteredOrgs, filteredPeople);
     };
+    // =================================================================
+    // FIM: ALTERAÇÃO
+    // =================================================================
 
     // Nível 2: Mostra as Pessoas (Membros) de uma Org
     const showDossierPeople = async (orgName) => {
@@ -2667,12 +2929,35 @@ Negociadoras: ${negociadoras}
             .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
     };
     
-    const openEditDossierModal = (org, id) => {
-        const entry = globalCurrentPeople.find(e => e.id === id && e.org === org);
+    // =================================================================
+    // INÍCIO: ALTERAÇÃO (Request 1 - Correção do Modal de Edição)
+    // =================================================================
+    // **** MODIFICADO (Request 1): Agora é async e busca dados se não estiverem em cache ****
+    const openEditDossierModal = async (org, id) => {
+        // Tenta encontrar a pessoa no cache (globalCurrentPeople)
+        let entry = globalCurrentPeople.find(e => e.id === id && e.org === org);
+        
+        // Se não encontrar (ex: vindo da busca global), busca no Firebase
         if (!entry) {
-            showToast("Erro: Entrada não encontrada.", "error");
-            return;
+            try {
+                const entryRef = ref(db, `dossies/${org}/${id}`);
+                const snapshot = await get(entryRef);
+                if (snapshot.exists()) {
+                    entry = { id: snapshot.key, org: org, ...snapshot.val() };
+                    // Define o cache temporariamente para esta pessoa
+                    // para que a função 'Salvar' funcione
+                    globalCurrentPeople = [entry];
+                } else {
+                    showToast("Erro: Entrada não encontrada no Banco de Dados.", "error");
+                    return;
+                }
+            } catch (e) {
+                showToast(`Erro ao buscar dados da pessoa: ${e.message}`, "error");
+                return;
+            }
         }
+        
+        // Continuação normal da função...
         
         els.editDossierOrg.value = entry.org;
         els.editDossierId.value = entry.id;
@@ -2690,6 +2975,9 @@ Negociadoras: ${negociadoras}
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
     };
+    // =================================================================
+    // FIM: ALTERAÇÃO
+    // =================================================================
 
     const closeEditDossierModal = () => {
         els.editDossierOverlay.style.display = 'none';
@@ -2962,6 +3250,36 @@ Negociadoras: ${negociadoras}
             openEditDossierModal(org, id);
         }
     });
+    
+    // =================================================================
+    // INÍCIO: ADIÇÃO (Request 1 - Listener para os novos botões)
+    // =================================================================
+    // Adiciona listener no grid de Orgs (para os botões nos resultados da busca de pessoas)
+    els.dossierOrgGrid.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.edit-dossier-btn');
+        const deleteBtn = e.target.closest('.delete-dossier-btn');
+        const fotoLinkBtn = e.target.closest('.veiculo-foto-link');
+        
+        if (fotoLinkBtn) {
+            e.preventDefault();
+            const url = fotoLinkBtn.dataset.url;
+            showImageLightbox(url);
+        }
+        
+        if (deleteBtn) {
+            const org = deleteBtn.dataset.org;
+            const id = deleteBtn.dataset.id;
+            removeDossierEntry(org, id);
+        }
+        if (editBtn) {
+            const org = editBtn.dataset.org;
+            const id = editBtn.dataset.id;
+            openEditDossierModal(org, id);
+        }
+    });
+    // =================================================================
+    // FIM: ADIÇÃO
+    // =================================================================
     
     // Modais de Pessoas (Salvar/Cancelar)
     els.saveDossierBtn.onclick = saveDossierChanges;
