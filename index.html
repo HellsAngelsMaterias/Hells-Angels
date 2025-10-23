@@ -1136,7 +1136,7 @@
     };
 
     // =================================================================
-    // INÍCIO: ALTERAÇÃO (Request 2 - Correção do CPF)
+    // INÍCIO: ALTERAÇÃO (Correção do CPF)
     // =================================================================
     const capitalizeText = (text) => {
         if (!text) return '';
@@ -1383,7 +1383,7 @@
     // **** FIM: FUNÇÃO GLOBAL DE BUSCA ****
     
     // =================================================================
-    // INÍCIO: ADIÇÃO (Request 1 - Busca Global de Pessoas)
+    // INÍCIO: ADIÇÃO (Busca Global de Pessoas)
     // =================================================================
     // **** INÍCIO: NOVA FUNÇÃO DE BUSCA GLOBAL (Request 1) ****
     /**
@@ -2265,7 +2265,7 @@ Negociadoras: ${negociadoras}
     };
     
     // =================================================================
-    // INÍCIO: ADIÇÃO (Request 1 - Exibição da Busca Global)
+    // INÍCIO: ADIÇÃO (Exibição da Busca Global)
     // =================================================================
     // **** INÍCIO: NOVA FUNÇÃO DE EXIBIÇÃO DE BUSCA (Request 1) ****
     /**
@@ -2338,23 +2338,32 @@ Negociadoras: ${negociadoras}
             els.dossierOrgGrid.appendChild(peopleHeader);
             
             people.forEach(entry => {
-                // SOLICITAÇÃO DO USUÁRIO: "aparecer em cima do card o nome da base"
-                const baseTitle = document.createElement('h4');
-                baseTitle.textContent = `Base: ${entry.org}`;
-                baseTitle.style.color = 'var(--cor-texto)';
-                baseTitle.style.fontSize = '14px';
-                baseTitle.style.textAlign = 'center';
-                baseTitle.style.marginTop = '15px'; // Espaçamento
-                baseTitle.style.marginBottom = '2px';
-                baseTitle.style.fontWeight = '600';
-                els.dossierOrgGrid.appendChild(baseTitle);
-
+                
                 // (Lógica copiada de displayPeople)
                 const card = document.createElement('div');
                 card.className = 'dossier-entry-card';
                 card.dataset.id = entry.id; 
                 card.style.cursor = 'default'; // O card em si não é clicável aqui
                 
+                // =================================================================
+                // INÍCIO: ALTERAÇÃO (Mover "Base" para dentro do Card)
+                // =================================================================
+                // SOLICITAÇÃO DO USUÁRIO: "fique em cima das informaçoes da pessoa"
+                const baseTitle = document.createElement('h4');
+                baseTitle.textContent = `Base: ${entry.org}`;
+                baseTitle.style.color = 'var(--cor-principal)'; // Cor principal
+                baseTitle.style.fontSize = '14px';          // Tamanho 14px
+                baseTitle.style.textAlign = 'left';       // Alinhado à esquerda
+                baseTitle.style.margin = '0 0 8px 0';       // Margem inferior, sem margem superior
+                baseTitle.style.fontWeight = '600';
+                baseTitle.style.borderBottom = '1px solid var(--cor-borda)'; // Linha separadora
+                baseTitle.style.paddingBottom = '5px';      // Espaçamento para a linha
+                
+                card.appendChild(baseTitle); // <-- ADICIONA DENTRO DO CARD, NO TOPO
+                // =================================================================
+                // FIM: ALTERAÇÃO
+                // =================================================================
+
                 const fotoDiv = document.createElement('div');
                 fotoDiv.className = 'dossier-foto';
                 if (entry.fotoUrl) {
@@ -2445,7 +2454,7 @@ Negociadoras: ${negociadoras}
     // =================================================================
     
     // =================================================================
-    // INÍCIO: ALTERAÇÃO (Request 1 - Função de Filtragem)
+    // INÍCIO: ALTERAÇÃO (Função de Filtragem)
     // =================================================================
     // Filtra a lista de Organizações (Bases)
     // **** MODIFICADO (Request 1): Agora é async e busca pessoas globalmente ****
@@ -2749,7 +2758,7 @@ Negociadoras: ${negociadoras}
         const orgId = els.editOrgId.value;
         if (!orgId) return;
         
-        if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
+        if (confirm(`ATENÇÃO:\n\NIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
             remove(ref(db, `organizacoes/${orgId}`))
                 .then(() => {
                     showToast("Informações da base removidas.", "success");
@@ -2930,7 +2939,7 @@ Negociadoras: ${negociadoras}
     };
     
     // =================================================================
-    // INÍCIO: ALTERAÇÃO (Request 1 - Correção do Modal de Edição)
+    // INÍCIO: ALTERAÇÃO (Correção do Modal de Edição)
     // =================================================================
     // **** MODIFICADO (Request 1): Agora é async e busca dados se não estiverem em cache ****
     const openEditDossierModal = async (org, id) => {
@@ -3252,7 +3261,7 @@ Negociadoras: ${negociadoras}
     });
     
     // =================================================================
-    // INÍCIO: ADIÇÃO (Request 1 - Listener para os novos botões)
+    // INÍCIO: ADIÇÃO (Listener para os novos botões)
     // =================================================================
     // Adiciona listener no grid de Orgs (para os botões nos resultados da busca de pessoas)
     els.dossierOrgGrid.addEventListener('click', (e) => {
