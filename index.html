@@ -361,6 +361,13 @@
         margin: 20px 0 5px 0;
         padding-bottom: 5px;
         border-bottom: 2px solid var(--cor-borda);
+        /* --- MUDANÇA: COMPACTAR TÍTULO DE BUSCA --- */
+        font-size: 16px;
+        margin-top: 5px; /* Reduz o espaço superior */
+        margin-bottom: 10px; /* Adiciona um pouco de espaço para separar do grid */
+        border-bottom: none; /* Remove a linha */
+        padding-bottom: 0;
+        /* --- FIM DA MUDANÇA --- */
     }
     
     /* Grid de Pessoas (Estilo antigo, renomeado) */
@@ -930,7 +937,7 @@
     let vendaOriginalRegistradoPorId = null;
     let vendaOriginalTimestamp = null;
     let vendaOriginalDataHora = null;
-    let vendaOriginalDossierOrg = null; // <-- ALTERAÇÃO 1: Variável Adicionada
+    let vendaOriginalDossierOrg = null; 
     
     // NOVAS VARIÁVEIS GLOBAIS PARA SINCRONIZAÇÃO
     let vendaOriginalCliente = null;
@@ -941,8 +948,8 @@
     
     let globalAllOrgs = []; 
     let globalCurrentPeople = [];
-    let sortableInstance = null; // <-- People SortableJS instance
-    let orgSortableInstance = null; // <-- NEW: Org SortableJS instance
+    let sortableInstance = null; 
+    let orgSortableInstance = null; 
     
     // --- NOVO (Gerenciador de Veículos) ---
     // Armazena temporariamente os veículos ao editar/adicionar um modal
@@ -1521,7 +1528,7 @@
                 updates.cargo = vendaData.vendaValorObs || existingEntryData.cargo;
                 updates.data = vendaData.dataHora; 
                 
-                // Base para veículos: usa dados antigos (se movido) ou dados já existentes
+                // Base para veículos: usa dados antigos (se movidos) ou dados já existentes
                 const baseVeiculos = (dadosAntigos ? dadosAntigos.veiculos : existingEntryData.veiculos) || {};
                 updates.veiculos = parseAndMergeVeiculos(vendaData, baseVeiculos);
 
@@ -2358,11 +2365,11 @@ Negociadoras: ${negociadoras}
     };
     
     // =================================================================
-    // INÍCIO: ADIÇÃO (Exibição da Busca Global)
+    // INÍCIO: ALTERAÇÃO (Exibição da Busca Global)
     // =================================================================
-    // **** INÍCIO: NOVA FUNÇÃO DE EXIBIÇÃO DE BUSCA (Request 1) ****
     /**
      * Exibe os resultados da busca global (Bases e Pessoas) no grid de organizações.
+     * Ajustado para que a Base apareça DENTRO do card de Pessoa Encontrada.
      */
     const displayGlobalSearchResults = (orgs, people) => {
         els.dossierOrgGrid.innerHTML = ''; // Limpa o grid
@@ -2374,9 +2381,10 @@ Negociadoras: ${negociadoras}
 
         // 1. Renderiza as Organizações (Bases) encontradas
         if (orgs.length > 0) {
+            // Título mais compacto para a busca
             const orgsHeader = document.createElement('h3');
             orgsHeader.className = 'dossier-org-title';
-            orgsHeader.textContent = 'Bases (Organizações) Encontradas';
+            orgsHeader.textContent = 'Bases Encontradas';
             els.dossierOrgGrid.appendChild(orgsHeader);
             
             orgs.forEach(org => {
@@ -2385,7 +2393,7 @@ Negociadoras: ${negociadoras}
                 card.className = 'dossier-org-card';
                 card.dataset.orgName = org.nome;
                 
-                // Remove o cursor grab da busca global de orgs
+                // Remove o cursor grab da busca global de orgs para evitar confusão se o sortable estiver desabilitado
                 card.style.cursor = 'pointer'; 
                 
                 const fotoDiv = document.createElement('div');
@@ -2428,6 +2436,7 @@ Negociadoras: ${negociadoras}
 
         // 2. Renderiza as Pessoas encontradas
         if (people.length > 0) {
+            // Título "Pessoas Encontradas" mais compacto
             const peopleHeader = document.createElement('h3');
             peopleHeader.className = 'dossier-org-title';
             peopleHeader.textContent = 'Pessoas Encontradas';
@@ -2439,26 +2448,21 @@ Negociadoras: ${negociadoras}
                 const card = document.createElement('div');
                 card.className = 'dossier-entry-card';
                 card.dataset.id = entry.id; 
-                card.style.cursor = 'default'; // O card em si não é clicável aqui
+                card.style.cursor = 'default'; // O card em si não é arrastável na busca global
                 
-                // =================================================================
-                // INÍCIO: ALTERAÇÃO (Mover "Base" para dentro do Card)
-                // =================================================================
-                // SOLICITAÇÃO DO USUÁRIO: "fique em cima das informaçoes da pessoa"
+                // --- INÍCIO: ADIÇÃO DA BASE DENTRO DO CARD ---
                 const baseTitle = document.createElement('h4');
                 baseTitle.textContent = `Base: ${entry.org}`;
-                baseTitle.style.color = 'var(--cor-principal)'; // Cor principal
-                baseTitle.style.fontSize = '14px';          // Tamanho 14px
-                baseTitle.style.textAlign = 'left';       // Alinhado à esquerda
-                baseTitle.style.margin = '0 0 8px 0';       // Margem inferior, sem margem superior
+                baseTitle.style.color = 'var(--cor-principal)'; 
+                baseTitle.style.fontSize = '14px';          
+                baseTitle.style.textAlign = 'left';       
+                baseTitle.style.margin = '0 0 8px 0';       
                 baseTitle.style.fontWeight = '600';
-                baseTitle.style.borderBottom = '1px solid var(--cor-borda)'; // Linha separadora
-                baseTitle.style.paddingBottom = '5px';      // Espaçamento para a linha
+                baseTitle.style.borderBottom = '1px solid var(--cor-borda)'; 
+                baseTitle.style.paddingBottom = '5px';      
                 
-                card.appendChild(baseTitle); // <-- ADICIONA DENTRO DO CARD, NO TOPO
-                // =================================================================
-                // FIM: ALTERAÇÃO
-                // =================================================================
+                card.appendChild(baseTitle); 
+                // --- FIM: ADIÇÃO DA BASE DENTRO DO CARD ---
 
                 const fotoDiv = document.createElement('div');
                 fotoDiv.className = 'dossier-foto';
@@ -2550,9 +2554,8 @@ Negociadoras: ${negociadoras}
             }
         }
     };
-    // **** FIM: NOVA FUNÇÃO DE EXIBIÇÃO ****
     // =================================================================
-    // FIM: ADIÇÃO
+    // FIM: ALTERAÇÃO
     // =================================================================
     
     // Filtra a lista de Organizações (Bases)
@@ -3271,7 +3274,7 @@ Negociadoras: ${negociadoras}
                     if ((person.carro || person.placas) && !person.veiculos) {
                         const newVeiculos = {};
                         const carros = person.carro ? person.carro.split(',').map(c => c.trim()) : [];
-                        const placas = person.placas ? person.placa.split(',').map(p => p.trim()) : [];
+                        const placas = person.placas ? person.placas.split(',').map(p => p.trim()) : [];
                         
                         const maxLen = Math.max(carros.length, placas.length);
                         
