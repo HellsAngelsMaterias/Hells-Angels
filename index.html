@@ -2181,7 +2181,10 @@ Negociadoras: ${negociadoras}
                 let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
                 instaHandle = instaHandle.split('/')[0]; // Remove barras caso seja URL
                 
-                instagramP.innerHTML = `<strong>Instagram:</strong> <a href="https://www.instagram.com/${instaHandle}" target="_blank" style="color: var(--cor-principal); text-decoration: none;">@${instaHandle}</a>`;
+                // --- MUDANÇA: INSTAGRAM NÃO CLICÁVEL ---
+                instagramP.innerHTML = `<strong>Instagram:</strong> <span style="color: var(--cor-principal); font-weight: 500;">@${instaHandle}</span>`;
+                // --- FIM DA MUDANÇA ---
+                
                 instagramP.style.fontSize = '13px';
                 card.appendChild(instagramP);
             }
@@ -2347,7 +2350,7 @@ Negociadoras: ${negociadoras}
         const orgId = els.editOrgId.value;
         if (!orgId) return;
         
-        if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\nIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
+        if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
             remove(ref(db, `organizacoes/${orgId}`))
                 .then(() => {
                     showToast("Informações da base removidas.", "success");
