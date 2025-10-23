@@ -1580,7 +1580,59 @@
     // FIM: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ
     // =================================================================
     
-    
+    // =================================================================
+    // INÍCIO: FUNÇÃO DE AUTO-PREENCHIMENTO (NOVA v13)
+    // =================================================================
+    const autoFillFromDossier = async () => {
+        // Não preencher automaticamente se estivermos editando uma venda (ela já tem seus dados)
+        if (vendaEmEdicaoId) return; 
+        
+        const nome = els.nomeCliente.value.trim();
+        
+        // Se o nome for limpo, não faz nada (deixa o usuário limpar os campos manualmente se quiser)
+        if (!nome) return; 
+
+        try {
+            const foundEntry = await findDossierEntryGlobal(nome);
+            
+            if (foundEntry && foundEntry.personData) {
+                const data = foundEntry.personData;
+                const orgBase = foundEntry.oldOrg;
+
+                // Preenche os campos
+                els.telefone.value = data.numero || '';
+                els.vendaValorObs.value = data.cargo || ''; // Campo "Cargo"
+                
+                // Mapeia a Base do Dossiê para os campos Organização/Tipo
+                if (orgBase.toUpperCase() === 'CPF') {
+                    els.organizacaoTipo.value = 'CPF';
+                    els.organizacao.value = ''; // CPF não usa o campo de nome de org
+                } else if (orgBase.toUpperCase() === 'OUTROS') {
+                    els.organizacaoTipo.value = 'OUTROS';
+                    els.organizacao.value = ''; // Outros não usa o campo de nome de org
+                } else {
+                    // É um CNPJ, preenche o nome da organização
+                    els.organizacaoTipo.value = 'CNPJ';
+                    els.organizacao.value = orgBase; 
+                }
+                
+                showToast(`Dados de "${nome}" preenchidos do dossiê.`, "success");
+            }
+            // Se não for encontrado (else), não faz nada. 
+            // O usuário continua com o preenchimento manual.
+            
+        } catch (error) {
+            // Não trava a aplicação se a busca falhar, apenas loga.
+            if(error.code !== "PERMISSION_DENIED") {
+                console.error("Erro ao tentar auto-preencher:", error);
+                showToast("Erro ao buscar dados do dossiê.", "error");
+            }
+        }
+    };
+    // =================================================================
+    // FIM: FUNÇÃO DE AUTO-PREENCHIMENTO
+    // =================================================================
+
     // **** MODIFICADO (v12): Tornou-se uma função 'async' ****
     const registerVenda = async () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
@@ -2867,6 +2919,9 @@ Negociadoras: ${negociadoras}
     els.tutorialBtn.onclick = () => { if (!currentUser) { showToast("Faça login para iniciar o tutorial.", "default"); return; } toggleView('main'); showNextTourStep(); };
     els.discordBtnCalc.onclick = () => copyDiscordMessage(false, null);
     els.filtroHistorico.addEventListener('input', filterHistory);
+    
+    // --- NOVO EVENT LISTENER (v13) ---
+    els.nomeCliente.addEventListener('change', autoFillFromDossier);
     
     // Event Listeners (Dossiê v8)
     els.investigacaoBtn.onclick = () => toggleView('dossier');
