@@ -363,9 +363,9 @@
         border-bottom: 2px solid var(--cor-borda);
         /* --- MUDANÇA: COMPACTAR TÍTULO DE BUSCA --- */
         font-size: 16px;
-        margin-top: 5px; /* Reduz o espaço superior */
-        margin-bottom: 10px; /* Adiciona um pouco de espaço para separar do grid */
-        border-bottom: none; /* Remove a linha */
+        margin-top: 5px; 
+        margin-bottom: 10px; 
+        border-bottom: none; 
         padding-bottom: 0;
         /* --- FIM DA MUDANÇA --- */
     }
@@ -657,7 +657,7 @@
     </div>
 
     <div class="actions">
-      <button id="calcBtn" class="primary">Calcular</button>
+      <button id="calcBtn" class="primary">Calculular</button>
       <button id="resetBtn" class="muted">Limpar Campos</button>
       <button id="registerBtn" class="success">Registrar Venda</button>
       <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
@@ -2365,11 +2365,10 @@ Negociadoras: ${negociadoras}
     };
     
     // =================================================================
-    // INÍCIO: ALTERAÇÃO (Exibição da Busca Global)
+    // INÍCIO: ALTERAÇÃO (Exibição da Busca Global - Base Clicável)
     // =================================================================
     /**
      * Exibe os resultados da busca global (Bases e Pessoas) no grid de organizações.
-     * Ajustado para que a Base apareça DENTRO do card de Pessoa Encontrada.
      */
     const displayGlobalSearchResults = (orgs, people) => {
         els.dossierOrgGrid.innerHTML = ''; // Limpa o grid
@@ -2450,18 +2449,29 @@ Negociadoras: ${negociadoras}
                 card.dataset.id = entry.id; 
                 card.style.cursor = 'default'; // O card em si não é arrastável na busca global
                 
-                // --- INÍCIO: ADIÇÃO DA BASE DENTRO DO CARD ---
-                const baseTitle = document.createElement('h4');
-                baseTitle.textContent = `Base: ${entry.org}`;
-                baseTitle.style.color = 'var(--cor-principal)'; 
-                baseTitle.style.fontSize = '14px';          
-                baseTitle.style.textAlign = 'left';       
-                baseTitle.style.margin = '0 0 8px 0';       
-                baseTitle.style.fontWeight = '600';
-                baseTitle.style.borderBottom = '1px solid var(--cor-borda)'; 
-                baseTitle.style.paddingBottom = '5px';      
+                // --- INÍCIO: ADIÇÃO DA BASE DENTRO DO CARD (AGORA CLICÁVEL) ---
+                const baseLink = document.createElement('a'); // Usa <a> para ser clicável
+                baseLink.href = '#';
+                baseLink.textContent = `Base: ${entry.org}`;
+                baseLink.style.color = 'var(--cor-principal)'; 
+                baseLink.style.fontSize = '14px';          
+                baseLink.style.textAlign = 'left';       
+                baseLink.style.margin = '0 0 8px 0';       
+                baseLink.style.fontWeight = '600';
+                baseLink.style.borderBottom = '1px solid var(--cor-borda)'; 
+                baseLink.style.paddingBottom = '5px';
+                baseLink.style.display = 'block'; // Ocupa a linha toda
+                baseLink.style.textDecoration = 'none'; // Remove sublinhado padrão
+                baseLink.style.cursor = 'pointer'; // Adiciona cursor de ponteiro
                 
-                card.appendChild(baseTitle); 
+                // Adiciona o Event Listener
+                baseLink.addEventListener('click', (e) => {
+                    e.preventDefault(); // Evita a navegação padrão
+                    e.stopPropagation(); // Evita o clique no card inteiro se houver
+                    showDossierPeople(entry.org);
+                });
+                
+                card.appendChild(baseLink); 
                 // --- FIM: ADIÇÃO DA BASE DENTRO DO CARD ---
 
                 const fotoDiv = document.createElement('div');
@@ -3651,7 +3661,7 @@ Negociadoras: ${negociadoras}
                             const newUserProfile = { 
                                 displayName: displayName,
                                 email: user.email,
-                                tag: 'Visitante'
+                                tag: 'Visitante' 
                             };
                             return set(userRef, newUserProfile); 
                         });
