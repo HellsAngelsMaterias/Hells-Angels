@@ -372,7 +372,14 @@
         flex-direction: column;
         gap: 5px;
         transition: box-shadow 0.2s ease, transform 0.2s ease;
+        /* --- MUDANÇA: HIERARQUIA --- */
+        cursor: grab;
     }
+    .dossier-entry-card:active {
+        cursor: grabbing;
+    }
+    /* --- FIM DA MUDANÇA --- */
+    
     .dossier-entry-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -438,6 +445,13 @@
     .modal-content label {
         margin-top: 10px;
     }
+    
+    /* --- MUDANÇA: HIERARQUIA (Estilo "Fantasma") --- */
+    .sortable-ghost {
+        opacity: 0.4;
+        background: var(--cor-btn-secundario);
+    }
+    /* --- FIM DA MUDANÇA --- */
     
     /* --- NOVO GERENCIADOR DE VEÍCULOS (MODAL) --- */
     #modalListaVeiculos, #addModalListaVeiculos, #editModalListaVeiculos {
@@ -793,6 +807,8 @@
       <label for="editDossierFotoUrl">Foto URL:</label>
       <input type="text" id="editDossierFotoUrl" placeholder="Cole o link da imagem aqui (ex: https://i.imgur.com/...)">
       
+      <label for="editDossierInstagram">Instagram:</label>
+      <input type="text" id="editDossierInstagram" placeholder="@usuario (opcional)">
       <h4 style="margin-top:15px; margin-bottom: 5px; color: var(--cor-principal);">Gerenciador de Veículos</h4>
       <div class="grid grid-venda" style="gap: 10px;">
           <input type="text" id="editModalCarroNome" placeholder="Nome do Carro">
@@ -879,6 +895,7 @@
   </div>
   
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -920,6 +937,7 @@
     
     let globalAllOrgs = []; 
     let globalCurrentPeople = [];
+    let sortableInstance = null; // <-- MUDANÇA: HIERARQUIA
     
     // --- NOVO (Gerenciador de Veículos) ---
     // Armazena temporariamente os veículos ao editar/adicionar um modal
@@ -1036,6 +1054,7 @@
       editDossierNumero: document.getElementById('editDossierNumero'),
       editDossierCargo: document.getElementById('editDossierCargo'),
       editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
+      editDossierInstagram: document.getElementById('editDossierInstagram'), // <-- MUDANÇA: INSTAGRAM
       saveDossierBtn: document.getElementById('saveDossierBtn'),
       cancelDossierBtn: document.getElementById('cancelDossierBtn'),
       
@@ -1188,6 +1207,13 @@
         });
       }
     });
+    
+    // NÃO CAPITALIZAR INSTAGRAM
+    if (els.editDossierInstagram) {
+        els.editDossierInstagram.addEventListener('input', (e) => {
+          // Deixa o usuário digitar livremente
+        });
+    }
     
     const calculate = () => {
       const { qtyTickets, qtyTablets, qtyNitro, tipoValor } = {
@@ -1406,6 +1432,8 @@
                     veiculos: parseAndMergeVeiculos(vendaData, {}), // Adiciona veículos da venda
                     // **** FIM DA MODIFICAÇÃO ****
                     fotoUrl: '',
+                    instagram: '', // <-- MUDANÇA: INSTAGRAM (Inicializa)
+                    hierarquiaIndex: 9999, // <-- MUDANÇA: HIERARQUIA (Vai para o fim)
                     data: vendaData.dataHora // Data da primeira venda
                 };
                 
@@ -1460,7 +1488,9 @@
                 // Mescla veículos antigos com os da venda atualizada
                 veiculos: parseAndMergeVeiculos(newVendaData, existingEntryData.veiculos || {}),
                 // **** FIM DA MODIFICAÇÃO ****
-                fotoUrl: existingEntryData.fotoUrl || ''
+                fotoUrl: existingEntryData.fotoUrl || '',
+                instagram: existingEntryData.instagram || '', // <-- MUDANÇA: INSTAGRAM (Preserva)
+                hierarquiaIndex: existingEntryData.hierarquiaIndex !== undefined ? existingEntryData.hierarquiaIndex : 9999 // <-- MUDANÇA: HIERARQUIA (Preserva)
             };
 
             if (oldOrg === newOrg) {
@@ -1849,7 +1879,7 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v9 - Com Foto de Veículo) ****
+    // **** INÍCIO DAS FUNÇÕES DO DOSSIÊ (v10 - Hierarquia e Instagram) ****
     
     // =============================================
     // NOVAS FUNÇÕES DO LIGHTBOX
@@ -1867,6 +1897,80 @@ Negociadoras: ${negociadoras}
         els.lightboxImg.src = ''; // Limpa para não "piscar" a imagem antiga
     };
     // =============================================
+    
+    // =============================================
+    // INÍCIO: FUNÇÕES DE HIERARQUIA (SortableJS)
+    // =============================================
+    
+    // Salva a nova ordem da hierarquia no Firebase
+    const saveHierarchyOrder = (orgName) => {
+        const grid = els.dossierPeopleGrid;
+        // Pega todos os cards de pessoa, na ordem atual do DOM
+        const children = Array.from(grid.children);
+        
+        if (children.length === 0 || !children[0].classList.contains('dossier-entry-card')) {
+            return; // Grid está vazio ou mostrando "carregando..."
+        }
+        
+        const updates = {};
+        // Cria um objeto de atualização multi-path
+        children.forEach((card, index) => {
+            const personId = card.dataset.id;
+            if (personId) {
+                // Atualiza o 'hierarquiaIndex' de cada pessoa baseado na sua posição (index)
+                updates[`dossies/${orgName}/${personId}/hierarquiaIndex`] = index;
+            }
+        });
+        
+        if (Object.keys(updates).length > 0) {
+            update(ref(db), updates)
+                .then(() => {
+                    showToast("Hierarquia atualizada!", "success");
+                    // Atualiza os dados locais (globalCurrentPeople) para refletir a nova ordem
+                    globalCurrentPeople = children.map((card, index) => {
+                        const person = globalCurrentPeople.find(p => p.id === card.dataset.id);
+                        if (person) {
+                            person.hierarquiaIndex = index;
+                        }
+                        return person;
+                    }).filter(Boolean);
+                })
+                .catch((err) => {
+                    showToast(`Erro ao salvar hierarquia: ${err.message}`, "error");
+                    // Se der erro, a UI pode ficar fora de sincronia.
+                    // O ideal seria recarregar, mas por enquanto só avisamos.
+                });
+        }
+    };
+
+    // Inicializa a biblioteca SortableJS no grid de pessoas
+    const initSortable = (orgName) => {
+        if (sortableInstance) {
+            sortableInstance.destroy(); // Destrói a instância anterior (se houver)
+        }
+        
+        const grid = els.dossierPeopleGrid;
+        
+        // Verifica a permissão do usuário
+        const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
+        const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
+        
+        sortableInstance = new Sortable(grid, {
+            animation: 150,
+            handle: '.dossier-entry-card', // Permite arrastar pelo card inteiro
+            disabled: !canDrag, // Desabilita o "arrastar" para Visitantes
+            ghostClass: 'sortable-ghost', // Classe CSS para o "fantasma"
+            onEnd: (evt) => {
+                // Quando o usuário solta o card, salva a nova ordem
+                saveHierarchyOrder(orgName);
+            }
+        });
+    };
+    
+    // =============================================
+    // FIM: FUNÇÕES DE HIERARQUIA
+    // =============================================
+    
     
     // Nível 1: Mostra as Organizações (Bases)
     const showDossierOrgs = async () => {
@@ -1988,6 +2092,7 @@ Negociadoras: ${negociadoras}
             
             if (!snapshot.exists()) {
                 els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro registrado para esta organização.</p>';
+                initSortable(orgName); // <-- MUDANÇA: HIERARQUIA (Inicializa mesmo se vazio)
                 return;
             }
             
@@ -2000,8 +2105,21 @@ Negociadoras: ${negociadoras}
                 });
             }
             
-            globalCurrentPeople.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            // --- MUDANÇA: HIERARQUIA (Ordena pelo índice) ---
+            globalCurrentPeople.sort((a, b) => {
+                const indexA = a.hierarquiaIndex !== undefined ? a.hierarquiaIndex : Infinity;
+                const indexB = b.hierarquiaIndex !== undefined ? b.hierarquiaIndex : Infinity;
+                if (indexA !== indexB) {
+                    return indexA - indexB; // Ordena pelo índice
+                }
+                // Se o índice for o mesmo (ou não existir), ordena por nome
+                return (a.nome || '').localeCompare(b.nome || ''); 
+            });
+            // --- FIM DA MUDANÇA ---
+            
             displayPeople(globalCurrentPeople);
+            
+            initSortable(orgName); // <-- MUDANÇA: HIERARQUIA (Inicializa o SortableJS)
             
         } catch (error) {
             els.dossierPeopleGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar membros: ${error.message}</p>`;
@@ -2019,6 +2137,7 @@ Negociadoras: ${negociadoras}
         people.forEach(entry => {
             const card = document.createElement('div');
             card.className = 'dossier-entry-card';
+            card.dataset.id = entry.id; // <-- MUDANÇA: HIERARQUIA (Necessário para salvar)
             
             const fotoDiv = document.createElement('div');
             fotoDiv.className = 'dossier-foto';
@@ -2054,6 +2173,19 @@ Negociadoras: ${negociadoras}
             card.appendChild(nomeH4);
             card.appendChild(numeroP);
             card.appendChild(cargoP);
+            
+            // --- MUDANÇA: INSTAGRAM (Adiciona o campo no card) ---
+            if (entry.instagram) {
+                const instagramP = document.createElement('p');
+                // Limpa o @ ou URL
+                let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
+                instaHandle = instaHandle.split('/')[0]; // Remove barras caso seja URL
+                
+                instagramP.innerHTML = `<strong>Instagram:</strong> <a href="https://www.instagram.com/${instaHandle}" target="_blank" style="color: var(--cor-principal); text-decoration: none;">@${instaHandle}</a>`;
+                instagramP.style.fontSize = '13px';
+                card.appendChild(instagramP);
+            }
+            // --- FIM DA MUDANÇA ---
             
             // --- INÍCIO DA ALTERAÇÃO 1: Mover Veículos para baixo do Cargo ---
             const veiculos = entry.veiculos || {};
@@ -2120,6 +2252,7 @@ Negociadoras: ${negociadoras}
         const filteredPeople = globalCurrentPeople.filter(entry => {
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
             const cargo = entry.cargo ? entry.cargo.toLowerCase() : '';
+            const instagram = entry.instagram ? entry.instagram.toLowerCase() : ''; // <-- MUDANÇA: INSTAGRAM (Filtro)
             
             let veiculoMatch = false;
             if (entry.veiculos) {
@@ -2132,7 +2265,7 @@ Negociadoras: ${negociadoras}
                 }
             }
             
-            return nome.includes(query) || cargo.includes(query) || veiculoMatch; 
+            return nome.includes(query) || cargo.includes(query) || instagram.includes(query) || veiculoMatch; 
         });
         
         displayPeople(filteredPeople);
@@ -2331,6 +2464,7 @@ Negociadoras: ${negociadoras}
         els.addDossierNumero.value = '';
         els.addDossierCargo.value = '';
         els.addDossierFotoUrl.value = '';
+        // Não há campo instagram aqui (conforme solicitado)
         
         tempVeiculos = {}; // Limpa os veículos temporários
         cancelarEdicaoVeiculo('addModal'); // Garante que o estado de edição seja resetado
@@ -2377,7 +2511,9 @@ Negociadoras: ${negociadoras}
             numero: els.addDossierNumero.value.trim(),
             cargo: els.addDossierCargo.value.trim(),
             fotoUrl: els.addDossierFotoUrl.value.trim(),
+            instagram: "", // <-- MUDANÇA: INSTAGRAM (Inicializa vazio)
             veiculos: tempVeiculos, // Salva o objeto de veículos
+            hierarquiaIndex: 9999, // <-- MUDANÇA: HIERARQUIA (Novo membro vai para o fim)
             data: `${dia}/${mes}/${ano} ${horas}:${minutos}`
         };
         
@@ -2404,6 +2540,7 @@ Negociadoras: ${negociadoras}
         els.editDossierNumero.value = entry.numero || '';
         els.editDossierCargo.value = entry.cargo || '';
         els.editDossierFotoUrl.value = entry.fotoUrl || '';
+        els.editDossierInstagram.value = entry.instagram || ''; // <-- MUDANÇA: INSTAGRAM
         
         // Carrega os veículos existentes para o gerenciador
         tempVeiculos = { ...(entry.veiculos || {}) };
@@ -2441,7 +2578,9 @@ Negociadoras: ${negociadoras}
             numero: els.editDossierNumero.value.trim(),
             cargo: els.editDossierCargo.value.trim(),
             fotoUrl: els.editDossierFotoUrl.value.trim(),
+            instagram: els.editDossierInstagram.value.trim(), // <-- MUDANÇA: INSTAGRAM
             veiculos: tempVeiculos // Salva o objeto de veículos atualizado
+            // O hierarquiaIndex é preservado pelo spread (...originalEntry)
         };
         
         delete updatedEntry.id;
@@ -2601,7 +2740,7 @@ Negociadoras: ${negociadoras}
     };
     // --- FIM ---
     
-    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v9) ****
+    // **** FIM DAS FUNÇÕES DO DOSSIÊ (v10) ****
     
     const toggleTheme = () => {
         const isDarkMode = document.body.classList.toggle('dark');
@@ -3102,4 +3241,3 @@ Negociadoras: ${negociadoras}
   </script>
 </body>
 </html>
-
