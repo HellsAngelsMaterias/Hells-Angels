@@ -13,7 +13,7 @@
       --cor-card: #ffffff; --cor-borda: #ffb3d9; --cor-btn-primario: #e60073;
       --cor-btn-texto: #fff; --cor-btn-secundario: #ffd6eb;
       --cor-btn-secundario-texto: #4a0033; --cor-erro: #cc0000;
-      --cor-glow-pulsante: rgba(230, 0, 115, 0.8);
+      --cor-glow-pulsante: rgba(230, 0, 115, 0.8);\
       --cor-tag-admin: #0056b3; --cor-tag-hells: #e60073; --cor-tag-visitante: #008000;
     }
     body.dark {
@@ -281,12 +281,16 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         text-align: center;
         transition: box-shadow 0.2s ease, transform 0.2s ease;
-        cursor: pointer;
+        /* Habilita o drag-and-drop para bases */
+        cursor: grab; 
         overflow: hidden; 
     }
     .dossier-org-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    }
+    .dossier-org-card:active {
+        cursor: grabbing;
     }
     .dossier-org-card h4 { /* Nome da Org */
         margin: 12px 10px 12px 10px;
@@ -937,7 +941,8 @@
     
     let globalAllOrgs = []; 
     let globalCurrentPeople = [];
-    let sortableInstance = null; // <-- MUDANÇA: HIERARQUIA
+    let sortableInstance = null; // <-- People SortableJS instance
+    let orgSortableInstance = null; // <-- NEW: Org SortableJS instance
     
     // --- NOVO (Gerenciador de Veículos) ---
     // Armazena temporariamente os veículos ao editar/adicionar um modal
@@ -1481,10 +1486,12 @@
         const orgRef = ref(db, `organizacoes/${org}`);
         get(orgRef).then(snapshot => {
             if (!snapshot.exists()) {
+                // Adiciona o novo campo ordemIndex para bases
                 set(orgRef, {
                     nome: org,
                     fotoUrl: '',
-                    info: 'Base registrada automaticamente via Venda.'
+                    info: 'Base registrada automaticamente via Venda.',
+                    ordemIndex: 9999 // Adiciona o índice de ordenação
                 });
             }
         });
@@ -2009,7 +2016,7 @@ Negociadoras: ${negociadoras}
             
             const valorCell = row.insertCell();
             valorCell.className = 'valor-total-cell';
-            valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})</span>`;
+            valorCell.innerHTML = `<span>${formatCurrency(venda.valorTotal || 0)}</span><span class="valor-obs-text">(${valorDescricao[venda.tipoValor] || 'N/A'})`;
 
             row.insertCell().textContent = capitalizeText(venda.negociadoras);
             
@@ -2101,7 +2108,7 @@ Negociadoras: ${negociadoras}
     // =============================================
     
     // =============================================
-    // INÍCIO: FUNÇÕES DE HIERARQUIA (SortableJS)
+    // INÍCIO: FUNÇÕES DE HIERARQUIA DE PESSOAS (SortableJS)
     // =============================================
     
     // Salva a nova ordem da hierarquia no Firebase
@@ -2170,7 +2177,80 @@ Negociadoras: ${negociadoras}
     };
     
     // =============================================
-    // FIM: FUNÇÕES DE HIERARQUIA
+    // FIM: FUNÇÕES DE HIERARQUIA DE PESSOAS
+    // =============================================
+
+    // =============================================
+    // INÍCIO: FUNÇÕES DE ORDENAÇÃO DE BASES (SortableJS para Orgs)
+    // =============================================
+    
+    // Salva a nova ordem das bases no Firebase
+    const saveOrgOrder = () => {
+        const grid = els.dossierOrgGrid;
+        // Filtra para pegar apenas os cards de organização e ignora os títulos
+        const children = Array.from(grid.children).filter(el => el.classList.contains('dossier-org-card'));
+        
+        if (children.length === 0) {
+            return;
+        }
+        
+        const updates = {};
+        // Cria um objeto de atualização multi-path
+        children.forEach((card, index) => {
+            const orgId = card.dataset.orgName;
+            if (orgId) {
+                // Atualiza o 'ordemIndex' de cada organização
+                updates[`organizacoes/${orgId}/ordemIndex`] = index;
+            }
+        });
+        
+        if (Object.keys(updates).length > 0) {
+            update(ref(db), updates)
+                .then(() => {
+                    showToast("Ordem das Bases atualizada!", "success");
+                    // Atualiza os dados locais (globalAllOrgs) para refletir a nova ordem
+                    globalAllOrgs = children.map((card, index) => {
+                        const org = globalAllOrgs.find(o => o.id === card.dataset.orgName);
+                        if (org) {
+                            org.ordemIndex = index;
+                        }
+                        return org;
+                    }).filter(Boolean);
+                })
+                .catch((err) => {
+                    showToast(`Erro ao salvar ordem das Bases: ${err.message}`, "error");
+                });
+        }
+    };
+    
+    // Inicializa o SortableJS no grid de Bases
+    const initOrgSortable = () => {
+        if (orgSortableInstance) {
+            orgSortableInstance.destroy();
+        }
+        
+        const grid = els.dossierOrgGrid;
+        
+        // Permissão: Apenas ADMIN ou HELLS podem reorganizar as bases
+        const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
+        const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
+        
+        orgSortableInstance = new Sortable(grid, {
+            animation: 150,
+            handle: '.dossier-org-card', 
+            group: 'orgs', 
+            disabled: !canDrag, 
+            ghostClass: 'sortable-ghost',
+            // Filtra para ignorar o cabeçalho de busca (Bases e Pessoas Encontradas)
+            filter: 'h3.dossier-org-title', 
+            onEnd: (evt) => {
+                // Quando o usuário solta o card, salva a nova ordem
+                saveOrgOrder();
+            }
+        });
+    };
+    // =============================================
+    // FIM: FUNÇÕES DE ORDENAÇÃO DE BASES
     // =============================================
     
     
@@ -2194,18 +2274,31 @@ Negociadoras: ${negociadoras}
             
             if (allOrgNames.size === 0) {
                 els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização encontrada. Clique em "+ Adicionar Base" para começar.</p>';
+                initOrgSortable(); 
                 return;
             }
             
             globalAllOrgs = Array.from(allOrgNames).map(orgName => {
+                const info = orgsInfo[orgName] || {};
                 return {
                     id: orgName,
                     nome: orgName,
-                    ...orgsInfo[orgName]
+                    // Garante que o ordemIndex exista, usando 9999 como fallback
+                    ordemIndex: info.ordemIndex !== undefined ? info.ordemIndex : 9999,
+                    ...info
                 };
-            }).sort((a, b) => a.nome.localeCompare(b.nome));
+            }).sort((a, b) => {
+                 // Sort by ordemIndex first, then name
+                 const indexA = a.ordemIndex !== undefined ? a.ordemIndex : Infinity;
+                 const indexB = b.ordemIndex !== undefined ? b.ordemIndex : Infinity;
+                 if (indexA !== indexB) {
+                    return indexA - indexB; // Sort by index
+                 }
+                 return a.nome.localeCompare(b.nome); // Then by name
+            });
             
             displayOrgs(globalAllOrgs);
+            initOrgSortable(); // <-- Inicializa o sortable para as bases
             
         } catch (error) {
             els.dossierOrgGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar organizações: ${error.message}</p>`;
@@ -2291,6 +2384,9 @@ Negociadoras: ${negociadoras}
                 const card = document.createElement('div');
                 card.className = 'dossier-org-card';
                 card.dataset.orgName = org.nome;
+                
+                // Remove o cursor grab da busca global de orgs
+                card.style.cursor = 'pointer'; 
                 
                 const fotoDiv = document.createElement('div');
                 fotoDiv.className = 'dossier-org-foto';
@@ -2446,6 +2542,12 @@ Negociadoras: ${negociadoras}
                 card.appendChild(actionsDiv);
                 els.dossierOrgGrid.appendChild(card);
             });
+            
+            // Não deve ter Sortable ativo quando há resultados de busca mista.
+            if (orgSortableInstance) {
+                orgSortableInstance.destroy();
+                orgSortableInstance = null;
+            }
         }
     };
     // **** FIM: NOVA FUNÇÃO DE EXIBIÇÃO ****
@@ -2453,16 +2555,14 @@ Negociadoras: ${negociadoras}
     // FIM: ADIÇÃO
     // =================================================================
     
-    // =================================================================
-    // INÍCIO: ALTERAÇÃO (Função de Filtragem)
-    // =================================================================
     // Filtra a lista de Organizações (Bases)
-    // **** MODIFICADO (Request 1): Agora é async e busca pessoas globalmente ****
     const filterOrgs = async () => {
         const query = els.filtroDossierOrgs.value.toLowerCase().trim();
         
+        // Se a busca estiver vazia, volta para a exibição normal ordenada.
         if (!query) {
             displayOrgs(globalAllOrgs); // Mostra todas as orgs (do cache)
+            initOrgSortable(); // Re-inicializa o Sortable para ordenação
             return;
         }
         
@@ -2478,10 +2578,13 @@ Negociadoras: ${negociadoras}
         
         // 3. Exibe ambos os resultados
         displayGlobalSearchResults(filteredOrgs, filteredPeople);
+        
+        // Destrói o sortable de bases quando a busca mista está ativa
+        if (orgSortableInstance) {
+            orgSortableInstance.destroy();
+            orgSortableInstance = null;
+        }
     };
-    // =================================================================
-    // FIM: ALTERAÇÃO
-    // =================================================================
 
     // Nível 2: Mostra as Pessoas (Membros) de uma Org
     const showDossierPeople = async (orgName) => {
@@ -2493,6 +2596,12 @@ Negociadoras: ${negociadoras}
         els.addPessoaBtn.dataset.orgName = orgName;
         
         globalCurrentPeople = [];
+        
+        // Destrói o sortable de bases antes de mudar a view
+        if (orgSortableInstance) {
+            orgSortableInstance.destroy();
+            orgSortableInstance = null;
+        }
         
         try {
             const peopleRef = ref(db, `dossies/${orgName}`);
@@ -2727,7 +2836,10 @@ Negociadoras: ${negociadoras}
         els.orgModal.style.display = 'none';
     };
     
-    const saveOrg = () => {
+    // =================================================================
+    // INÍCIO: ALTERAÇÃO (saveOrg para adicionar ordemIndex)
+    // =================================================================
+    const saveOrg = async () => {
         const orgNome = capitalizeText(els.orgNome.value.trim());
         const orgId = els.editOrgId.value || orgNome;
         
@@ -2738,13 +2850,30 @@ Negociadoras: ${negociadoras}
         }
         els.orgNome.classList.remove('input-invalido');
         
+        const orgRef = ref(db, `organizacoes/${orgId}`);
+        
+        let existingIndex = 9999;
+        // Se estiver editando, busca o índice existente para preservá-lo
+        if (els.editOrgId.value) {
+            try {
+                const snapshot = await get(orgRef);
+                if (snapshot.exists()) {
+                    // Preserva o índice se ele existir, senão usa 9999
+                    existingIndex = snapshot.val().ordemIndex !== undefined ? snapshot.val().ordemIndex : 9999;
+                }
+            } catch (e) {
+                console.error("Erro ao buscar ordemIndex:", e);
+            }
+        } 
+        // Se estiver adicionando, ele usa o 9999 default (vai para o final)
+
         const orgData = {
             nome: orgNome,
             fotoUrl: els.orgFotoUrl.value.trim(),
-            info: els.orgInfo.value.trim()
+            info: els.orgInfo.value.trim(),
+            ordemIndex: existingIndex // Adiciona o índice de ordenação
         };
         
-        const orgRef = ref(db, `organizacoes/${orgId}`);
         set(orgRef, orgData)
             .then(() => {
                 showToast("Base salva com sucesso!", "success");
@@ -2753,12 +2882,15 @@ Negociadoras: ${negociadoras}
             })
             .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
     };
+    // =================================================================
+    // FIM: ALTERAÇÃO
+    // =================================================================
     
     const deleteOrg = () => {
         const orgId = els.editOrgId.value;
         if (!orgId) return;
         
-        if (confirm(`ATENÇÃO:\n\NIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
+        if (confirm(`ATENÇÃO:\n\nIsso apagará as INFORMAÇÕES DA BASE "${orgId}".\n\NIsso NÃO apagará os membros (pessoas) que estão dentro dela.\n\nDeseja continuar?`)) {
             remove(ref(db, `organizacoes/${orgId}`))
                 .then(() => {
                     showToast("Informações da base removidas.", "success");
@@ -3139,7 +3271,7 @@ Negociadoras: ${negociadoras}
                     if ((person.carro || person.placas) && !person.veiculos) {
                         const newVeiculos = {};
                         const carros = person.carro ? person.carro.split(',').map(c => c.trim()) : [];
-                        const placas = person.placas ? person.placas.split(',').map(p => p.trim()) : [];
+                        const placas = person.placas ? person.placa.split(',').map(p => p.trim()) : [];
                         
                         const maxLen = Math.max(carros.length, placas.length);
                         
@@ -3260,9 +3392,6 @@ Negociadoras: ${negociadoras}
         }
     });
     
-    // =================================================================
-    // INÍCIO: ADIÇÃO (Listener para os novos botões)
-    // =================================================================
     // Adiciona listener no grid de Orgs (para os botões nos resultados da busca de pessoas)
     els.dossierOrgGrid.addEventListener('click', (e) => {
         const editBtn = e.target.closest('.edit-dossier-btn');
@@ -3286,9 +3415,6 @@ Negociadoras: ${negociadoras}
             openEditDossierModal(org, id);
         }
     });
-    // =================================================================
-    // FIM: ADIÇÃO
-    // =================================================================
     
     // Modais de Pessoas (Salvar/Cancelar)
     els.saveDossierBtn.onclick = saveDossierChanges;
