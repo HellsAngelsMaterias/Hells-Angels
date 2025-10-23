@@ -670,7 +670,7 @@
       </div>
       
       <h3>Gerenciamento de Usuários</h3>
-      <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
+      <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag. O usuário "snow" está oculto.</p>
       <div class="history-table-wrapper">
           
           <table id="adminUserTable">
@@ -909,6 +909,7 @@
     let vendaOriginalRegistradoPorId = null;
     let vendaOriginalTimestamp = null;
     let vendaOriginalDataHora = null;
+    let vendaOriginalDossierOrg = null; // <-- ALTERAÇÃO 1: Variável Adicionada
     
     // NOVAS VARIÁVEIS GLOBAIS PARA SINCRONIZAÇÃO
     let vendaOriginalCliente = null;
@@ -1261,6 +1262,7 @@
         vendaOriginalDataHora = null;
         vendaOriginalCliente = null; // LIMPA
         vendaOriginalOrganizacao = null; // LIMPA
+        vendaOriginalDossierOrg = null; // <-- ALTERAÇÃO 2: Limpa a variável
         els.registerBtn.textContent = 'Registrar Venda';
       }
     };
@@ -1529,16 +1531,41 @@
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
-              // **CORREÇÃO DO BUG**: Só sincroniza se tiver uma organização
-              if (newVenda.organizacao && newVenda.organizacao.trim() !== '') {
+              // --- INÍCIO DA LÓGICA DE DOSSIÊ ATUALIZADA (CPF/CNPJ) ---
+              
+              // 1. Prepara os dados para o Dossiê
+              // Copia a newVenda para não modificar o objeto que foi salvo no histórico
+              const dossierVendaData = { ...newVenda }; 
+              
+              // 2. Determina a Base (Organização) de destino do Dossiê
+              let dossierOrgDestino = '';
+              if (dossierVendaData.organizacaoTipo === 'CPF') {
+                  dossierOrgDestino = 'CPF';
+              } else if (dossierVendaData.organizacaoTipo === 'OUTROS') {
+                  dossierOrgDestino = 'Outros';
+              } else { // 'CNPJ'
+                  // Somente tipo CNPJ usa o nome da organização digitado
+                  dossierOrgDestino = dossierVendaData.organizacao.trim();
+              }
+              
+              // 3. Atualiza o objeto de dados com a Base de destino
+              // O addDossierEntry usará este campo para saber onde salvar
+              dossierVendaData.organizacao = dossierOrgDestino;
+
+              // 4. Executa a sincronização, se a Base de destino não estiver vazia
+              // (Não sincroniza se for CNPJ e o nome estiver em branco)
+              if (dossierOrgDestino !== '') {
                   if (vendaEmEdicaoId) {
                       // É uma ATUALIZAÇÃO de venda
-                      updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalOrganizacao, newVenda);
+                      // Usamos a 'vendaOriginalDossierOrg' (CPF, Outros, ou Hells) que salvamos no editVenda
+                      // E os dados do cliente antigo 'vendaOriginalCliente'
+                      updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalDossierOrg, dossierVendaData);
                   } else {
                       // É um NOVO registro
-                      addDossierEntry(newVenda);
+                      addDossierEntry(dossierVendaData);
                   }
               }
+              // --- FIM DA LÓGICA DE DOSSIÊ ATUALIZADA ---
               
               clearAllFields();
           })
@@ -1574,9 +1601,21 @@
         vendaOriginalTimestamp = venda.timestamp;
         vendaOriginalDataHora = venda.dataHora;
         
+        // --- ALTERAÇÃO 3: Lógica Dossiê v9 ---
         // SALVA DADOS ORIGINAIS PARA SINCRONIZAÇÃO
         vendaOriginalCliente = venda.cliente;
-        vendaOriginalOrganizacao = venda.organizacao;
+        vendaOriginalOrganizacao = venda.organizacao; // Para o registro de venda
+        
+        // Determina qual era a Base (Dossiê) original da pessoa
+        if (venda.organizacaoTipo === 'CPF') {
+            vendaOriginalDossierOrg = 'CPF';
+        } else if (venda.organizacaoTipo === 'OUTROS') {
+            vendaOriginalDossierOrg = 'Outros';
+        } else {
+            // É CNPJ, usa o nome da organização da venda
+            vendaOriginalDossierOrg = venda.organizacao;
+        }
+        // --- FIM DA ALTERAÇÃO 3 ---
         
         els.registerBtn.textContent = 'Atualizar Venda';
         toggleView('main'); 
@@ -3063,4 +3102,3 @@ Negociadoras: ${negociadoras}
   </script>
 </body>
 </html>
-
