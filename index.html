@@ -69,12 +69,8 @@
         box-shadow: 0 0 4px var(--cor-erro); 
     }
     #logoLink { position: fixed; top: 16px; left: 16px; width: auto; max-height: 80px; cursor: pointer; z-index: 9998; }
-    .app-logo { max-height: 80px; width: auto; transition: opacity 0.3s ease, filter 0.3s ease, transform 0.2s ease; display: block; }
-    #appLogo:hover { 
-        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante)); 
-        opacity: 0.9;
-        transform: scale(1.05);
-    }
+    .app-logo { max-height: 80px; width: auto; transition: opacity 0.3s ease, filter 0.3s ease; display: block; }
+    #appLogo:hover { filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante)); opacity: 0.9; }
     
     #welcomeLogo { max-width: 80%; max-height: 120px; margin-bottom: 25px; display: block; }
     #welcomeScreen {
@@ -192,6 +188,7 @@
         display: flex; justify-content: space-between; align-items: center;
         padding: 8px 0; border-bottom: 1px solid var(--cor-borda);
         font-size: 14px;
+        color: var(--cor-texto); /* Garante que o texto seja visível em modo claro/escuro */
     }
     .online-user-item:last-child { border-bottom: none; }
     .online-user-item .tag { 
@@ -210,6 +207,7 @@
         padding-right: 5px;
     }
     /* FIM NOVO: Estilo para o Indicador Online */
+
 
     .top-right-controls { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
     .control-btn {
@@ -1175,7 +1173,7 @@
       imageLightboxModal: document.getElementById('imageLightboxModal'),
       lightboxImg: document.getElementById('lightboxImg'),
 
-      // NOVO ELEMENTO
+      // NOVO ELEMENTO (PARA LISTA DETALHADA)
       onlineUsersList: document.getElementById('onlineUsersList')
     };
     
@@ -1246,20 +1244,30 @@
     };
     
     /**
-     * Formata o tempo de inatividade em minutos ou segundos.
+     * Formata o tempo de inatividade em minutos, horas ou segundos.
      */
     const formatInactivityTime = (inactivityMs) => {
         const seconds = Math.floor(inactivityMs / 1000);
-        if (seconds < 60) {
-            return `${seconds}s atrás`;
-        }
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) {
-            return `${minutes} min atrás`;
-        }
         const hours = Math.floor(minutes / 60);
-        return `${hours} h atrás`; 
+
+        if (seconds < 5) {
+            return "Agora";
+        }
+        if (seconds < 60) {
+            return `${seconds} Segundos Atrás`;
+        }
+        if (minutes < 60) {
+            return `${minutes} Minuto${minutes > 1 ? 's' : ''} Atrás`;
+        }
+        
+        const remainingMinutes = minutes % 60;
+        if (hours < 2) {
+             return `1 Hora e ${remainingMinutes} Minutos Atrás`;
+        }
+        return `${hours} Horas e ${remainingMinutes} Minutos Atrás`;
     }
+    
     
     /**
      * Monitora e exibe a lista de usuários online/offline em tempo real no Painel Admin.
@@ -1267,7 +1275,12 @@
     const monitorOnlineUsers = () => {
         const statusRef = ref(db, 'onlineStatus');
         
-        onValue(statusRef, (snapshot) => {
+        // Remove listener anterior se existir
+        if (monitorOnlineUsers.listener) {
+            monitorOnlineUsers.listener();
+        }
+        
+        const listener = onValue(statusRef, (snapshot) => {
             const now = Date.now();
             const activeThreshold = 60000; // 60 segundos
             let activeCount = 0;
@@ -1283,6 +1296,7 @@
                 const uid = child.key;
                 const userStatus = child.val();
                 
+                // Ignorar o usuário 'snow'
                 if (userStatus.displayName && userStatus.displayName.toLowerCase() === 'snow') {
                     return; 
                 }
@@ -1299,7 +1313,8 @@
                     displayName: userStatus.displayName || 'Usuário Desconhecido',
                     tag: userStatus.tag || 'N/A',
                     isOnline: isOnline,
-                    inactivity: inactivity
+                    inactivity: inactivity,
+                    lastActive: userStatus.lastActive
                 });
             });
             
@@ -1308,7 +1323,7 @@
                 if (a.isOnline !== b.isOnline) {
                     return a.isOnline ? -1 : 1; 
                 }
-                return a.displayName.localeCompare(b.displayName); 
+                return (a.displayName || '').localeCompare(b.displayName || '');
             });
 
             els.onlineUsersCount.textContent = activeCount.toString();
@@ -1324,19 +1339,28 @@
                 item.className = 'online-user-item';
 
                 const statusDotClass = user.isOnline ? 'status-online' : 'status-offline';
-                const statusDot = `<span class="status-dot ${statusDotClass}"></span>`;
-                
-                const tagClass = `tag-${user.tag.toLowerCase()}`;
-                const userTag = `<span class="tag ${tagClass}">${user.tag}</span>`;
+                const tagClass = `tag-${(user.tag || 'visitante').toLowerCase()}`;
 
-                const timeAgo = user.isOnline ? 'Agora' : formatInactivityTime(user.inactivity);
+                const timeDisplay = user.isOnline 
+                                  ? 'Ativo' 
+                                  : 'Inativo';
+                
+                const formattedTime = formatInactivityTime(user.inactivity);
+                
+                // Se o usuário está online, mas a atividade é "Agora", podemos omitir o tempo, ou mostrar 'Ativo Agora'
+                const activityText = user.isOnline 
+                                  ? `Ativo (${formattedTime})`
+                                  : `Inativo (${formattedTime})`;
                 
                 item.innerHTML = `
                     <span style="display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        ${statusDot} ${user.displayName}
-                        ${userTag}
+                        <span class="status-dot ${statusDotClass}" title="${user.isOnline ? 'Online' : 'Offline'}"></span> 
+                        <strong style="margin-right: 5px;">${user.displayName}</strong> 
+                        <span class="tag ${tagClass}">${user.tag}</span>
                     </span>
-                    <span class="last-active-time">${timeAgo}</span>
+                    <span class="last-active-time" style="color: ${user.isOnline ? '#00b33c' : 'var(--cor-erro)'}; font-weight: 600;">
+                       ${activityText}
+                    </span>
                 `;
                 
                 els.onlineUsersList.appendChild(item);
@@ -1347,6 +1371,8 @@
                 console.error("Erro ao monitorar status online:", error);
             }
         });
+        
+        monitorOnlineUsers.listener = listener;
     };
     
     // =================================================================
@@ -2103,7 +2129,7 @@ Negociadoras: ${negociadoras}
         } else if (viewName === 'admin') {
             els.adminPanel.style.display = 'block';
             loadAdminPanel();
-            monitorOnlineUsers(); // Inicia o monitoramento de usuários online
+            monitorOnlineUsers(); // Inicia o monitoramento de usuários online DETALHADO
         } else if (viewName === 'dossier') {
             document.body.classList.add('dossier-view-active');
             els.dossierCard.style.display = 'block';
@@ -2533,11 +2559,6 @@ Negociadoras: ${negociadoras}
                 
                 els.dossierOrgGrid.appendChild(card);
             });
-            
-            if (orgSortableInstance) {
-                orgSortableInstance.destroy();
-                orgSortableInstance = null;
-            }
         }
 
         // 2. Renderiza as Pessoas encontradas
@@ -2660,11 +2681,6 @@ Negociadoras: ${negociadoras}
                 card.appendChild(actionsDiv);
                 els.dossierOrgGrid.appendChild(card);
             });
-            
-            if (orgSortableInstance) {
-                orgSortableInstance.destroy();
-                orgSortableInstance = null;
-            }
         }
     };
     
@@ -3476,8 +3492,8 @@ Negociadoras: ${negociadoras}
     
     // --- NOVOS Listeners do Gerenciador de Veículos (Com Edição) ---
     
-    els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
-    els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
+    els.addModalAddVeiculoBtn.onclick = () => adicionarOu AtualizarVeiculoTemp('addModal');
+    els.editModalAddVeiculoBtn.onclick = () => adicionarOu AtualizarVeiculoTemp('editModal');
     
     els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
     els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
