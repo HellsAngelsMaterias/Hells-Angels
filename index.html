@@ -69,8 +69,12 @@
         box-shadow: 0 0 4px var(--cor-erro); 
     }
     #logoLink { position: fixed; top: 16px; left: 16px; width: auto; max-height: 80px; cursor: pointer; z-index: 9998; }
-    .app-logo { max-height: 80px; width: auto; transition: opacity 0.3s ease, filter 0.3s ease; display: block; }
-    #appLogo:hover { filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante)); opacity: 0.9; }
+    .app-logo { max-height: 80px; width: auto; transition: opacity 0.3s ease, filter 0.3s ease, transform 0.2s ease; display: block; }
+    #appLogo:hover { 
+        filter: drop-shadow(0 0 8px var(--cor-principal)) drop-shadow(0 0 15px var(--cor-glow-pulsante)); 
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
     
     #welcomeLogo { max-width: 80%; max-height: 120px; margin-bottom: 25px; display: block; }
     #welcomeScreen {
@@ -169,6 +173,43 @@
     .muted { background: var(--cor-btn-secundario); color: var(--cor-btn-secundario-texto); }
     .success { background: #00b33c; color: #fff; }
     .danger { background: var(--cor-erro); color: #fff; }
+
+    /* NOVO: Estilo para o Indicador Online */
+    .status-dot {
+        height: 10px; width: 10px; border-radius: 50%;
+        display: inline-block; margin-right: 8px;
+        transition: background-color 0.5s ease;
+        flex-shrink: 0;
+    }
+    .status-online {
+        background-color: #00b33c; /* Verde */
+        box-shadow: 0 0 5px #00b33c;
+    }
+    .status-offline {
+        background-color: var(--cor-erro); /* Vermelho */
+    }
+    .online-user-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 0; border-bottom: 1px solid var(--cor-borda);
+        font-size: 14px;
+    }
+    .online-user-item:last-child { border-bottom: none; }
+    .online-user-item .tag { 
+        font-size: 12px; font-weight: 600; padding: 3px 6px; 
+        border-radius: 4px; color: var(--cor-btn-texto);
+        flex-shrink: 0; margin-left: 10px; 
+    }
+    .online-user-item .last-active-time { 
+        font-size: 12px; color: #888; margin-left: auto; 
+        flex-shrink: 0;
+        text-align: right;
+    }
+    #onlineUsersList {
+        max-height: 250px; 
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    /* FIM NOVO: Estilo para o Indicador Online */
 
     .top-right-controls { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
     .control-btn {
@@ -695,9 +736,13 @@
           <button id="toggleCalcBtnAdmin" class="muted">Voltar à Calculadora</button>
       </div>
       
-      <h3>Status do Servidor</h3>
-      <p style="font-size: 13px;">Usuários online (ativos nos últimos 60s): <strong id="onlineUsersCount">...</strong></p>
-      
+      <div id="onlineUsersCard" class="card" style="margin-bottom: 20px;">
+        <h3>Status de Atividade em Tempo Real</h3>
+        <p style="font-size: 13px; margin-bottom: 10px;">Usuários online (ativos nos últimos 60s): <strong id="onlineUsersCount">...</strong></p>
+        <div id="onlineUsersList">
+            <p style="text-align: center;">Carregando status...</p>
+        </div>
+      </div>
       <h3>Gerenciamento de Usuários</h3>
       <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
       <div class="history-table-wrapper">
@@ -1128,7 +1173,10 @@
       // --- NOVOS ELEMENTOS DO LIGHTBOX ---
       imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
       imageLightboxModal: document.getElementById('imageLightboxModal'),
-      lightboxImg: document.getElementById('lightboxImg')
+      lightboxImg: document.getElementById('lightboxImg'),
+
+      // NOVO ELEMENTO
+      onlineUsersList: document.getElementById('onlineUsersList')
     };
     
     // =================================================================
@@ -1198,45 +1246,107 @@
     };
     
     /**
-     * Conta e exibe o número de usuários ativos (últimos 60 segundos).
+     * Formata o tempo de inatividade em minutos ou segundos.
      */
-    const countOnlineUsers = () => {
+    const formatInactivityTime = (inactivityMs) => {
+        const seconds = Math.floor(inactivityMs / 1000);
+        if (seconds < 60) {
+            return `${seconds}s atrás`;
+        }
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) {
+            return `${minutes} min atrás`;
+        }
+        const hours = Math.floor(minutes / 60);
+        return `${hours} h atrás`; 
+    }
+    
+    /**
+     * Monitora e exibe a lista de usuários online/offline em tempo real no Painel Admin.
+     */
+    const monitorOnlineUsers = () => {
         const statusRef = ref(db, 'onlineStatus');
         
-        // Listener que remove o listener anterior se ele existir
-        let listener;
-        if (countOnlineUsers.listener) {
-             listener = countOnlineUsers.listener;
-        }
-        
-        listener = onValue(statusRef, (snapshot) => {
+        onValue(statusRef, (snapshot) => {
+            const now = Date.now();
+            const activeThreshold = 60000; // 60 segundos
+            let activeCount = 0;
+            const usersData = [];
+            
             if (!snapshot.exists()) {
+                els.onlineUsersList.innerHTML = '<p style="text-align: center;">Nenhum usuário ativo.</p>';
                 els.onlineUsersCount.textContent = '0';
                 return;
             }
             
-            const now = Date.now();
-            const activeThreshold = 60000; // 60 segundos
-            let activeCount = 0;
-            
             snapshot.forEach(child => {
+                const uid = child.key;
                 const userStatus = child.val();
-                if (userStatus.lastActive && (now - userStatus.lastActive) < activeThreshold) {
-                    activeCount++;
-                } else if (now - userStatus.lastActive >= activeThreshold) {
-                    // Opcional: Remover o nó do usuário inativo (melhor se for feito com Cloud Functions)
-                    // remove(child.ref); 
+                
+                if (userStatus.displayName && userStatus.displayName.toLowerCase() === 'snow') {
+                    return; 
                 }
+                
+                const inactivity = now - userStatus.lastActive;
+                const isOnline = inactivity < activeThreshold;
+                
+                if (isOnline) {
+                    activeCount++;
+                }
+
+                usersData.push({
+                    uid: uid,
+                    displayName: userStatus.displayName || 'Usuário Desconhecido',
+                    tag: userStatus.tag || 'N/A',
+                    isOnline: isOnline,
+                    inactivity: inactivity
+                });
             });
             
+            // Ordenar: Online > Offline > Nome
+            usersData.sort((a, b) => {
+                if (a.isOnline !== b.isOnline) {
+                    return a.isOnline ? -1 : 1; 
+                }
+                return a.displayName.localeCompare(b.displayName); 
+            });
+
             els.onlineUsersCount.textContent = activeCount.toString();
+            els.onlineUsersList.innerHTML = '';
+
+            if (usersData.length === 0) {
+                 els.onlineUsersList.innerHTML = '<p style="text-align: center;">Nenhum usuário para exibir.</p>';
+                 return;
+            }
+
+            usersData.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'online-user-item';
+
+                const statusDotClass = user.isOnline ? 'status-online' : 'status-offline';
+                const statusDot = `<span class="status-dot ${statusDotClass}"></span>`;
+                
+                const tagClass = `tag-${user.tag.toLowerCase()}`;
+                const userTag = `<span class="tag ${tagClass}">${user.tag}</span>`;
+
+                const timeAgo = user.isOnline ? 'Agora' : formatInactivityTime(user.inactivity);
+                
+                item.innerHTML = `
+                    <span style="display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${statusDot} ${user.displayName}
+                        ${userTag}
+                    </span>
+                    <span class="last-active-time">${timeAgo}</span>
+                `;
+                
+                els.onlineUsersList.appendChild(item);
+            });
             
-        }, {
-             // Opções para otimizar o listener (opcional)
+        }, (error) => {
+            if(error.code !== "PERMISSION_DENIED") {
+                console.error("Erro ao monitorar status online:", error);
+            }
         });
-        
-        // Salva o novo listener
-        countOnlineUsers.listener = listener;
     };
     
     // =================================================================
@@ -1993,7 +2103,7 @@ Negociadoras: ${negociadoras}
         } else if (viewName === 'admin') {
             els.adminPanel.style.display = 'block';
             loadAdminPanel();
-            countOnlineUsers(); // Inicia a contagem de usuários online
+            monitorOnlineUsers(); // Inicia o monitoramento de usuários online
         } else if (viewName === 'dossier') {
             document.body.classList.add('dossier-view-active');
             els.dossierCard.style.display = 'block';
@@ -2095,7 +2205,7 @@ Negociadoras: ${negociadoras}
             return;
         }
         const headers = ["Data/Hora", "Cliente", "Organização", "Tipo", "Telefone", "Negociadoras", "Cargo", "Carro", "Placas", "Qtde Tickets", "Qtde Tablets", "Qtde Nitro", "Valor Total", "Tipo Valor", "Registrado Por"];
-        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${venda.cliente}"`, `"${venda.organizacao}"`, `"${venda.organizacaoTipo}"`, `"${venda.telefone}"`, `"${venda.negociadoras}"`, `"${venda.vendaValorObs}"`, `"${venda.carro || ''}"`, `"${venda.placas || ''}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${venda.registradoPor}"`].join(','));
+        const csvRows = vendas.map(v => [`"${v.dataHora}"`, `"${v.cliente}"`, `"${v.organizacao}"`, `"${v.organizacaoTipo}"`, `"${v.telefone}"`, `"${v.negociadoras}"`, `"${v.vendaValorObs}"`, `"${v.carro || ''}"`, `"${v.placas || ''}"`, v.qtyTickets, v.qtyTablets, v.qtyNitro, v.valorTotal, `"${valorDescricao[v.tipoValor]}"`, `"${v.registradoPor}"`].join(','));
         const csvContent = [headers.join(','), ...csvRows].join('\n');
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
@@ -2423,6 +2533,11 @@ Negociadoras: ${negociadoras}
                 
                 els.dossierOrgGrid.appendChild(card);
             });
+            
+            if (orgSortableInstance) {
+                orgSortableInstance.destroy();
+                orgSortableInstance = null;
+            }
         }
 
         // 2. Renderiza as Pessoas encontradas
@@ -3782,4 +3897,3 @@ Negociadoras: ${negociadoras}
   </script>
 </body>
 </html>
-
