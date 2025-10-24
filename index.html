@@ -265,6 +265,7 @@
         padding: 10px 20px; z-index: 9997;
         display: none;
         justify-content: center; align-items: center; gap: 20px;
+        text-align: center; /* Adiciona alinhamento de texto para o conteúdo */
     }
     
     /* --- INÍCIO DOS NOVOS ESTILOS DO DOSSIÊ (v6) --- */
@@ -694,6 +695,9 @@
           <button id="toggleCalcBtnAdmin" class="muted">Voltar à Calculadora</button>
       </div>
       
+      <h3>Status do Servidor</h3>
+      <p style="font-size: 13px;">Usuários online (ativos nos últimos 60s): <strong id="onlineUsersCount">...</strong></p>
+      
       <h3>Gerenciamento de Usuários</h3>
       <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
       <div class="history-table-wrapper">
@@ -724,6 +728,12 @@
               <input type="checkbox" id="layoutToggleBottomPanel" style="width: auto;">
               Ligar "Painel Inferior" para todos
           </label>
+          
+          <div style="margin-top: 15px;">
+             <label for="bottomPanelText">Mensagem do Painel Inferior:</label>
+             <input type="text" id="bottomPanelText" placeholder="Digite a mensagem para o rodapé aqui">
+             <button id="saveBottomPanelTextBtn" class="primary" style="margin-top: 8px;">Salvar Mensagem</button>
+          </div>
       </div>
       
       <h3 style="margin-top: 20px;">Ações de Dossiê</h3>
@@ -797,7 +807,7 @@
   <div id="toast-container"></div>
   
   <div id="bottomPanel">
-      <span>Este é o painel inferior. O conteúdo pode ser personalizado.</span>
+      <span id="bottomPanelDisplay">Este é o painel inferior. O conteúdo pode ser personalizado.</span>
   </div>
   
   <div id="editDossierOverlay" class="modal-overlay"></div>
@@ -1034,8 +1044,16 @@
       adminPanel: document.getElementById('adminPanel'),
       adminUserListBody: document.getElementById('adminUserListBody'),
       toggleCalcBtnAdmin: document.getElementById('toggleCalcBtnAdmin'), 
+      
+      // --- Novos Elementos Admin
+      onlineUsersCount: document.getElementById('onlineUsersCount'),
       layoutToggleNightMode: document.getElementById('layoutToggleNightMode'),
       layoutToggleBottomPanel: document.getElementById('layoutToggleBottomPanel'),
+      bottomPanelText: document.getElementById('bottomPanelText'),
+      saveBottomPanelTextBtn: document.getElementById('saveBottomPanelTextBtn'),
+      bottomPanelDisplay: document.getElementById('bottomPanelDisplay'), // O <span> no rodapé
+      // --- Fim Novos Elementos Admin
+      
       bottomPanel: document.getElementById('bottomPanel'),
       userStatus: document.getElementById('userStatus'),
       
@@ -1056,7 +1074,7 @@
       dossierPeopleGrid: document.getElementById('dossierPeopleGrid'),
       
       migrateDossierBtn: document.getElementById('migrateDossierBtn'),
-      migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), // Novo botão
+      migrateVeiculosBtn: document.getElementById('migrateVeiculosBtn'), 
       
       editDossierOverlay: document.getElementById('editDossierOverlay'),
       editDossierModal: document.getElementById('editDossierModal'),
@@ -1066,16 +1084,16 @@
       editDossierNumero: document.getElementById('editDossierNumero'),
       editDossierCargo: document.getElementById('editDossierCargo'),
       editDossierFotoUrl: document.getElementById('editDossierFotoUrl'),
-      editDossierInstagram: document.getElementById('editDossierInstagram'), // <-- MUDANÇA: INSTAGRAM
+      editDossierInstagram: document.getElementById('editDossierInstagram'), 
       saveDossierBtn: document.getElementById('saveDossierBtn'),
       cancelDossierBtn: document.getElementById('cancelDossierBtn'),
       
       // -- Novos elementos (Modal Editar)
       editModalCarroNome: document.getElementById('editModalCarroNome'),
       editModalCarroPlaca: document.getElementById('editModalCarroPlaca'),
-      editModalCarroFoto: document.getElementById('editModalCarroFoto'), // NOVO
+      editModalCarroFoto: document.getElementById('editModalCarroFoto'), 
       editModalAddVeiculoBtn: document.getElementById('editModalAddVeiculoBtn'),
-      editModalCancelVeiculoBtn: document.getElementById('editModalCancelVeiculoBtn'), // NOVO
+      editModalCancelVeiculoBtn: document.getElementById('editModalCancelVeiculoBtn'), 
       editModalListaVeiculos: document.getElementById('editModalListaVeiculos'),
       
       addDossierOverlay: document.getElementById('addDossierOverlay'),
@@ -1091,9 +1109,9 @@
       // -- Novos elementos (Modal Adicionar)
       addModalCarroNome: document.getElementById('addModalCarroNome'),
       addModalCarroPlaca: document.getElementById('addModalCarroPlaca'),
-      addModalCarroFoto: document.getElementById('addModalCarroFoto'), // NOVO
+      addModalCarroFoto: document.getElementById('addModalCarroFoto'), 
       addModalAddVeiculoBtn: document.getElementById('addModalAddVeiculoBtn'),
-      addModalCancelVeiculoBtn: document.getElementById('addModalCancelVeiculoBtn'), // NOVO
+      addModalCancelVeiculoBtn: document.getElementById('addModalCancelVeiculoBtn'), 
       addModalListaVeiculos: document.getElementById('addModalListaVeiculos'),
       
       orgModalOverlay: document.getElementById('orgModalOverlay'),
@@ -1113,12 +1131,18 @@
       lightboxImg: document.getElementById('lightboxImg')
     };
     
+    // =================================================================
+    // INÍCIO: NOVAS FUNÇÕES DE CONFIGURAÇÃO GLOBAL E STATUS ONLINE
+    // =================================================================
+    
     const globalLayoutRef = ref(db, 'configuracoesGlobais/layout');
+    
+    // Listener que atualiza o layout para todos os usuários
     onValue(globalLayoutRef, (snapshot) => {
         if (!snapshot.exists()) {
             console.warn("Nó /configuracoesGlobais/layout não encontrado. Criando...");
             if(currentUserData && currentUserData.tag.toUpperCase() === 'ADMIN') {
-                 set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false });
+                 set(globalLayoutRef, { enableNightMode: true, enableBottomPanel: false, bottomPanelText: 'Este é o painel inferior.' });
             }
             return;
         }
@@ -1126,7 +1150,7 @@
         
         if (els.themeBtn) {
             els.themeBtn.style.display = settings.enableNightMode ? 'block' : 'none';
-            if (!settings.enableNightMode) {
+            if (!settings.enableNightMode && document.body.classList.contains('dark')) {
                 document.body.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
             }
@@ -1134,13 +1158,91 @@
         
         if (els.bottomPanel) {
             els.bottomPanel.style.display = settings.enableBottomPanel ? 'flex' : 'none';
+            // Atualiza a mensagem no rodapé para todos
+            els.bottomPanelDisplay.textContent = settings.bottomPanelText || 'Este é o painel inferior.'; 
         }
+        
+        // Atualiza o input de texto no Painel Admin (se estiver visível)
+        if (els.adminPanel.style.display !== 'none' && els.bottomPanelText) {
+             els.bottomPanelText.value = settings.bottomPanelText || '';
+        }
+
     }, (error) => {
         if(error.code !== "PERMISSION_DENIED") {
             showToast(`Erro ao carregar configurações de layout: ${error.message}`, 'error');
         }
     });
     
+    /**
+     * Atualiza a última atividade do usuário logado a cada 30 segundos.
+     * Usado para rastrear usuários "online".
+     */
+    const updateUserActivity = () => {
+        if (currentUser) {
+            // Cria um nó temporário (ou sobrescreve o existente)
+            const activityRef = ref(db, `onlineStatus/${currentUser.uid}`);
+            
+            // Adiciona um valor 'timestamp' com a hora atual
+            set(activityRef, {
+                lastActive: Date.now(),
+                displayName: currentUser.displayName,
+                tag: currentUserData ? currentUserData.tag : 'N/A'
+            }).catch(e => {
+                 // Apenas para logs, não é crítico
+                 console.warn("Erro ao registrar atividade online:", e.message);
+            });
+            
+            // Define um intervalo para rodar a cada 30 segundos
+            setTimeout(updateUserActivity, 30000); 
+        }
+    };
+    
+    /**
+     * Conta e exibe o número de usuários ativos (últimos 60 segundos).
+     */
+    const countOnlineUsers = () => {
+        const statusRef = ref(db, 'onlineStatus');
+        
+        // Listener que remove o listener anterior se ele existir
+        let listener;
+        if (countOnlineUsers.listener) {
+             listener = countOnlineUsers.listener;
+        }
+        
+        listener = onValue(statusRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                els.onlineUsersCount.textContent = '0';
+                return;
+            }
+            
+            const now = Date.now();
+            const activeThreshold = 60000; // 60 segundos
+            let activeCount = 0;
+            
+            snapshot.forEach(child => {
+                const userStatus = child.val();
+                if (userStatus.lastActive && (now - userStatus.lastActive) < activeThreshold) {
+                    activeCount++;
+                } else if (now - userStatus.lastActive >= activeThreshold) {
+                    // Opcional: Remover o nó do usuário inativo (melhor se for feito com Cloud Functions)
+                    // remove(child.ref); 
+                }
+            });
+            
+            els.onlineUsersCount.textContent = activeCount.toString();
+            
+        }, {
+             // Opções para otimizar o listener (opcional)
+        });
+        
+        // Salva o novo listener
+        countOnlineUsers.listener = listener;
+    };
+    
+    // =================================================================
+    // FIM: NOVAS FUNÇÕES DE CONFIGURAÇÃO GLOBAL E STATUS ONLINE
+    // =================================================================
+
     
     const formatCurrency = (value) => {
       if (typeof value !== 'number' || isNaN(value)) { return 'R$ 0'; }
@@ -1223,7 +1325,7 @@
         els.addDossierNome, els.addDossierOrganizacao, els.addDossierCargo, 
         els.editDossierNome, els.editDossierCargo, 
         els.orgNome,
-        els.addModalCarroNome, els.editModalCarroNome // Adiciona os novos campos de carro
+        els.addModalCarroNome, els.editModalCarroNome 
     ];
     camposParaCapitalizar.forEach(campo => {
       if (campo) {
@@ -1313,9 +1415,9 @@
         vendaOriginalRegistradoPorId = null;
         vendaOriginalTimestamp = null;
         vendaOriginalDataHora = null;
-        vendaOriginalCliente = null; // LIMPA
-        vendaOriginalOrganizacao = null; // LIMPA
-        vendaOriginalDossierOrg = null; // <-- ALTERAÇÃO 2: Limpa a variável
+        vendaOriginalCliente = null; 
+        vendaOriginalOrganizacao = null; 
+        vendaOriginalDossierOrg = null; 
         els.registerBtn.textContent = 'Registrar Venda';
       }
     };
@@ -1352,7 +1454,6 @@
     // INÍCIO: LÓGICA DE SINCRONIZAÇÃO DO DOSSIÊ (v12)
     // =================================================================
     
-    // **** INÍCIO: FUNÇÃO GLOBAL DE BUSCA (v12) ****
     /**
      * Procura por um nome de pessoa em TODAS as organizações do dossiê.
      * Retorna os dados, a org e o ID se encontrar.
@@ -1361,7 +1462,6 @@
         if (!nome) return null;
         
         try {
-            // Esta permissão (ler 'dossies/') é necessária para a função de "mover"
             const dossiesRef = ref(db, 'dossies');
             const snapshot = await get(dossiesRef);
             
@@ -1371,10 +1471,8 @@
             
             for (const orgKey in dossies) {
                 const orgData = dossies[orgKey];
-                // Itera sobre as chaves de pessoa (personId) dentro de cada org
                 for (const personId in orgData) {
                     if (orgData[personId].nome && orgData[personId].nome.toLowerCase() === nome.toLowerCase()) {
-                        // Encontrado!
                         return {
                             personData: orgData[personId],
                             oldOrg: orgKey,
@@ -1384,20 +1482,14 @@
                 }
             }
         } catch (error) {
-            // Não mostra erro de permissão para visitantes
             if(error.code !== "PERMISSION_DENIED") {
                 console.error("Erro na busca global:", error);
             }
             return null;
         }
-        return null; // Não encontrado
+        return null; 
     };
-    // **** FIM: FUNÇÃO GLOBAL DE BUSCA ****
     
-    // =================================================================
-    // INÍCIO: ADIÇÃO (Busca Global de Pessoas)
-    // =================================================================
-    // **** INÍCIO: NOVA FUNÇÃO DE BUSCA GLOBAL (Request 1) ****
     /**
      * Procura por um NOME PARCIAL de pessoa em TODAS as organizações do dossiê.
      * Retorna um array de resultados.
@@ -1422,12 +1514,11 @@
                     const person = orgData[personId];
                     const nome = person.nome ? person.nome.toLowerCase() : '';
                     
-                    // Verifica se o nome da pessoa inclui o texto da busca
                     if (nome.includes(queryLower)) {
                         results.push({
                             ...person,
                             id: personId,
-                            org: orgKey // Adiciona a org/base ao resultado
+                            org: orgKey 
                         });
                     }
                 }
@@ -1439,10 +1530,6 @@
         }
         return results;
     };
-    // **** FIM: NOVA FUNÇÃO DE BUSCA GLOBAL ****
-    // =================================================================
-    // FIM: ADIÇÃO
-    // =================================================================
     
     /**
      * Mescla veículos de uma venda (formato string) com um objeto de veículos existente.
@@ -1453,23 +1540,19 @@
         const placas = (vendaData.placas || '').split(',').map(p => p.trim());
         const maxLen = Math.max(carros.length, placas.length);
         
-        const merged = { ...existingVeiculos }; // Começa com os veículos existentes
+        const merged = { ...existingVeiculos }; 
 
         for (let i = 0; i < maxLen; i++) {
             const carro = carros[i] || 'N/A';
             const placa = placas[i] || '';
             
             if (placa) {
-                // Se tem placa, usa como chave.
-                if (!merged[placa]) { // Só adiciona se a placa NÃO existir
+                if (!merged[placa]) { 
                     merged[placa] = { carro: carro, placa: placa, fotoUrl: '' };
                 } else if (carro !== 'N/A' && merged[placa].carro === 'N/A') {
-                    // Se já existe mas o carro era N/A, atualiza o nome do carro
                     merged[placa].carro = carro;
                 }
             } else if (carro !== 'N/A') {
-                // Se não tem placa, é difícil... vamos adicionar com uma chave temporária.
-                // O usuário terá que limpar duplicatas manualmente no dossiê.
                 const tempKey = `venda_${Date.now()}_${i}`;
                 merged[tempKey] = { carro: carro, placa: '', fotoUrl: '' };
             }
@@ -1479,26 +1562,24 @@
     
     
     // Adiciona ou ATUALIZA entrada de pessoa no dossiê
-    // **** MODIFICADO (v12): Aceita 'dadosAntigos' para mesclar ao criar/atualizar ****
     const addDossierEntry = async (vendaData, dadosAntigos = null) => {
         const org = vendaData.organizacao.trim();
         const nome = vendaData.cliente.trim();
         
         if (!org || !nome) {
             console.warn("addDossierEntry: Org ou Nome faltando. Saindo.");
-            return; // Não pode salvar sem org ou nome
+            return;
         }
 
         // Garante que a Organização exista em /organizacoes
         const orgRef = ref(db, `organizacoes/${org}`);
         get(orgRef).then(snapshot => {
             if (!snapshot.exists()) {
-                // Adiciona o novo campo ordemIndex para bases
                 set(orgRef, {
                     nome: org,
                     fotoUrl: '',
                     info: 'Base registrada automaticamente via Venda.',
-                    ordemIndex: 9999 // Adiciona o índice de ordenação
+                    ordemIndex: 9999 
                 });
             }
         });
@@ -1520,58 +1601,42 @@
 
                 const updates = {};
                 
-                // **** INÍCIO DA MODIFICAÇÃO (v12) ****
-                // Mescla dados antigos (se movidos) com dados existentes
-                
-                // Atualiza telefone, cargo e data (para ter o mais recente da venda)
                 updates.numero = vendaData.telefone || existingEntryData.numero;
                 updates.cargo = vendaData.vendaValorObs || existingEntryData.cargo;
                 updates.data = vendaData.dataHora; 
                 
-                // Base para veículos: usa dados antigos (se movidos) ou dados já existentes
                 const baseVeiculos = (dadosAntigos ? dadosAntigos.veiculos : existingEntryData.veiculos) || {};
                 updates.veiculos = parseAndMergeVeiculos(vendaData, baseVeiculos);
 
-                // Preserva dados do registro antigo (se movido)
                 if (dadosAntigos) {
                     updates.fotoUrl = dadosAntigos.fotoUrl || existingEntryData.fotoUrl || '';
                     updates.instagram = dadosAntigos.instagram || existingEntryData.instagram || '';
-                    // Preserva a hierarquia, se não houver, usa a existente, senão 9999
                     updates.hierarquiaIndex = dadosAntigos.hierarquiaIndex !== undefined ? dadosAntigos.hierarquiaIndex : (existingEntryData.hierarquiaIndex !== undefined ? existingEntryData.hierarquiaIndex : 9999);
                 }
-                // **** FIM DA MODIFICAÇÃO (v12) ****
 
                 const updateRef = ref(db, `dossies/${org}/${existingEntryId}`);
                 await update(updateRef, updates);
 
             } else {
                 // NÃO EXISTE: Cria uma nova entrada
-                
-                // **** INÍCIO DA MODIFICAÇÃO (v12) ****
-                // Começa com os dados antigos (se movidos)
                 const dossierEntry = { ...dadosAntigos };
                 
-                // Sobrescreve/Adiciona dados da venda atual
                 dossierEntry.nome = vendaData.cliente;
                 dossierEntry.numero = vendaData.telefone;
                 dossierEntry.organizacao = org;
                 dossierEntry.cargo = vendaData.vendaValorObs || 'N/A';
-                dossierEntry.data = vendaData.dataHora; // Data da venda
+                dossierEntry.data = vendaData.dataHora; 
                 
-                // Mescla veículos da venda com veículos antigos (se movidos)
                 dossierEntry.veiculos = parseAndMergeVeiculos(vendaData, (dadosAntigos ? dadosAntigos.veiculos : {}));
 
-                // Garante que campos opcionais existam (caso 'dadosAntigos' seja null)
                 dossierEntry.fotoUrl = dossierEntry.fotoUrl || '';
                 dossierEntry.instagram = dossierEntry.instagram || '';
                 dossierEntry.hierarquiaIndex = dossierEntry.hierarquiaIndex !== undefined ? dossierEntry.hierarquiaIndex : 9999;
-                // **** FIM DA MODIFICAÇÃO (v12) ****
                 
                 await push(ref(db, `dossies/${org}`), dossierEntry);
             }
         } catch (err) {
             console.error("Erro ao adicionar/atualizar dossiê:", err);
-            // NÃO MOSTRAR ERRO DE PERMISSÃO PARA VISITANTES
             if(err.code !== "PERMISSION_DENIED") {
                 showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
             }
@@ -1588,27 +1653,21 @@
             return;
         }
 
-        // Procura pelo registro de dossiê antigo
         const dossierQuery = query(ref(db, `dossies/${oldOrg}`), orderByChild('nome'), equalTo(oldNome));
         
         try {
             const snapshot = await get(dossierQuery);
             
             if (!snapshot.exists()) {
-                // Não existia um dossiê...
-                // **** MUDANÇA (v12): Verifica se o nome existe em outro lugar antes de criar
-                // (Cenário: Editou uma venda que não tinha dossiê, para um nome que já existe em outra org)
                 const globalEntry = await findDossierEntryGlobal(newNome);
                 
                 let dadosAntigos = null;
                 if (globalEntry && globalEntry.oldOrg !== newOrg) {
-                    // Encontrou em outra org, vamos movê-lo
                     dadosAntigos = globalEntry.personData;
                     await remove(ref(db, `dossies/${globalEntry.oldOrg}/${globalEntry.personId}`));
                     showToast(`"${newNome}" movido de "${globalEntry.oldOrg}" para "${newOrg}".`, "default", 4000);
                 }
                 
-                // Cria um novo (com ou sem dados antigos)
                 addDossierEntry(newVendaData, dadosAntigos);
                 return;
             }
@@ -1620,35 +1679,26 @@
                 existingEntryData = child.val();
             });
             
-            // Cria o objeto de dados do dossiê com base na venda ATUALIZADA
-            // (Esta lógica já preserva os dados antigos, está correta)
             const newDossierData = {
-                ...existingEntryData, // Preserva foto, insta, hierarquia
+                ...existingEntryData, 
                 nome: newVendaData.cliente,
                 numero: newVendaData.telefone,
                 organizacao: newVendaData.organizacao,
                 cargo: newVendaData.vendaValorObs || 'N/A',
                 data: newVendaData.dataHora,
-                // Mescla veículos antigos com os da venda atualizada
                 veiculos: parseAndMergeVeiculos(newVendaData, existingEntryData.veiculos || {}),
             };
 
             if (oldOrg === newOrg) {
-                // Org é a mesma. Apenas atualiza o registro existente
                 const updateRef = ref(db, `dossies/${newOrg}/${existingEntryId}`);
-                await set(updateRef, newDossierData); // 'set' para sobrescrever tudo
+                await set(updateRef, newDossierData); 
             } else {
-                // Org mudou. Apaga o antigo e cria um novo (com a lógica de deduplicação).
                 await remove(ref(db, `dossies/${oldOrg}/${existingEntryId}`));
-                
-                // Roda a lógica de add para verificar se o nome já existe na *nova* org
-                // **** MUDANÇA (v12): Passa os dados preservados para o addDossierEntry
                 addDossierEntry(newVendaData, existingEntryData); 
             }
 
         } catch (err) {
             console.error("Erro ao sincronizar edição da venda com dossiê:", err);
-            // NÃO MOSTRAR ERRO DE PERMISSÃO PARA VISITANTES
             if(err.code !== "PERMISSION_DENIED") {
                 showToast(`Erro ao sincronizar dossiê: ${err.message}`, "error");
             }
@@ -1663,12 +1713,10 @@
     // INÍCIO: FUNÇÃO DE AUTO-PREENCHIMENTO (NOVA v13)
     // =================================================================
     const autoFillFromDossier = async () => {
-        // Não preencher automaticamente se estivermos editando uma venda (ela já tem seus dados)
         if (vendaEmEdicaoId) return; 
         
         const nome = els.nomeCliente.value.trim();
         
-        // Se o nome for limpo, não faz nada (deixa o usuário limpar os campos manualmente se quiser)
         if (!nome) return; 
 
         try {
@@ -1678,30 +1726,24 @@
                 const data = foundEntry.personData;
                 const orgBase = foundEntry.oldOrg;
 
-                // Preenche os campos
                 els.telefone.value = data.numero || '';
-                els.vendaValorObs.value = data.cargo || ''; // Campo "Cargo"
+                els.vendaValorObs.value = data.cargo || ''; 
                 
-                // Mapeia a Base do Dossiê para os campos Organização/Tipo
                 if (orgBase.toUpperCase() === 'CPF') {
                     els.organizacaoTipo.value = 'CPF';
-                    els.organizacao.value = ''; // CPF não usa o campo de nome de org
+                    els.organizacao.value = ''; 
                 } else if (orgBase.toUpperCase() === 'OUTROS') {
                     els.organizacaoTipo.value = 'OUTROS';
-                    els.organizacao.value = ''; // Outros não usa o campo de nome de org
+                    els.organizacao.value = ''; 
                 } else {
-                    // É um CNPJ, preenche o nome da organização
                     els.organizacaoTipo.value = 'CNPJ';
                     els.organizacao.value = orgBase; 
                 }
                 
                 showToast(`Dados de "${nome}" preenchidos do dossiê.`, "success");
             }
-            // Se não for encontrado (else), não faz nada. 
-            // O usuário continua com o preenchimento manual.
             
         } catch (error) {
-            // Não trava a aplicação se a busca falhar, apenas loga.
             if(error.code !== "PERMISSION_DENIED") {
                 console.error("Erro ao tentar auto-preencher:", error);
                 showToast("Erro ao buscar dados do dossiê.", "error");
@@ -1712,7 +1754,6 @@
     // FIM: FUNÇÃO DE AUTO-PREENCHIMENTO
     // =================================================================
 
-    // **** MODIFICADO (v12): Tornou-se uma função 'async' ****
     const registerVenda = async () => {
       const { qtyTickets, qtyTablets, qtyNitro, totalValue, tipoValor, hasQuantities } = calculate();
       if (!hasQuantities) {
@@ -1749,33 +1790,26 @@
         registradoPorId: vendaEmEdicaoId ? vendaOriginalRegistradoPorId : currentUser.uid 
       };
       
-      // --- INÍCIO DA LÓGICA DE MOVIMENTAÇÃO DE DOSSIÊ (v12) ---
       
-      // 1. Determina a Base (Organização) de destino do Dossiê
       let dossierOrgDestino = '';
       if (newVenda.organizacaoTipo === 'CPF') {
           dossierOrgDestino = 'CPF';
       } else if (newVenda.organizacaoTipo === 'OUTROS') {
           dossierOrgDestino = 'Outros';
-      } else { // 'CNPJ'
+      } else { 
           dossierOrgDestino = newVenda.organizacao.trim();
       }
       
-      // 2. Variável para armazenar os dados do registro antigo, se for movido
       let dadosAntigosParaMover = null;
       
-      // 3. Verifica se é um NOVO REGISTRO e se o cliente precisa ser movido
       if (!vendaEmEdicaoId && dossierOrgDestino !== '' && newVenda.cliente !== '') {
           try {
               const existingEntry = await findDossierEntryGlobal(newVenda.cliente);
               
               if (existingEntry && existingEntry.oldOrg !== dossierOrgDestino) {
-                  // ENCONTRADO EM OUTRA ORG! Esta é a 'move operation'.
                   
-                  // 1. Salva os dados antigos para mover
                   dadosAntigosParaMover = { ...existingEntry.personData };
                   
-                  // 2. Remove da organização antiga
                   await remove(ref(db, `dossies/${existingEntry.oldOrg}/${existingEntry.personId}`));
                   
                   showToast(`"${newVenda.cliente}" movido de "${existingEntry.oldOrg}" para "${dossierOrgDestino}".`, "default", 4000);
@@ -1786,7 +1820,6 @@
               }
           }
       }
-      // --- FIM DA LÓGICA DE MOVIMENTAÇÃO ---
       
 
       const operation = vendaEmEdicaoId ? set(ref(db, `vendas/${vendaEmEdicaoId}`), newVenda) : push(ref(db, 'vendas'), newVenda);
@@ -1795,23 +1828,16 @@
           .then(() => {
               showToast(`Venda ${vendaEmEdicaoId ? 'atualizada' : 'registrada'} com sucesso!`, "success");
               
-              // --- LÓGICA DE SINCRONIZAÇÃO (Atualizada v12) ---
-              
               const dossierVendaData = { ...newVenda }; 
-              // Usa o 'dossierOrgDestino' que já calculamos
               dossierVendaData.organizacao = dossierOrgDestino;
 
               if (dossierOrgDestino !== '') {
                   if (vendaEmEdicaoId) {
-                      // É uma ATUALIZAÇÃO de venda
                       updateDossierEntryOnEdit(vendaOriginalCliente, vendaOriginalDossierOrg, dossierVendaData);
                   } else {
-                      // É um NOVO registro
-                      // **** MUDANÇA (v12): Passa os dados antigos (se houver) para a função
                       addDossierEntry(dossierVendaData, dadosAntigosParaMover);
                   }
               }
-              // --- FIM DA LÓGICA DE SINCRONIZAÇÃO ---
               
               clearAllFields();
           })
@@ -1847,21 +1873,16 @@
         vendaOriginalTimestamp = venda.timestamp;
         vendaOriginalDataHora = venda.dataHora;
         
-        // --- ALTERAÇÃO 3: Lógica Dossiê v9 ---
-        // SALVA DADOS ORIGINAIS PARA SINCRONIZAÇÃO
         vendaOriginalCliente = venda.cliente;
-        vendaOriginalOrganizacao = venda.organizacao; // Para o registro de venda
+        vendaOriginalOrganizacao = venda.organizacao; 
         
-        // Determina qual era a Base (Dossiê) original da pessoa
         if (venda.organizacaoTipo === 'CPF') {
             vendaOriginalDossierOrg = 'CPF';
         } else if (venda.organizacaoTipo === 'OUTROS') {
             vendaOriginalDossierOrg = 'Outros';
         } else {
-            // É CNPJ, usa o nome da organização da venda
             vendaOriginalDossierOrg = venda.organizacao;
         }
-        // --- FIM DA ALTERAÇÃO 3 ---
         
         els.registerBtn.textContent = 'Atualizar Venda';
         toggleView('main'); 
@@ -1870,7 +1891,6 @@
 
     const removeVenda = (id) => {
         if (confirm("Tem certeza que deseja remover esta venda?")) {
-            // (Futuramente, podemos adicionar a remoção do dossiê aqui, mas por enquanto é melhor não)
             remove(ref(db, `vendas/${id}`))
                 .then(() => {
                     showToast("Venda removida.", "success");
@@ -1973,6 +1993,7 @@ Negociadoras: ${negociadoras}
         } else if (viewName === 'admin') {
             els.adminPanel.style.display = 'block';
             loadAdminPanel();
+            countOnlineUsers(); // Inicia a contagem de usuários online
         } else if (viewName === 'dossier') {
             document.body.classList.add('dossier-view-active');
             els.dossierCard.style.display = 'block';
@@ -2110,7 +2131,7 @@ Negociadoras: ${negociadoras}
     const closeImageLightbox = () => {
         els.imageLightboxOverlay.style.display = 'none';
         els.imageLightboxModal.style.display = 'none';
-        els.lightboxImg.src = ''; // Limpa para não "piscar" a imagem antiga
+        els.lightboxImg.src = ''; 
     };
     // =============================================
     
@@ -2118,22 +2139,18 @@ Negociadoras: ${negociadoras}
     // INÍCIO: FUNÇÕES DE HIERARQUIA DE PESSOAS (SortableJS)
     // =============================================
     
-    // Salva a nova ordem da hierarquia no Firebase
     const saveHierarchyOrder = (orgName) => {
         const grid = els.dossierPeopleGrid;
-        // Pega todos os cards de pessoa, na ordem atual do DOM
         const children = Array.from(grid.children);
         
         if (children.length === 0 || !children[0].classList.contains('dossier-entry-card')) {
-            return; // Grid está vazio ou mostrando "carregando..."
+            return; 
         }
         
         const updates = {};
-        // Cria um objeto de atualização multi-path
         children.forEach((card, index) => {
             const personId = card.dataset.id;
             if (personId) {
-                // Atualiza o 'hierarquiaIndex' de cada pessoa baseado na sua posição (index)
                 updates[`dossies/${orgName}/${personId}/hierarquiaIndex`] = index;
             }
         });
@@ -2142,7 +2159,6 @@ Negociadoras: ${negociadoras}
             update(ref(db), updates)
                 .then(() => {
                     showToast("Hierarquia atualizada!", "success");
-                    // Atualiza os dados locais (globalCurrentPeople) para refletir a nova ordem
                     globalCurrentPeople = children.map((card, index) => {
                         const person = globalCurrentPeople.find(p => p.id === card.dataset.id);
                         if (person) {
@@ -2153,31 +2169,26 @@ Negociadoras: ${negociadoras}
                 })
                 .catch((err) => {
                     showToast(`Erro ao salvar hierarquia: ${err.message}`, "error");
-                    // Se der erro, a UI pode ficar fora de sincronia.
-                    // O ideal seria recarregar, mas por enquanto só avisamos.
                 });
         }
     };
 
-    // Inicializa a biblioteca SortableJS no grid de pessoas
     const initSortable = (orgName) => {
         if (sortableInstance) {
-            sortableInstance.destroy(); // Destrói a instância anterior (se houver)
+            sortableInstance.destroy(); 
         }
         
         const grid = els.dossierPeopleGrid;
         
-        // Verifica a permissão do usuário
         const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
         const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
         
         sortableInstance = new Sortable(grid, {
             animation: 150,
-            handle: '.dossier-entry-card', // Permite arrastar pelo card inteiro
-            disabled: !canDrag, // Desabilita o "arrastar" para Visitantes
-            ghostClass: 'sortable-ghost', // Classe CSS para o "fantasma"
+            handle: '.dossier-entry-card', 
+            disabled: !canDrag, 
+            ghostClass: 'sortable-ghost', 
             onEnd: (evt) => {
-                // Quando o usuário solta o card, salva a nova ordem
                 saveHierarchyOrder(orgName);
             }
         });
@@ -2191,10 +2202,8 @@ Negociadoras: ${negociadoras}
     // INÍCIO: FUNÇÕES DE ORDENAÇÃO DE BASES (SortableJS para Orgs)
     // =============================================
     
-    // Salva a nova ordem das bases no Firebase
     const saveOrgOrder = () => {
         const grid = els.dossierOrgGrid;
-        // Filtra para pegar apenas os cards de organização e ignora os títulos
         const children = Array.from(grid.children).filter(el => el.classList.contains('dossier-org-card'));
         
         if (children.length === 0) {
@@ -2202,11 +2211,9 @@ Negociadoras: ${negociadoras}
         }
         
         const updates = {};
-        // Cria um objeto de atualização multi-path
         children.forEach((card, index) => {
             const orgId = card.dataset.orgName;
             if (orgId) {
-                // Atualiza o 'ordemIndex' de cada organização
                 updates[`organizacoes/${orgId}/ordemIndex`] = index;
             }
         });
@@ -2215,7 +2222,6 @@ Negociadoras: ${negociadoras}
             update(ref(db), updates)
                 .then(() => {
                     showToast("Ordem das Bases atualizada!", "success");
-                    // Atualiza os dados locais (globalAllOrgs) para refletir a nova ordem
                     globalAllOrgs = children.map((card, index) => {
                         const org = globalAllOrgs.find(o => o.id === card.dataset.orgName);
                         if (org) {
@@ -2230,7 +2236,6 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // Inicializa o SortableJS no grid de Bases
     const initOrgSortable = () => {
         if (orgSortableInstance) {
             orgSortableInstance.destroy();
@@ -2238,7 +2243,6 @@ Negociadoras: ${negociadoras}
         
         const grid = els.dossierOrgGrid;
         
-        // Permissão: Apenas ADMIN ou HELLS podem reorganizar as bases
         const userTagUpper = currentUserData ? currentUserData.tag.toUpperCase() : 'VISITANTE';
         const canDrag = (userTagUpper === 'ADMIN' || userTagUpper === 'HELLS');
         
@@ -2248,10 +2252,8 @@ Negociadoras: ${negociadoras}
             group: 'orgs', 
             disabled: !canDrag, 
             ghostClass: 'sortable-ghost',
-            // Filtra para ignorar o cabeçalho de busca (Bases e Pessoas Encontradas)
             filter: 'h3.dossier-org-title', 
             onEnd: (evt) => {
-                // Quando o usuário solta o card, salva a nova ordem
                 saveOrgOrder();
             }
         });
@@ -2290,22 +2292,20 @@ Negociadoras: ${negociadoras}
                 return {
                     id: orgName,
                     nome: orgName,
-                    // Garante que o ordemIndex exista, usando 9999 como fallback
                     ordemIndex: info.ordemIndex !== undefined ? info.ordemIndex : 9999,
                     ...info
                 };
             }).sort((a, b) => {
-                 // Sort by ordemIndex first, then name
                  const indexA = a.ordemIndex !== undefined ? a.ordemIndex : Infinity;
                  const indexB = b.ordemIndex !== undefined ? b.ordemIndex : Infinity;
                  if (indexA !== indexB) {
-                    return indexA - indexB; // Sort by index
+                    return indexA - indexB; 
                  }
-                 return a.nome.localeCompare(b.nome); // Then by name
+                 return a.nome.localeCompare(b.nome); 
             });
             
             displayOrgs(globalAllOrgs);
-            initOrgSortable(); // <-- Inicializa o sortable para as bases
+            initOrgSortable(); 
             
         } catch (error) {
             els.dossierOrgGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar organizações: ${error.message}</p>`;
@@ -2364,14 +2364,9 @@ Negociadoras: ${negociadoras}
         });
     };
     
-    // =================================================================
-    // INÍCIO: ALTERAÇÃO (Exibição da Busca Global - Base Clicável)
-    // =================================================================
-    /**
-     * Exibe os resultados da busca global (Bases e Pessoas) no grid de organizações.
-     */
+    // Exibição da Busca Global
     const displayGlobalSearchResults = (orgs, people) => {
-        els.dossierOrgGrid.innerHTML = ''; // Limpa o grid
+        els.dossierOrgGrid.innerHTML = ''; 
         
         if (orgs.length === 0 && people.length === 0) {
             els.dossierOrgGrid.innerHTML = '<p>Nenhuma organização ou pessoa encontrada para este filtro.</p>';
@@ -2380,19 +2375,16 @@ Negociadoras: ${negociadoras}
 
         // 1. Renderiza as Organizações (Bases) encontradas
         if (orgs.length > 0) {
-            // Título mais compacto para a busca
             const orgsHeader = document.createElement('h3');
             orgsHeader.className = 'dossier-org-title';
             orgsHeader.textContent = 'Bases Encontradas';
             els.dossierOrgGrid.appendChild(orgsHeader);
             
             orgs.forEach(org => {
-                // (Lógica copiada de displayOrgs)
                 const card = document.createElement('div');
                 card.className = 'dossier-org-card';
                 card.dataset.orgName = org.nome;
                 
-                // Remove o cursor grab da busca global de orgs para evitar confusão se o sortable estiver desabilitado
                 card.style.cursor = 'pointer'; 
                 
                 const fotoDiv = document.createElement('div');
@@ -2435,7 +2427,6 @@ Negociadoras: ${negociadoras}
 
         // 2. Renderiza as Pessoas encontradas
         if (people.length > 0) {
-            // Título "Pessoas Encontradas" mais compacto
             const peopleHeader = document.createElement('h3');
             peopleHeader.className = 'dossier-org-title';
             peopleHeader.textContent = 'Pessoas Encontradas';
@@ -2443,14 +2434,13 @@ Negociadoras: ${negociadoras}
             
             people.forEach(entry => {
                 
-                // (Lógica copiada de displayPeople)
                 const card = document.createElement('div');
                 card.className = 'dossier-entry-card';
                 card.dataset.id = entry.id; 
-                card.style.cursor = 'default'; // O card em si não é arrastável na busca global
+                card.style.cursor = 'default'; 
                 
-                // --- INÍCIO: ADIÇÃO DA BASE DENTRO DO CARD (AGORA CLICÁVEL) ---
-                const baseLink = document.createElement('a'); // Usa <a> para ser clicável
+                // --- INÍCIO: BASE CLICÁVEL ---
+                const baseLink = document.createElement('a'); 
                 baseLink.href = '#';
                 baseLink.textContent = `Base: ${entry.org}`;
                 baseLink.style.color = 'var(--cor-principal)'; 
@@ -2460,19 +2450,18 @@ Negociadoras: ${negociadoras}
                 baseLink.style.fontWeight = '600';
                 baseLink.style.borderBottom = '1px solid var(--cor-borda)'; 
                 baseLink.style.paddingBottom = '5px';
-                baseLink.style.display = 'block'; // Ocupa a linha toda
-                baseLink.style.textDecoration = 'none'; // Remove sublinhado padrão
-                baseLink.style.cursor = 'pointer'; // Adiciona cursor de ponteiro
+                baseLink.style.display = 'block'; 
+                baseLink.style.textDecoration = 'none'; 
+                baseLink.style.cursor = 'pointer'; 
                 
-                // Adiciona o Event Listener
                 baseLink.addEventListener('click', (e) => {
-                    e.preventDefault(); // Evita a navegação padrão
-                    e.stopPropagation(); // Evita o clique no card inteiro se houver
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
                     showDossierPeople(entry.org);
                 });
                 
                 card.appendChild(baseLink); 
-                // --- FIM: ADIÇÃO DA BASE DENTRO DO CARD ---
+                // --- FIM: BASE CLICÁVEL ---
 
                 const fotoDiv = document.createElement('div');
                 fotoDiv.className = 'dossier-foto';
@@ -2557,42 +2546,32 @@ Negociadoras: ${negociadoras}
                 els.dossierOrgGrid.appendChild(card);
             });
             
-            // Não deve ter Sortable ativo quando há resultados de busca mista.
             if (orgSortableInstance) {
                 orgSortableInstance.destroy();
                 orgSortableInstance = null;
             }
         }
     };
-    // =================================================================
-    // FIM: ALTERAÇÃO
-    // =================================================================
     
-    // Filtra a lista de Organizações (Bases)
     const filterOrgs = async () => {
         const query = els.filtroDossierOrgs.value.toLowerCase().trim();
         
-        // Se a busca estiver vazia, volta para a exibição normal ordenada.
         if (!query) {
-            displayOrgs(globalAllOrgs); // Mostra todas as orgs (do cache)
-            initOrgSortable(); // Re-inicializa o Sortable para ordenação
+            displayOrgs(globalAllOrgs); 
+            initOrgSortable(); 
             return;
         }
         
-        els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>'; // Feedback de carregamento
+        els.dossierOrgGrid.innerHTML = '<p>Buscando...</p>'; 
         
-        // 1. Filtra as Organizações (do cache)
         const filteredOrgs = globalAllOrgs.filter(org => 
             org.nome.toLowerCase().includes(query)
         );
         
-        // 2. Busca Pessoas (do Banco de Dados)
         const filteredPeople = await searchAllPeopleGlobal(query);
         
-        // 3. Exibe ambos os resultados
         displayGlobalSearchResults(filteredOrgs, filteredPeople);
         
-        // Destrói o sortable de bases quando a busca mista está ativa
         if (orgSortableInstance) {
             orgSortableInstance.destroy();
             orgSortableInstance = null;
@@ -2610,7 +2589,6 @@ Negociadoras: ${negociadoras}
         
         globalCurrentPeople = [];
         
-        // Destrói o sortable de bases antes de mudar a view
         if (orgSortableInstance) {
             orgSortableInstance.destroy();
             orgSortableInstance = null;
@@ -2622,7 +2600,7 @@ Negociadoras: ${negociadoras}
             
             if (!snapshot.exists()) {
                 els.dossierPeopleGrid.innerHTML = '<p>Nenhum membro registrado para esta organização.</p>';
-                initSortable(orgName); // <-- MUDANÇA: HIERARQUIA (Inicializa mesmo se vazio)
+                initSortable(orgName); 
                 return;
             }
             
@@ -2635,21 +2613,18 @@ Negociadoras: ${negociadoras}
                 });
             }
             
-            // --- MUDANÇA: HIERARQUIA (Ordena pelo índice) ---
             globalCurrentPeople.sort((a, b) => {
                 const indexA = a.hierarquiaIndex !== undefined ? a.hierarquiaIndex : Infinity;
                 const indexB = b.hierarquiaIndex !== undefined ? b.hierarquiaIndex : Infinity;
                 if (indexA !== indexB) {
-                    return indexA - indexB; // Ordena pelo índice
+                    return indexA - indexB; 
                 }
-                // Se o índice for o mesmo (ou não existir), ordena por nome
                 return (a.nome || '').localeCompare(b.nome || ''); 
             });
-            // --- FIM DA MUDANÇA ---
             
             displayPeople(globalCurrentPeople);
             
-            initSortable(orgName); // <-- MUDANÇA: HIERARQUIA (Inicializa o SortableJS)
+            initSortable(orgName); 
             
         } catch (error) {
             els.dossierPeopleGrid.innerHTML = `<p style="color: var(--cor-erro);">Erro ao carregar membros: ${error.message}</p>`;
@@ -2667,7 +2642,7 @@ Negociadoras: ${negociadoras}
         people.forEach(entry => {
             const card = document.createElement('div');
             card.className = 'dossier-entry-card';
-            card.dataset.id = entry.id; // <-- MUDANÇA: HIERARQUIA (Necessário para salvar)
+            card.dataset.id = entry.id; 
             
             const fotoDiv = document.createElement('div');
             fotoDiv.className = 'dossier-foto';
@@ -2690,7 +2665,6 @@ Negociadoras: ${negociadoras}
             cargoP.innerHTML = `<strong>Cargo:</strong> ${entry.cargo || 'N/A'}`;
             
             
-            // --- Bloco de Ações (Criado antes) ---
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'dossier-actions';
             actionsDiv.innerHTML = `
@@ -2698,29 +2672,22 @@ Negociadoras: ${negociadoras}
                 <button class="action-btn danger delete-dossier-btn" data-org="${entry.org}" data-id="${entry.id}">❌ Apagar</button>
             `;
             
-            // --- Ordem de Apresentação no Card ---
             card.appendChild(fotoDiv);
             card.appendChild(nomeH4);
             card.appendChild(numeroP);
             card.appendChild(cargoP);
             
-            // --- MUDANÇA: INSTAGRAM (Adiciona o campo no card) ---
             if (entry.instagram) {
                 const instagramP = document.createElement('p');
-                // Limpa o @ ou URL
                 let instaHandle = entry.instagram.startsWith('@') ? entry.instagram.substring(1) : entry.instagram;
-                instaHandle = instaHandle.split('/')[0]; // Remove barras caso seja URL
+                instaHandle = instaHandle.split('/')[0]; 
                 
-                // --- MUDANÇA: INSTAGRAM NÃO CLICÁVEL ---
                 instagramP.innerHTML = `<strong>Instagram:</strong> <span style="color: var(--cor-principal); font-weight: 500;">@${instaHandle}</span>`;
-                // --- FIM DA MUDANÇA ---
                 
                 instagramP.style.fontSize = '13px';
                 card.appendChild(instagramP);
             }
-            // --- FIM DA MUDANÇA ---
             
-            // --- INÍCIO DA ALTERAÇÃO 1: Mover Veículos para baixo do Cargo ---
             const veiculos = entry.veiculos || {};
             const veiculosCount = Object.keys(veiculos).length;
 
@@ -2741,14 +2708,12 @@ Negociadoras: ${negociadoras}
                     const veiculo = veiculos[id];
                     const p = document.createElement('p');
                     
-                    // --- LÓGICA DA FOTO DO VEÍCULO (MODIFICADA P/ LIGHTBOX) ---
                     let fotoLink = '';
                     if (veiculo.fotoUrl) {
                         fotoLink = ` <a href="#" class="veiculo-foto-link" data-url="${veiculo.fotoUrl}" style="font-size: 11px; color: var(--cor-principal); text-decoration: none; font-weight: 600;">[Ver Foto]</a>`;
                     } else {
                         fotoLink = ` <span style="font-size: 11px; color: #888; font-weight: normal;">[Sem Foto]</span>`;
                     }
-                    // --- FIM DA LÓGICA DA FOTO ---
                     
                     p.innerHTML = `<strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}${fotoLink}`;
                     p.style.fontWeight = 'normal';
@@ -2761,14 +2726,12 @@ Negociadoras: ${negociadoras}
             } else {
                 const p = document.createElement('p');
                 p.innerHTML = '<strong>Veículos:</strong> N/A';
-                // Adicionando estilos para consistência
                 p.style.fontWeight = 'normal';
                 p.style.color = 'var(--cor-texto)';
                 card.appendChild(p);
             }
-            // --- FIM DA ALTERAÇÃO 1 ---
             
-            card.appendChild(actionsDiv); // Adiciona as ações no final
+            card.appendChild(actionsDiv); 
             
             els.dossierPeopleGrid.appendChild(card);
         });
@@ -2785,7 +2748,7 @@ Negociadoras: ${negociadoras}
         const filteredPeople = globalCurrentPeople.filter(entry => {
             const nome = entry.nome ? entry.nome.toLowerCase() : '';
             const cargo = entry.cargo ? entry.cargo.toLowerCase() : '';
-            const instagram = entry.instagram ? entry.instagram.toLowerCase() : ''; // <-- MUDANÇA: INSTAGRAM (Filtro)
+            const instagram = entry.instagram ? entry.instagram.toLowerCase() : ''; 
             
             let veiculoMatch = false;
             if (entry.veiculos) {
@@ -2866,25 +2829,22 @@ Negociadoras: ${negociadoras}
         const orgRef = ref(db, `organizacoes/${orgId}`);
         
         let existingIndex = 9999;
-        // Se estiver editando, busca o índice existente para preservá-lo
         if (els.editOrgId.value) {
             try {
                 const snapshot = await get(orgRef);
                 if (snapshot.exists()) {
-                    // Preserva o índice se ele existir, senão usa 9999
                     existingIndex = snapshot.val().ordemIndex !== undefined ? snapshot.val().ordemIndex : 9999;
                 }
             } catch (e) {
                 console.error("Erro ao buscar ordemIndex:", e);
             }
         } 
-        // Se estiver adicionando, ele usa o 9999 default (vai para o final)
 
         const orgData = {
             nome: orgNome,
             fotoUrl: els.orgFotoUrl.value.trim(),
             info: els.orgInfo.value.trim(),
-            ordemIndex: existingIndex // Adiciona o índice de ordenação
+            ordemIndex: existingIndex 
         };
         
         set(orgRef, orgData)
@@ -2918,9 +2878,8 @@ Negociadoras: ${negociadoras}
     
     // --- INÍCIO: NOVAS FUNÇÕES DO GERENCIADOR DE VEÍCULOS (Com Edição) ---
     
-    // Renderiza a lista de veículos no modal
     const renderModalVeiculos = (listaElement) => {
-        listaElement.innerHTML = ''; // Limpa a lista
+        listaElement.innerHTML = ''; 
         if (Object.keys(tempVeiculos).length === 0) {
             listaElement.innerHTML = '<p style="font-size: 13px; text-align: center; margin: 0; padding: 5px;">Nenhum veículo adicionado.</p>';
             return;
@@ -2930,7 +2889,6 @@ Negociadoras: ${negociadoras}
             const veiculo = tempVeiculos[key];
             const itemDiv = document.createElement('div');
             itemDiv.className = 'veiculo-item-modal';
-            // Adicionado botão de Editar
             itemDiv.innerHTML = `
                 <span style="flex-grow: 1;"><strong>${veiculo.carro || 'N/A'}:</strong> ${veiculo.placa || 'N/A'}</span>
                 <button class="muted action-btn edit-veiculo-btn" data-key="${key}">Editar</button>
@@ -2940,40 +2898,33 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // Inicia a edição de um veículo (preenche os campos)
     const iniciarEdicaoVeiculo = (key, modalPrefix) => {
         if (!tempVeiculos[key]) return;
         
         const veiculo = tempVeiculos[key];
-        veiculoEmEdicaoKey = key; // Define a chave global
+        veiculoEmEdicaoKey = key; 
         
-        // Preenche os campos do modal correto
         els[modalPrefix + 'CarroNome'].value = veiculo.carro;
         els[modalPrefix + 'CarroPlaca'].value = veiculo.placa;
         els[modalPrefix + 'CarroFoto'].value = veiculo.fotoUrl;
         
-        // Muda os botões
         els[modalPrefix + 'AddVeiculoBtn'].textContent = 'Atualizar Veículo';
         els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'inline-block';
         
         els[modalPrefix + 'CarroNome'].focus();
     };
     
-    // Cancela a edição de um veículo (limpa campos e reseta botões)
     const cancelarEdicaoVeiculo = (modalPrefix) => {
-        veiculoEmEdicaoKey = null; // Limpa a chave global
+        veiculoEmEdicaoKey = null; 
         
-        // Limpa os campos
         els[modalPrefix + 'CarroNome'].value = '';
         els[modalPrefix + 'CarroPlaca'].value = '';
         els[modalPrefix + 'CarroFoto'].value = '';
         
-        // Reseta os botões
         els[modalPrefix + 'AddVeiculoBtn'].textContent = '+ Adicionar Veículo';
         els[modalPrefix + 'CancelVeiculoBtn'].style.display = 'none';
     };
 
-    // Adiciona OU Atualiza um veículo no objeto tempVeiculos
     const adicionarOuAtualizarVeiculoTemp = (modalPrefix) => {
         const carroEl = els[modalPrefix + 'CarroNome'];
         const placaEl = els[modalPrefix + 'CarroPlaca'];
@@ -2990,21 +2941,18 @@ Negociadoras: ${negociadoras}
         }
         
         if (veiculoEmEdicaoKey) {
-            // --- MODO DE ATUALIZAÇÃO ---
             if (tempVeiculos[veiculoEmEdicaoKey]) {
                 tempVeiculos[veiculoEmEdicaoKey] = { carro, placa, fotoUrl };
             }
         } else {
-            // --- MODO DE ADIÇÃO ---
             const tempKey = `temp_${Date.now()}`;
             tempVeiculos[tempKey] = { carro, placa, fotoUrl };
         }
         
-        renderModalVeiculos(listaEl); // Re-renderiza a lista
-        cancelarEdicaoVeiculo(modalPrefix); // Limpa campos e reseta botões/chave
+        renderModalVeiculos(listaEl); 
+        cancelarEdicaoVeiculo(modalPrefix); 
     };
     
-    // Remove um veículo do objeto tempVeiculos
     const removerVeiculoTemp = (key, listaEl) => {
         if (tempVeiculos[key]) {
             delete tempVeiculos[key];
@@ -3020,11 +2968,10 @@ Negociadoras: ${negociadoras}
         els.addDossierNumero.value = '';
         els.addDossierCargo.value = '';
         els.addDossierFotoUrl.value = '';
-        // Não há campo instagram aqui (conforme solicitado)
         
-        tempVeiculos = {}; // Limpa os veículos temporários
-        cancelarEdicaoVeiculo('addModal'); // Garante que o estado de edição seja resetado
-        renderModalVeiculos(els.addModalListaVeiculos); // Renderiza a lista vazia
+        tempVeiculos = {}; 
+        cancelarEdicaoVeiculo('addModal'); 
+        renderModalVeiculos(els.addModalListaVeiculos); 
         
         document.querySelectorAll('.input-invalido').forEach(el => el.classList.remove('input-invalido'));
         
@@ -3036,7 +2983,7 @@ Negociadoras: ${negociadoras}
     const closeAddDossierModal = () => {
         els.addDossierOverlay.style.display = 'none';
         els.addDossierModal.style.display = 'none';
-        cancelarEdicaoVeiculo('addModal'); // Limpa o estado de edição ao fechar
+        cancelarEdicaoVeiculo('addModal'); 
     };
     
     const saveNewDossierEntry = () => {
@@ -3067,13 +3014,12 @@ Negociadoras: ${negociadoras}
             numero: els.addDossierNumero.value.trim(),
             cargo: els.addDossierCargo.value.trim(),
             fotoUrl: els.addDossierFotoUrl.value.trim(),
-            instagram: "", // <-- MUDANÇA: INSTAGRAM (Inicializa vazio)
-            veiculos: tempVeiculos, // Salva o objeto de veículos
-            hierarquiaIndex: 9999, // <-- MUDANÇA: HIERARQUIA (Novo membro vai para o fim)
+            instagram: "", 
+            veiculos: tempVeiculos, 
+            hierarquiaIndex: 9999, 
             data: `${dia}/${mes}/${ano} ${horas}:${minutos}`
         };
         
-        // Push para o banco de dados
         push(ref(db, `dossies/${org}`), newEntry)
             .then(() => {
                  showToast("Nova pessoa salva no dossiê!", "success");
@@ -3083,23 +3029,15 @@ Negociadoras: ${negociadoras}
             .catch(err => showToast(`Erro ao salvar: ${err.message}`, "error"));
     };
     
-    // =================================================================
-    // INÍCIO: ALTERAÇÃO (Correção do Modal de Edição)
-    // =================================================================
-    // **** MODIFICADO (Request 1): Agora é async e busca dados se não estiverem em cache ****
     const openEditDossierModal = async (org, id) => {
-        // Tenta encontrar a pessoa no cache (globalCurrentPeople)
         let entry = globalCurrentPeople.find(e => e.id === id && e.org === org);
         
-        // Se não encontrar (ex: vindo da busca global), busca no Firebase
         if (!entry) {
             try {
                 const entryRef = ref(db, `dossies/${org}/${id}`);
                 const snapshot = await get(entryRef);
                 if (snapshot.exists()) {
                     entry = { id: snapshot.key, org: org, ...snapshot.val() };
-                    // Define o cache temporariamente para esta pessoa
-                    // para que a função 'Salvar' funcione
                     globalCurrentPeople = [entry];
                 } else {
                     showToast("Erro: Entrada não encontrada no Banco de Dados.", "error");
@@ -3111,32 +3049,26 @@ Negociadoras: ${negociadoras}
             }
         }
         
-        // Continuação normal da função...
-        
         els.editDossierOrg.value = entry.org;
         els.editDossierId.value = entry.id;
         els.editDossierNome.value = entry.nome || '';
         els.editDossierNumero.value = entry.numero || '';
         els.editDossierCargo.value = entry.cargo || '';
         els.editDossierFotoUrl.value = entry.fotoUrl || '';
-        els.editDossierInstagram.value = entry.instagram || ''; // <-- MUDANÇA: INSTAGRAM
+        els.editDossierInstagram.value = entry.instagram || ''; 
         
-        // Carrega os veículos existentes para o gerenciador
         tempVeiculos = { ...(entry.veiculos || {}) };
-        cancelarEdicaoVeiculo('editModal'); // Garante que o estado de edição seja resetado
+        cancelarEdicaoVeiculo('editModal'); 
         renderModalVeiculos(els.editModalListaVeiculos);
         
         els.editDossierOverlay.style.display = 'block';
         els.editDossierModal.style.display = 'block';
     };
-    // =================================================================
-    // FIM: ALTERAÇÃO
-    // =================================================================
 
     const closeEditDossierModal = () => {
         els.editDossierOverlay.style.display = 'none';
         els.editDossierModal.style.display = 'none';
-        cancelarEdicaoVeiculo('editModal'); // Limpa o estado de edição ao fechar
+        cancelarEdicaoVeiculo('editModal'); 
     };
     
     const saveDossierChanges = () => {
@@ -3160,9 +3092,8 @@ Negociadoras: ${negociadoras}
             numero: els.editDossierNumero.value.trim(),
             cargo: els.editDossierCargo.value.trim(),
             fotoUrl: els.editDossierFotoUrl.value.trim(),
-            instagram: els.editDossierInstagram.value.trim(), // <-- MUDANÇA: INSTAGRAM
-            veiculos: tempVeiculos // Salva o objeto de veículos atualizado
-            // O hierarquiaIndex é preservado pelo spread (...originalEntry)
+            instagram: els.editDossierInstagram.value.trim(), 
+            veiculos: tempVeiculos 
         };
         
         delete updatedEntry.id;
@@ -3224,20 +3155,16 @@ Negociadoras: ${negociadoras}
             for (const vendaId in vendas) {
                 const venda = vendas[vendaId];
                 
-                // Transforma a venda no formato esperado por addDossierEntry
                 const vendaData = {
                     cliente: venda.cliente,
                     organizacao: venda.organizacao,
                     telefone: venda.telefone,
                     vendaValorObs: venda.vendaValorObs || 'N/A (Migrado)',
                     dataHora: venda.dataHora,
-                    // *** MODIFICAÇÃO: Passa os dados de veículo para a função de migração ***
                     carro: venda.carro,
                     placas: venda.placas
                 };
 
-                // Roda a lógica de add (que já faz a deduplicação E mescla veículos)
-                // **** MODIFICAÇÃO (v12): Passa 'null' para dadosAntigos
                 await addDossierEntry(vendaData, null);
                 count++;
             }
@@ -3252,7 +3179,6 @@ Negociadoras: ${negociadoras}
         }
     };
     
-    // --- FUNÇÃO DE MIGRAÇÃO DE VEÍCULOS (v9 - Atualizada) ---
     const migrateVeiculosData = async () => {
         if (!confirm("ATENÇÃO: Isso irá converter TODOS os campos 'carro' e 'placas' (com vírgulas) para o novo sistema de veículos. Faça isso APENAS UMA VEZ.\n\nDeseja continuar?")) {
             return;
@@ -3279,8 +3205,6 @@ Negociadoras: ${negociadoras}
                 for (const personId in dossies[org]) {
                     const person = dossies[org][personId];
                     
-                    // Verifica se a pessoa tem os campos antigos (carro/placas)
-                    // E se ainda NÃO tem o campo novo (veiculos)
                     if ((person.carro || person.placas) && !person.veiculos) {
                         const newVeiculos = {};
                         const carros = person.carro ? person.carro.split(',').map(c => c.trim()) : [];
@@ -3293,15 +3217,14 @@ Negociadoras: ${negociadoras}
                             newVeiculos[newKey] = {
                                 carro: carros[i] || 'N/A',
                                 placa: placas[i] || 'N/A',
-                                fotoUrl: '' // ADICIONA O CAMPO DE FOTO VAZIO
+                                fotoUrl: '' 
                             };
                         }
                         
-                        // Prepara o update para esta pessoa
                         const path = `dossies/${org}/${personId}`;
                         updates[`${path}/veiculos`] = newVeiculos;
-                        updates[`${path}/carro`] = null; // Remove o campo antigo
-                        updates[`${path}/placas`] = null; // Remove o campo antigo
+                        updates[`${path}/carro`] = null; 
+                        updates[`${path}/placas`] = null; 
                         count++;
                     }
                 }
@@ -3321,7 +3244,6 @@ Negociadoras: ${negociadoras}
             els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
         }
     };
-    // --- FIM ---
     
     // **** FIM DAS FUNÇÕES DO DOSSIÊ (v12) ****
     
@@ -3384,11 +3306,10 @@ Negociadoras: ${negociadoras}
     els.dossierPeopleGrid.addEventListener('click', (e) => {
         const editBtn = e.target.closest('.edit-dossier-btn');
         const deleteBtn = e.target.closest('.delete-dossier-btn');
-        const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); // NOVO (Lightbox)
+        const fotoLinkBtn = e.target.closest('.veiculo-foto-link'); 
         
-        // NOVO (Lightbox)
         if (fotoLinkBtn) {
-            e.preventDefault(); // Impede o link href="#" de rolar a página
+            e.preventDefault(); 
             const url = fotoLinkBtn.dataset.url;
             showImageLightbox(url);
         }
@@ -3440,15 +3361,12 @@ Negociadoras: ${negociadoras}
     
     // --- NOVOS Listeners do Gerenciador de Veículos (Com Edição) ---
     
-    // Botões de Adicionar/Atualizar
     els.addModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('addModal');
     els.editModalAddVeiculoBtn.onclick = () => adicionarOuAtualizarVeiculoTemp('editModal');
     
-    // Botões de Cancelar Edição
     els.addModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('addModal');
     els.editModalCancelVeiculoBtn.onclick = () => cancelarEdicaoVeiculo('editModal');
     
-    // Listeners das listas para botões de Editar/Remover
     els.addModalListaVeiculos.onclick = (e) => {
         const removeBtn = e.target.closest('.remove-veiculo-btn');
         const editBtn = e.target.closest('.edit-veiculo-btn');
@@ -3484,8 +3402,17 @@ Negociadoras: ${negociadoras}
     
     // Admin
     els.migrateDossierBtn.onclick = migrateVendasToDossier;
-    els.migrateVeiculosBtn.onclick = migrateVeiculosData; // Novo listener
+    els.migrateVeiculosBtn.onclick = migrateVeiculosData; 
     els.toggleCalcBtnAdmin.onclick = () => toggleView('main'); 
+    
+    // --- NOVO LISTENER: Salvar Texto do Painel Inferior ---
+    els.saveBottomPanelTextBtn.onclick = () => {
+        const newText = els.bottomPanelText.value.trim();
+        updateGlobalLayout('bottomPanelText', newText);
+        showToast("Mensagem do rodapé salva!", "success");
+    };
+    // --- FIM NOVO LISTENER ---
+
     
     const deleteUser = (uid, displayName) => {
         if (confirm(`ATENÇÃO:\n\nTem certeza que deseja apagar o usuário "${displayName}"?\n\nIsso removerá o registro dele do banco de dados (e suas permissões).\n\nIMPORTANTE: Para apagar o LOGIN dele permanentemente, você ainda precisará ir ao painel "Authentication" do Firebase.`)) {
@@ -3602,6 +3529,7 @@ Negociadoras: ${negociadoras}
                 const settings = layoutSnapshot.val();
                 els.layoutToggleNightMode.checked = settings.enableNightMode;
                 els.layoutToggleBottomPanel.checked = settings.enableBottomPanel;
+                els.bottomPanelText.value = settings.bottomPanelText || '';
             }
         } catch (error) {
             if(error.code !== "PERMISSION_DENIED") {
@@ -3661,7 +3589,7 @@ Negociadoras: ${negociadoras}
                             const newUserProfile = { 
                                 displayName: displayName,
                                 email: user.email,
-                                tag: 'Visitante' 
+                                tag: 'Visitante'
                             };
                             return set(userRef, newUserProfile); 
                         });
@@ -3759,6 +3687,9 @@ Negociadoras: ${negociadoras}
             currentUser = user; 
             const userRef = ref(db, `usuarios/${user.uid}`);
             
+            // INICIA O RASTREAMENTO DE ATIVIDADE
+            updateUserActivity(); 
+            
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val(); 
@@ -3811,8 +3742,8 @@ Negociadoras: ${negociadoras}
         } else {
             currentUser = null;
             currentUserData = null;
-            vendaOriginalCliente = null; // LIMPA
-            vendaOriginalOrganizacao = null; // LIMPA
+            vendaOriginalCliente = null; 
+            vendaOriginalOrganizacao = null; 
             if (vendasListener) vendasListener(); 
             vendas = []; 
             
