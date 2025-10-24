@@ -184,13 +184,27 @@
     .status-offline {
         background-color: var(--cor-erro); /* Vermelho */
     }
-    .online-status-cell {
-        font-size: 13px;
-        font-weight: 500;
+    .online-user-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 0; border-bottom: 1px solid var(--cor-borda);
+        font-size: 14px;
+        color: var(--cor-texto); /* Garante que o texto seja visível em modo claro/escuro */
+    }
+    .online-user-item:last-child { border-bottom: none; }
+    .online-user-item .tag { 
+        font-size: 12px; font-weight: 600; padding: 3px 6px; 
+        border-radius: 4px; color: var(--cor-btn-texto);
+        flex-shrink: 0; margin-left: 10px; 
+    }
+    .online-user-item .last-active-time { 
+        font-size: 12px; color: #888; margin-left: auto; 
+        flex-shrink: 0;
         text-align: right;
     }
-    .online-status-cell .status-dot {
-        margin-right: 4px; /* Reduz o espaçamento do ponto na célula */
+    #onlineUsersList {
+        max-height: 250px; 
+        overflow-y: auto;
+        padding-right: 5px;
     }
     /* FIM NOVO: Estilo para o Indicador Online */
 
@@ -720,13 +734,13 @@
           <button id="toggleCalcBtnAdmin" class="muted">Voltar à Calculadora</button>
       </div>
       
-      
-      <div id="adminStatusDisplay" style="margin-bottom: 20px;">
-          <h3>Status de Atividade em Tempo Real</h3>
-          <p style="font-size: 13px; margin-bottom: 10px;">Usuários online (ativos nos últimos 60s): <strong id="onlineUsersCount">...</strong></p>
+      <div id="onlineUsersCard" class="card" style="margin-bottom: 20px;">
+        <h3>Status de Atividade em Tempo Real</h3>
+        <p style="font-size: 13px; margin-bottom: 10px;">Usuários online (ativos nos últimos 60s): <strong id="onlineUsersCount">...</strong></p>
+        <div id="onlineUsersList">
+            <p style="text-align: center;">Carregando status...</p>
+        </div>
       </div>
-      
-      
       <h3>Gerenciamento de Usuários</h3>
       <p style="font-size: 13px;">Altere a permissão de usuários. Você não pode alterar sua própria tag.</p>
       <div class="history-table-wrapper">
@@ -734,14 +748,13 @@
           <table id="adminUserTable">
               <thead>
                   <tr>
-                      <th style="width: 35%;">Usuário (Nome)</th>
-                      <th style="width: 25%;">Permissão (Tag)</th>
-                      <th style="width: 25%;">Atividade</th> 
+                      <th style="width: 45%;">Usuário (Nome)</th>
+                      <th style="width: 40%;">Permissão (Tag)</th>
                       <th style="width: 15%;">Ações</th>
                   </tr>
               </thead>
               <tbody id="adminUserListBody">
-                  <tr><td colspan="4" style="text-align: center;">Carregando usuários...</td></tr>
+                  <tr><td colspan="3" style="text-align: center;">Carregando usuários...</td></tr>
               </tbody>
           </table>
 
@@ -959,7 +972,7 @@
       apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
       // ########## ATENÇÃO!! ##########
       authDomain: "hells-angels-438c2.firebaseapp.com",
-      databaseURL: "https://://hells-angels-438c2-default-rtdb.firebaseio.com/",
+      databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
       projectId: "hells-angels-438c2",
       storageBucket: "hells-angels-438c2.firebasestorage.app",
       messagingSenderId: "429406215315",
@@ -985,9 +998,6 @@
     
     let currentUser = null;
     let currentUserData = null; 
-    
-    // NOVO: Variável global para armazenar o status online de todos os usuários
-    let globalOnlineStatus = {}; 
     
     let globalAllOrgs = []; 
     let globalCurrentPeople = [];
@@ -1161,7 +1171,10 @@
       // --- NOVOS ELEMENTOS DO LIGHTBOX ---
       imageLightboxOverlay: document.getElementById('imageLightboxOverlay'),
       imageLightboxModal: document.getElementById('imageLightboxModal'),
-      lightboxImg: document.getElementById('lightboxImg')
+      lightboxImg: document.getElementById('lightboxImg'),
+
+      // NOVO ELEMENTO (PARA LISTA DETALHADA)
+      onlineUsersList: document.getElementById('onlineUsersList')
     };
     
     // =================================================================
@@ -1242,68 +1255,124 @@
             return "Agora";
         }
         if (seconds < 60) {
-            return `${seconds} Segundos`;
+            return `${seconds} Segundos Atrás`;
         }
         if (minutes < 60) {
-            return `${minutes} Minuto${minutes > 1 ? 's' : ''}`;
+            return `${minutes} Minuto${minutes > 1 ? 's' : ''} Atrás`;
         }
         
         const remainingMinutes = minutes % 60;
         if (hours < 2) {
-             return `1 Hora e ${remainingMinutes} Minutos`;
+             return `1 Hora e ${remainingMinutes} Minutos Atrás`;
         }
-        return `${hours} Horas e ${remainingMinutes} Minutos`;
+        return `${hours} Horas e ${remainingMinutes} Minutos Atrás`;
     }
     
+    
     /**
-     * Monitora e armazena o status de atividade em tempo real.
+     * Monitora e exibe a lista de usuários online/offline em tempo real no Painel Admin.
      */
-    const monitorOnlineStatus = () => {
+    const monitorOnlineUsers = () => {
         const statusRef = ref(db, 'onlineStatus');
         
         // Remove listener anterior se existir
-        if (monitorOnlineStatus.listener) {
-            monitorOnlineStatus.listener();
+        if (monitorOnlineUsers.listener) {
+            monitorOnlineUsers.listener();
         }
         
         const listener = onValue(statusRef, (snapshot) => {
             const now = Date.now();
+            const activeThreshold = 60000; // 60 segundos
             let activeCount = 0;
-            globalOnlineStatus = {}; 
+            const usersData = [];
             
-            if (snapshot.exists()) {
-                snapshot.forEach(child => {
-                    const uid = child.key;
-                    const userStatus = child.val();
-                    const inactivity = now - userStatus.lastActive;
-                    const isOnline = inactivity < 60000; // 60 segundos
-                    
-                    if (isOnline) {
-                        activeCount++;
-                    }
+            if (!snapshot.exists()) {
+                els.onlineUsersList.innerHTML = '<p style="text-align: center;">Nenhum usuário ativo.</p>';
+                els.onlineUsersCount.textContent = '0';
+                return;
+            }
+            
+            snapshot.forEach(child => {
+                const uid = child.key;
+                const userStatus = child.val();
+                
+                // Ignorar o usuário 'snow'
+                if (userStatus.displayName && userStatus.displayName.toLowerCase() === 'snow') {
+                    return; 
+                }
+                
+                const inactivity = now - userStatus.lastActive;
+                const isOnline = inactivity < activeThreshold;
+                
+                if (isOnline) {
+                    activeCount++;
+                }
 
-                    globalOnlineStatus[uid] = {
-                        isOnline: isOnline,
-                        inactivity: inactivity,
-                        lastActive: userStatus.lastActive
-                    };
+                usersData.push({
+                    uid: uid,
+                    displayName: userStatus.displayName || 'Usuário Desconhecido',
+                    tag: userStatus.tag || 'N/A',
+                    isOnline: isOnline,
+                    inactivity: inactivity,
+                    lastActive: userStatus.lastActive
                 });
-            }
+            });
             
+            // Ordenar: Online > Offline > Nome
+            usersData.sort((a, b) => {
+                if (a.isOnline !== b.isOnline) {
+                    return a.isOnline ? -1 : 1; 
+                }
+                return (a.displayName || '').localeCompare(b.displayName || '');
+            });
+
             els.onlineUsersCount.textContent = activeCount.toString();
-            
-            // Se o Painel Admin estiver aberto, forçamos a atualização da lista
-            if (els.adminPanel.style.display !== 'none') {
-                loadAdminPanel(false); // Atualiza a lista na tabela sem recarregar tudo.
+            els.onlineUsersList.innerHTML = '';
+
+            if (usersData.length === 0) {
+                 els.onlineUsersList.innerHTML = '<p style="text-align: center;">Nenhum usuário para exibir.</p>';
+                 return;
             }
 
+            usersData.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'online-user-item';
+
+                const statusDotClass = user.isOnline ? 'status-online' : 'status-offline';
+                const tagClass = `tag-${(user.tag || 'visitante').toLowerCase()}`;
+
+                const timeDisplay = user.isOnline 
+                                  ? 'Ativo' 
+                                  : 'Inativo';
+                
+                const formattedTime = formatInactivityTime(user.inactivity);
+                
+                // Se o usuário está online, mas a atividade é "Agora", podemos omitir o tempo, ou mostrar 'Ativo Agora'
+                const activityText = user.isOnline 
+                                  ? `Ativo (${formattedTime})`
+                                  : `Inativo (${formattedTime})`;
+                
+                item.innerHTML = `
+                    <span style="display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span class="status-dot ${statusDotClass}" title="${user.isOnline ? 'Online' : 'Offline'}"></span> 
+                        <strong style="margin-right: 5px;">${user.displayName}</strong> 
+                        <span class="tag ${tagClass}">${user.tag}</span>
+                    </span>
+                    <span class="last-active-time" style="color: ${user.isOnline ? '#00b33c' : 'var(--cor-erro)'}; font-weight: 600;">
+                       ${activityText}
+                    </span>
+                `;
+                
+                els.onlineUsersList.appendChild(item);
+            });
+            
         }, (error) => {
             if(error.code !== "PERMISSION_DENIED") {
                 console.error("Erro ao monitorar status online:", error);
             }
         });
         
-        monitorOnlineStatus.listener = listener;
+        monitorOnlineUsers.listener = listener;
     };
     
     // =================================================================
@@ -2059,8 +2128,8 @@ Negociadoras: ${negociadoras}
             displaySalesHistory(vendas); 
         } else if (viewName === 'admin') {
             els.adminPanel.style.display = 'block';
-            loadAdminPanel(); // Carrega a tabela de usuários com status online
-            monitorOnlineStatus(); // Mantém o contador de online e o status atualizado
+            loadAdminPanel();
+            monitorOnlineUsers(); // Inicia o monitoramento de usuários online DETALHADO
         } else if (viewName === 'dossier') {
             document.body.classList.add('dossier-view-active');
             els.dossierCard.style.display = 'block';
@@ -2269,7 +2338,7 @@ Negociadoras: ${negociadoras}
     // INÍCIO: FUNÇÕES DE ORDENAÇÃO DE BASES (SortableJS para Orgs)
     // =============================================
     
-    const saveOrgOrder = (showToastOnSuccess = true) => {
+    const saveOrgOrder = () => {
         const grid = els.dossierOrgGrid;
         const children = Array.from(grid.children).filter(el => el.classList.contains('dossier-org-card'));
         
@@ -2288,7 +2357,7 @@ Negociadoras: ${negociadoras}
         if (Object.keys(updates).length > 0) {
             update(ref(db), updates)
                 .then(() => {
-                    if(showToastOnSuccess) showToast("Ordem das Bases atualizada!", "success");
+                    showToast("Ordem das Bases atualizada!", "success");
                     globalAllOrgs = children.map((card, index) => {
                         const org = globalAllOrgs.find(o => o.id === card.dataset.orgName);
                         if (org) {
@@ -2398,11 +2467,6 @@ Negociadoras: ${negociadoras}
                 const img = document.createElement('img');
                 img.src = org.fotoUrl;
                 img.alt = `Base de ${org.nome}`;
-                // NOVO: Adiciona o listener para o Lightbox
-                img.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showImageLightbox(org.fotoUrl);
-                });
                 fotoDiv.appendChild(img);
             } else {
                 fotoDiv.textContent = 'Sem Foto da Base';
@@ -2465,11 +2529,6 @@ Negociadoras: ${negociadoras}
                     const img = document.createElement('img');
                     img.src = org.fotoUrl;
                     img.alt = `Base de ${org.nome}`;
-                    // NOVO: Adiciona o listener para o Lightbox
-                    img.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showImageLightbox(org.fotoUrl);
-                    });
                     fotoDiv.appendChild(img);
                 } else {
                     fotoDiv.textContent = 'Sem Foto da Base';
@@ -2546,11 +2605,6 @@ Negociadoras: ${negociadoras}
                     const img = document.createElement('img');
                     img.src = entry.fotoUrl;
                     img.alt = `Foto de ${entry.nome}`;
-                    // NOVO: Adiciona o listener para o Lightbox
-                    img.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showImageLightbox(entry.fotoUrl);
-                    });
                     fotoDiv.appendChild(img);
                 } else {
                     fotoDiv.textContent = 'Sem Foto';
@@ -2727,11 +2781,6 @@ Negociadoras: ${negociadoras}
                 const img = document.createElement('img');
                 img.src = entry.fotoUrl;
                 img.alt = `Foto de ${entry.nome}`;
-                // NOVO: Adiciona o listener para o Lightbox
-                img.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showImageLightbox(entry.fotoUrl);
-                });
                 fotoDiv.appendChild(img);
             } else {
                 fotoDiv.textContent = 'Sem Foto';
@@ -3511,38 +3560,13 @@ Negociadoras: ${negociadoras}
         }
     };
 
-    /**
-     * Carrega a lista de usuários e incorpora o status online.
-     * @param {boolean} fetchStatus - Indica se deve buscar o status online se ainda não tiver.
-     */
-    const loadAdminPanel = async (fetchStatus = true) => {
-        
-        // 1. Garante que os dados de status online estejam disponíveis
-        if (fetchStatus) {
-            const statusSnapshot = await get(ref(db, 'onlineStatus'));
-            const now = Date.now();
-            globalOnlineStatus = {}; 
-            
-            if (statusSnapshot.exists()) {
-                statusSnapshot.forEach(child => {
-                    const userStatus = child.val();
-                    const inactivity = now - userStatus.lastActive;
-                    const isOnline = inactivity < 60000; 
-                    
-                    globalOnlineStatus[child.key] = {
-                        isOnline: isOnline,
-                        inactivity: inactivity
-                    };
-                });
-            }
-        }
-        
-        els.adminUserListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Carregando...</td></tr>';
+    const loadAdminPanel = async () => {
+        els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Carregando...</td></tr>';
         
         try {
             const usersSnapshot = await get(ref(db, 'usuarios'));
             if (!usersSnapshot.exists()) {
-                els.adminUserListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+                els.adminUserListBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
             
@@ -3555,31 +3579,13 @@ Negociadoras: ${negociadoras}
                 usersList.push({ uid: userSnap.key, ...userData });
             });
 
-            // Re-ordena: Online (Hells/Admin) > Offline (Hells/Admin) > Visitante
-            const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'VISITANTE': 3 };
-            
+            const tagOrder = { 'ADMIN': 1, 'HELLS': 2, 'Visitante': 3 };
             usersList.sort((a, b) => {
-                const statusA = globalOnlineStatus[a.uid] || { isOnline: false, inactivity: Infinity };
-                const statusB = globalOnlineStatus[b.uid] || { isOnline: false, inactivity: Infinity };
-                
-                // 1. Ordem por Online vs Offline
-                if (statusA.isOnline !== statusB.isOnline) {
-                    return statusA.isOnline ? -1 : 1; 
-                }
-                
-                // 2. Ordem por Tag (Admin/Hells/Visitante)
                 const tagA = (tagOrder[a.tag.toUpperCase()] || 4);
                 const tagB = (tagOrder[b.tag.toUpperCase()] || 4);
                 if (tagA !== tagB) {
                     return tagA - tagB;
                 }
-                
-                // 3. Ordem por Inatividade (Menos inativo primeiro)
-                if (statusA.inactivity !== statusB.inactivity) {
-                    return statusA.inactivity - statusB.inactivity;
-                }
-
-                // 4. Ordem alfabética (fallback)
                 return (a.displayName || '').localeCompare(b.displayName || '');
             });
 
@@ -3588,7 +3594,6 @@ Negociadoras: ${negociadoras}
             usersList.forEach(user => {
                 const uid = user.uid;
                 const userData = user;
-                const status = globalOnlineStatus[uid] || { isOnline: false, inactivity: Infinity };
                 
                 const row = els.adminUserListBody.insertRow();
                 row.insertCell().textContent = userData.displayName || '(Sem nome)';
@@ -3622,31 +3627,10 @@ Negociadoras: ${negociadoras}
                     tagCell.appendChild(select);
                 }
                 
-                // CÉLULA DE ATIVIDADE (NOVA)
-                const activityCell = row.insertCell();
-                activityCell.className = 'online-status-cell';
-                
-                const statusDotClass = status.isOnline ? 'status-online' : 'status-offline';
-                const statusText = status.isOnline 
-                                    ? `Online (Ativo)` 
-                                    : `Inativo há ${formatInactivityTime(status.inactivity)}`;
-
-                activityCell.innerHTML = `<span class="status-dot ${statusDotClass}" title="${status.isOnline ? 'Online' : 'Inativo'}"></span>${statusText}`;
-
-                if (!status.isOnline && status.inactivity > 60000 * 60 * 24) { // Mais de 24h
-                     activityCell.textContent = 'Inativo há muito tempo';
-                     activityCell.style.color = '#888';
-                } else if (!status.isOnline) {
-                     activityCell.style.color = 'var(--cor-erro)';
-                } else {
-                     activityCell.style.color = '#00b33c';
-                }
-
-                
                 const actionsCell = row.insertCell();
                 actionsCell.style.textAlign = 'center';
                 actionsCell.style.verticalAlign = 'middle';
-                
+
                 if (uid === currentUser.uid) {
                     actionsCell.textContent = '---';
                 } else {
@@ -3667,7 +3651,7 @@ Negociadoras: ${negociadoras}
             
         } catch (error) {
             showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-            els.adminUserListBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
+            els.adminUserListBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
         }
         
         try {
@@ -3836,7 +3820,6 @@ Negociadoras: ${negociadoras}
             
             // INICIA O RASTREAMENTO DE ATIVIDADE
             updateUserActivity(); 
-            monitorOnlineStatus(); // Inicia o monitoramento de status
             
             onValue(userRef, (snapshot) => {
                 if (snapshot.exists()) {
