@@ -732,14 +732,12 @@
           <table id="adminUserTable">
               <thead>
                   <tr>
-                      <th style="width: 35%;">Usuário (Nome)</th>
-                      <th style="width: 30%;">Atividade</th> 
-                      <th style="width: 25%;">Permissão (Tag)</th>
-                      <th style="width: 10%;">Ações</th>
+                      <th style="width: 80%;">Usuário / Status</th>
+                      <th style="width: 20%;">Ações</th>
                   </tr>
               </thead>
               <tbody id="adminUserListBody">
-                  <tr><td colspan="4" style="text-align: center;">Carregando usuários...</td></tr>
+                  <tr><td colspan="2" style="text-align: center;">Carregando usuários...</td></tr>
               </tbody>
           </table>
 
@@ -3513,7 +3511,7 @@ Negociadoras: ${negociadoras}
      * Carrega a lista de usuários e incorpora o status online.
      * @param {boolean} fetchStatus - Indica se deve buscar o status online se ainda não tiver.
      */
-    const loadAdminPanel = async (fetchStatus = true) => {
+const loadAdminPanel = async (fetchStatus = true) => {
         
         // 1. Garante que os dados de status online estejam disponíveis
         if (fetchStatus) {
@@ -3535,12 +3533,14 @@ Negociadoras: ${negociadoras}
             }
         }
         
-        els.adminUserListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Carregando...</td></tr>';
+        // CORREÇÃO: Colspan de 4 para 2
+        els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Carregando...</td></tr>';
         
         try {
             const usersSnapshot = await get(ref(db, 'usuarios'));
             if (!usersSnapshot.exists()) {
-                els.adminUserListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
+                // CORREÇÃO: Colspan de 4 para 2
+                els.adminUserListBody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Nenhum usuário encontrado.</td></tr>';
                 return;
             }
             
@@ -3590,43 +3590,64 @@ Negociadoras: ${negociadoras}
                 
                 const row = els.adminUserListBody.insertRow();
                 
-                // CÉLULA DE NOME (NOVA: Incorpora o ponto de status aqui)
-                const nameCell = row.insertCell();
-                nameCell.className = 'user-name-cell';
+                // --- INÍCIO DA MODIFICAÇÃO (AGRUPAMENTO) ---
+                // CÉLULA PRINCIPAL (Nome, Atividade, Tag)
+                const mainCell = row.insertCell();
+                mainCell.style.verticalAlign = 'top'; // Alinha no topo para a pilha
+                mainCell.style.padding = '8px 6px'; // Espaçamento padrão
+
+                // 1. Nome (com status dot)
+                const nameDiv = document.createElement('div');
+                nameDiv.style.display = 'flex';
+                nameDiv.style.alignItems = 'center';
+                nameDiv.style.fontWeight = '700';
+                nameDiv.style.fontSize = '16px'; // Destaque para o nome
+                nameDiv.style.marginBottom = '4px'; // Espaço abaixo do nome
                 
                 const statusDotClass = status.isOnline ? 'status-online' : 'status-offline';
                 const displayNameText = userData.displayName || '(Sem nome)';
                 
-                nameCell.innerHTML = `<span class="status-dot ${statusDotClass}" title="${status.isOnline ? 'Online' : 'Inativo'}"></span>${displayNameText}`;
+                nameDiv.innerHTML = `
+                    <span class="status-dot ${statusDotClass}" title="${status.isOnline ? 'Online' : 'Inativo'}" style="flex-shrink: 0;"></span>
+                    <span>${displayNameText}</span>
+                `;
+                mainCell.appendChild(nameDiv);
 
-                
-                // CÉLULA DE ATIVIDADE (NOVA)
-                const activityCell = row.insertCell();
-                activityCell.className = 'online-status-cell';
+                // 2. Atividade
+                const activitySpan = document.createElement('span');
+                activitySpan.style.fontSize = '13px';
+                activitySpan.style.display = 'block'; // Empilha abaixo do nome
+                activitySpan.style.marginLeft = '20px'; // Indenta (abaixo do nome, alinhado com o texto)
+                activitySpan.style.marginBottom = '8px'; // Espaço abaixo da atividade
                 
                 const statusText = status.isOnline 
                                     ? `Ativo (agora)` 
                                     : `Inativo há ${formatInactivityTime(status.inactivity)}`;
+                activitySpan.textContent = statusText;
 
-                activityCell.textContent = statusText;
-
-                if (!status.isOnline && status.inactivity > 60000 * 60 * 24) { // Mais de 24h
-                     activityCell.textContent = 'Inativo há muito tempo';
-                     activityCell.style.color = '#888';
-                } else if (!status.isOnline) {
-                     activityCell.style.color = 'var(--cor-erro)';
+                if (status.isOnline) {
+                    activitySpan.style.color = '#00b33c';
                 } else {
-                     activityCell.style.color = '#00b33c';
+                    activitySpan.style.color = 'var(--cor-erro)';
                 }
                 
-                // CÉLULA DE PERMISSÃO (TAG)
-                const tagCell = row.insertCell();
+                if (!status.isOnline && status.inactivity > 60000 * 60 * 24) { // Mais de 24h
+                     activitySpan.textContent = 'Inativo há muito tempo';
+                     activitySpan.style.color = '#888';
+                }
+                mainCell.appendChild(activitySpan);
+                
+                // 3. Permissão (Tag)
+                const tagContainer = document.createElement('div');
+                tagContainer.style.marginLeft = '20px'; // Indenta
                 
                 if (uid === currentUser.uid) {
-                    tagCell.textContent = `👑 ${userData.tag} (Você)`;
+                    tagContainer.textContent = `👑 ${userData.tag} (Você)`;
+                    tagContainer.style.fontWeight = '600';
                 } else {
                     const select = document.createElement('select');
-                    select.style.width = '100%';
+                    select.style.width = 'auto'; // Ajusta ao conteúdo
+                    select.style.maxWidth = '200px';
                     select.dataset.uid = uid; 
                     
                     const optVisitante = document.createElement('option');
@@ -3646,10 +3667,13 @@ Negociadoras: ${negociadoras}
                     
                     select.value = userData.tag.toUpperCase() === 'HELLS' ? 'HELLS' : (userData.tag.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'Visitante');
                     select.onchange = (e) => updateUserTag(e.target.dataset.uid, e.target.value);
-                    tagCell.appendChild(select);
+                    tagContainer.appendChild(select);
                 }
+                mainCell.appendChild(tagContainer);
+                // --- FIM DA MODIFICAÇÃO (AGRUPAMENTO) ---
+
                 
-                // CÉLULA DE AÇÕES
+                // CÉLULA DE AÇÕES (Agora é a segunda célula)
                 const actionsCell = row.insertCell();
                 actionsCell.style.textAlign = 'center';
                 actionsCell.style.verticalAlign = 'middle';
@@ -3674,7 +3698,8 @@ Negociadoras: ${negociadoras}
             
         } catch (error) {
             showToast(`Erro ao carregar usuários: ${error.message}`, 'error');
-            els.adminUserListBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
+            // CORREÇÃO: Colspan de 4 para 2
+            els.adminUserListBody.innerHTML = `<tr><td colspan="2" style="text-align: center;">Erro ao carregar. ${error.message}</td></tr>`;
         }
         
         try {
