@@ -227,13 +227,13 @@ body.dark #historyBackground { background: rgba(44, 0, 26, 0.7); }
 
 .action-btn { padding: 4px 8px; font-size: 12px; margin-right: 0px; border-radius: 4px; }
 
-/* --- ALTERAÇÃO APLICADA AQUI --- */
-.history-table-wrapper { 
-    overflow-x: auto; 
-    -webkit-overflow-scrolling: touch; 
-    width: 100%; 
-    margin-top: 8px; 
-    max-height: 600px; /* Exemplo: se a tabela também rola verticalmente */ 
+/* --- ALTERAÇÃO APLICADA AQUI (conforme a imagem) --- */
+.history-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-top: 8px;
+    max-height: 600px; /* Exemplo: se a tabela também rola verticalmente */
 }
 /* --- FIM DA ALTERAÇÃO --- */
 
@@ -556,12 +556,10 @@ body.dark #imageLightboxModal {
     }
 }
 
-/* --- NOVO CÓDIGO ADICIONADO AO FINAL --- */
-
 /* 1. O Wrapper da Barra Fantasma */
 #top-scrollbar {
     overflow-x: auto;  /* Cria a barra de rolagem horizontal */
-    overflow-y: hidden;  /* Esconde qualquer rolagem vertical */
+  Desta forma, ao rolar a barra de rolagem superior, a inferior (da tabela) rolará junto, e vice-versa.   overflow-y: hidden;  /* Esconde qualquer rolagem vertical */
     height: 20px;        /* Altura padrão de uma barra de rolagem */
 }
 
@@ -577,3 +575,5 @@ body.dark #imageLightboxModal {
     width: 100%; /* Boa prática */
     border-collapse: collapse;
 }
+
+/* ... resto do seu CSS para a tabela ... */
