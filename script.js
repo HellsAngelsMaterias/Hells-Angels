@@ -3071,3 +3071,60 @@ els.enterBtn.onclick = () => {
         els.welcomeScreen.style.display = 'none';
     }, 500);
 };
+
+// Aguarda o documento carregar para garantir que os elementos existam
+document.addEventListener('DOMContentLoaded', () => {
+
+    // 1. Seleciona os elementos
+    const topScroll = document.getElementById('top-scrollbar');
+    const topScrollInner = document.getElementById('top-scrollbar-inner');
+    const tableWrapper = document.getElementById('real-table-wrapper');
+
+    // Verificação de segurança caso os elementos não existam
+    if (!topScroll || !topScrollInner || !tableWrapper) {
+        console.warn('Elementos da barra de rolagem sincronizada não encontrados.');
+        return;
+    }
+
+    // --- Função Principal de Sincronização de Largura ---
+    function syncScrollWidths() {
+        // Pega a largura total de rolagem do wrapper da tabela real
+        const realScrollWidth = tableWrapper.scrollWidth;
+        
+        // Define a largura do "filho" da barra fantasma
+        topScrollInner.style.width = realScrollWidth + 'px';
+    }
+
+    // Sincroniza a largura ao carregar a página
+    syncScrollWidths();
+
+    // Sincroniza a largura se a janela for redimensionada (importante!)
+    window.addEventListener('resize', syncScrollWidths);
+
+
+    // --- Sincronização das Posições de Rolagem ---
+    
+    let isSyncing = false; // Flag para evitar loops de evento
+
+    // Evento: Quando a barra do TOPO rolar
+    topScroll.addEventListener('scroll', () => {
+        if (isSyncing) return; // Se já estiver sincronizando, não faz nada
+        isSyncing = true;
+        
+        // Aplica a rolagem do topo na tabela de baixo
+        tableWrapper.scrollLeft = topScroll.scrollLeft;
+        
+        isSyncing = false;
+    });
+
+    // Evento: Quando a tabela de BAIXO rolar
+    tableWrapper.addEventListener('scroll', () => {
+        if (isSyncing) return;
+        isSyncing = true;
+
+        // Aplica a rolagem de baixo na barra do topo
+        topScroll.scrollLeft = tableWrapper.scrollLeft;
+
+        isSyncing = false;
+    });
+});
