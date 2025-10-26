@@ -139,7 +139,7 @@
     </div>
 
     <div class="actions">
-      <button id="calcBtn" class="primary">Calcular</button>
+      <button id="calcBtn" class="primary">Calculular</button>
       <button id="resetBtn" class="muted">Limpar Campos</button>
       <button id="registerBtn" class="success">Registrar Venda</button>
       <button id="toggleHistoryBtn" class="muted">Ver Histórico</button>
@@ -213,23 +213,29 @@
               <button id="clearHistoryBtn" class="muted">Limpar Histórico</button>
               <button id="toggleCalcBtn" class="muted">Voltar à Calculadora</button>
           </div>
-          <div class="history-table-wrapper"><table id="historicoVendas">
-              <thead>
-                  <tr>
-                      <th>Data/Hora</th>
-                      <th>Cliente</th>
-                      <th>Organização/Tipo</th>
-                      <th>Telefone</th>
-                      <th>Produtos (Unidade)</th>
-                      <th>Valor Total</th>
-                      <th>Negociadoras</th>
-                      <th>Registrado Por</th>
-                      <th>Ações</th>
-                  </tr>
-              </thead>
-              <tbody id="salesHistory"></tbody>
-          </table></div>
-      </div>
+          
+          <div id="top-scrollbar">
+              <div id="top-scrollbar-inner"></div>
+          </div>
+          
+          <div class="history-table-wrapper" id="real-table-wrapper">
+              
+              <table id="historicoVendas">
+                  <thead>
+                      <tr>
+                          <th>Data</th>
+                          <th>ID Venda</th>
+                          <th>Cliente</th>
+                          <th>Produto</th>
+                          <th>Valor</th>
+                          <th>Status</th>
+                      </tr>
+                  </thead>
+                  <tbody id="salesHistory"></tbody>
+              </table>
+          
+          </div>
+          </div>
   </div>
   
   <div class="card" id="dossierCard" style="display:none">
@@ -385,8 +391,6 @@
   <div id="imageLightboxModal">
       <img id="lightboxImg" src="" alt="Imagem Ampliada">
   </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   
   <script type="module" src="script.js"></script> 
   
