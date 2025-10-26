@@ -227,13 +227,13 @@ body.dark #historyBackground { background: rgba(44, 0, 26, 0.7); }
 
 .action-btn { padding: 4px 8px; font-size: 12px; margin-right: 0px; border-radius: 4px; }
 
-/* --- ALTERAÇÃO APLICADA AQUI (conforme a imagem) --- */
+/* --- ALTERAÇÃO APLICADA AQUI: ADIÇÃO DE max-height --- */
 .history-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
     margin-top: 8px;
-    max-height: 600px; /* Exemplo: se a tabela também rola verticalmente */
+    max-height: 600px; /* Limita a altura e permite rolagem vertical se necessário */
 }
 /* --- FIM DA ALTERAÇÃO --- */
 
@@ -556,24 +556,46 @@ body.dark #imageLightboxModal {
     }
 }
 
-/* 1. O Wrapper da Barra Fantasma */
+
+/* --- Estilos da Barra de Rolagem Sincronizada (Versão Bonita) --- */
+
+/* 1. O Wrapper da Barra Fantasma (BEM MAIS FINA) */
 #top-scrollbar {
-    overflow-x: auto;  /* Cria a barra de rolagem horizontal */
-  Desta forma, ao rolar a barra de rolagem superior, a inferior (da tabela) rolará junto, e vice-versa.   overflow-y: hidden;  /* Esconde qualquer rolagem vertical */
-    height: 20px;        /* Altura padrão de uma barra de rolagem */
+    overflow-x: auto;  /* Habilita rolagem horizontal */
+    overflow-y: hidden;  /* Esconde rolagem vertical */
+    height: 12px;        /* << BEM MAIS FINA, apenas 12px de altura */
 }
 
-/* 2. O conteúdo interno que força a largura */
+/* 2. O conteúdo interno */
 #top-scrollbar-inner {
-    height: 1px; /* Só precisa ter 1px de altura para funcionar */
-    /* A LARGURA (width) será definida dinamicamente pelo JavaScript */
+    height: 1px; /* Continua igual, só para forçar a largura */
+    /* A largura ainda é definida pelo JavaScript */
 }
 
-/* 4. Sua Tabela (Seu CSS existente) */
-#historicoVendas {
-    min-width: 1150px;
-    width: 100%; /* Boa prática */
-    border-collapse: collapse;
+
+/* --- ESTILIZAÇÃO CUSTOMIZADA (A MÁGICA ACONTECE AQUI) --- */
+/* Isso vai aplicar o tema do seu site às barras (de cima E de baixo) */
+/* Funciona no Chrome, Edge, Safari (e navegadores baseados em WebKit) */
+
+/* Define a altura da barra horizontal e largura da vertical */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
 }
 
-/* ... resto do seu CSS para a tabela ... */
+/* O "caminho" por onde a barra corre */
+::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Um cinza bem claro para o fundo */
+    border-radius: 10px; /* Bordas arredondadas */
+}
+
+/* A barra (o "botão" que você arrasta) */
+::-webkit-scrollbar-thumb {
+    background: #E83E8C; /* << O PINK do cabeçalho do seu site! */
+    border-radius: 10px;
+}
+
+/* A barra quando você passa o mouse por cima */
+::-webkit-scrollbar-thumb:hover {
+    background: #d1307b; /* Um tom de pink um pouco mais escuro */
+}
