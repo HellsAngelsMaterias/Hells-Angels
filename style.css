@@ -227,7 +227,16 @@ body.dark #historyBackground { background: rgba(44, 0, 26, 0.7); }
 
 .action-btn { padding: 4px 8px; font-size: 12px; margin-right: 0px; border-radius: 4px; }
 
-.history-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; margin-top: 8px; }
+/* --- ALTERAÇÃO APLICADA AQUI --- */
+.history-table-wrapper { 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    width: 100%; 
+    margin-top: 8px; 
+    max-height: 600px; /* Exemplo: se a tabela também rola verticalmente */ 
+}
+/* --- FIM DA ALTERAÇÃO --- */
+
 #historyCard table {
     width: 100%; border-collapse: collapse; table-layout: fixed;
     min-width: 1150px; background: transparent; 
@@ -545,4 +554,26 @@ body.dark #imageLightboxModal {
     .dossier-org-grid, .dossier-people-grid {
          grid-template-columns: 1fr; 
     }
+}
+
+/* --- NOVO CÓDIGO ADICIONADO AO FINAL --- */
+
+/* 1. O Wrapper da Barra Fantasma */
+#top-scrollbar {
+    overflow-x: auto;  /* Cria a barra de rolagem horizontal */
+    overflow-y: hidden;  /* Esconde qualquer rolagem vertical */
+    height: 20px;        /* Altura padrão de uma barra de rolagem */
+}
+
+/* 2. O conteúdo interno que força a largura */
+#top-scrollbar-inner {
+    height: 1px; /* Só precisa ter 1px de altura para funcionar */
+    /* A LARGURA (width) será definida dinamicamente pelo JavaScript */
+}
+
+/* 4. Sua Tabela (Seu CSS existente) */
+#historicoVendas {
+    min-width: 1150px;
+    width: 100%; /* Boa prática */
+    border-collapse: collapse;
 }
