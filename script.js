@@ -5,10 +5,8 @@ import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, createUser
 import { getDatabase, ref, set, push, onValue, remove, get, query, orderByChild, equalTo, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
-  // ########## ATENÇÃO!! ##########
-  // COLE SUA NOVA CHAVE DE API AQUI
+  
   apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
-  // ########## ATENÇÃO!! ##########
   authDomain: "hells-angels-438c2.firebaseapp.com",
   databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
   projectId: "hells-angels-438c2",
@@ -2264,12 +2262,20 @@ const removeDossierEntry = (orgName, entryId) => {
     }
 };
 
+// ===========================================
+// INÍCIO DA ALTERAÇÃO (Botão de Migração 1)
+// ===========================================
 const migrateVendasToDossier = async () => {
     if (!confirm("Isso irá copiar *todas* as vendas com organização para o Dossiê de Pessoas. (Já faz verificação de duplicados). Deseja continuar?")) {
         return;
     }
     
     showToast("Iniciando migração... Isso pode demorar.", "default", 5000);
+    
+    // --- INÍCIO DA MUDANÇA ---
+    let isSuccess = false; // Flag para rastrear o sucesso
+    // --- FIM DA MUDANÇA ---
+    
     els.migrateDossierBtn.disabled = true;
     els.migrateDossierBtn.textContent = "Migrando...";
     
@@ -2279,6 +2285,8 @@ const migrateVendasToDossier = async () => {
         
         if (!snapshot.exists()) {
             showToast("Nenhuma venda encontrada para migrar.", "error");
+            // --- MUDANÇA: Mesmo sem vendas, consideramos "sucesso"
+            isSuccess = true; 
             return;
         }
         
@@ -2303,21 +2311,48 @@ const migrateVendasToDossier = async () => {
         }
         
         showToast(`Migração concluída! ${count} registros verificados/migrados.`, "success");
+        // --- INÍCIO DA MUDANÇA ---
+        isSuccess = true; // Marca como sucesso
+        // --- FIM DA MUDANÇA ---
         
     } catch (error) {
         showToast(`Erro na migração: ${error.message}`, "error");
+        // --- INÍCIO DA MUDANÇA ---
+        isSuccess = false; // Marca como falha
+        // --- FIM DA MUDANÇA ---
     } finally {
-        els.migrateDossierBtn.disabled = false;
-        els.migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
+        // --- INÍCIO DA MUDANÇA ---
+        if (isSuccess) {
+            // Se deu certo, mantém desabilitado e muda o texto
+            els.migrateDossierBtn.textContent = "Migração Concluída";
+            // Se preferir OCULTAR o botão, descomente a linha abaixo:
+            // els.migrateDossierBtn.style.display = 'none';
+        } else {
+            // Se deu erro, reabilita para tentar de novo
+            els.migrateDossierBtn.disabled = false;
+            els.migrateDossierBtn.textContent = "Migrar Vendas Antigas para Dossiê";
+        }
+        // --- FIM DA MUDANÇA ---
     }
 };
+// ===========================================
+// FIM DA ALTERAÇÃO (Botão de Migração 1)
+// ===========================================
 
+// ===========================================
+// INÍCIO DA ALTERAÇÃO (Botão de Migração 2)
+// ===========================================
 const migrateVeiculosData = async () => {
     if (!confirm("ATENÇÃO: Isso irá converter TODOS os campos 'carro' e 'placas' (com vírgulas) para o novo sistema de veículos. Faça isso APENAS UMA VEZ.\n\nDeseja continuar?")) {
         return;
     }
     
     showToast("Iniciando migração de veículos... Isso pode demorar.", "default", 5000);
+    
+    // --- INÍCIO DA MUDANÇA ---
+    let isSuccess = false; // Flag para rastrear o sucesso
+    // --- FIM DA MUDANÇA ---
+    
     els.migrateVeiculosBtn.disabled = true;
     els.migrateVeiculosBtn.textContent = "Migrando...";
     
@@ -2327,6 +2362,8 @@ const migrateVeiculosData = async () => {
         
         if (!snapshot.exists()) {
             showToast("Nenhum dossiê encontrado.", "error");
+            // --- MUDANÇA: Mesmo sem dossiê, consideramos "sucesso"
+            isSuccess = true;
             return;
         }
         
@@ -2370,13 +2407,33 @@ const migrateVeiculosData = async () => {
             showToast("Nenhum registro antigo para migrar.", "default");
         }
         
+        // --- INÍCIO DA MUDANÇA ---
+        isSuccess = true; // Marca como sucesso (mesmo se não houver o que migrar)
+        // --- FIM DA MUDANÇA ---
+        
     } catch (error) {
         showToast(`Erro na migração de veículos: ${error.message}`, "error");
+        // --- INÍCIO DA MUDANÇA ---
+        isSuccess = false; // Marca como falha
+        // --- FIM DA MUDANÇA ---
     } finally {
-        els.migrateVeiculosBtn.disabled = false;
-        els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
+        // --- INÍCIO DA MUDANÇA ---
+        if (isSuccess) {
+            // Se deu certo, mantém desabilitado e muda o texto
+            els.migrateVeiculosBtn.textContent = "Migração Concluída";
+            // Se preferir OCULTAR o botão, descomente a linha abaixo:
+            // els.migrateVeiculosBtn.style.display = 'none';
+        } else {
+            // Se deu erro, reabilita para tentar de novo
+            els.migrateVeiculosBtn.disabled = false;
+            els.migrateVeiculosBtn.textContent = "Migrar Veículos Antigos (Dossiê)";
+        }
+        // --- FIM DA MUDANÇA ---
     }
 };
+// ===========================================
+// FIM DA ALTERAÇÃO (Botão de Migração 2)
+// ===========================================
 
 // **** FIM DAS FUNÇÕES DO DOSSIÊ (v12) ****
 
@@ -3013,5 +3070,4 @@ els.enterBtn.onclick = () => {
     setTimeout(() => {
         els.welcomeScreen.style.display = 'none';
     }, 500);
-
 };
