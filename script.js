@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCPNd9INqIfqG1-rjaYAlz988RLDZvL528", 
   // ########## ATENÇÃO!! ##########
   authDomain: "hells-angels-438c2.firebaseapp.com",
-  databaseURL: "https.://hells-angels-438c2-default-rtdb.firebaseio.com/",
+  databaseURL: "https://hells-angels-438c2-default-rtdb.firebaseio.com/",
   projectId: "hells-angels-438c2",
   storageBucket: "hells-angels-438c2.firebasestorage.app",
   messagingSenderId: "429406215315",
@@ -3013,4 +3013,5 @@ els.enterBtn.onclick = () => {
     setTimeout(() => {
         els.welcomeScreen.style.display = 'none';
     }, 500);
+
 };
